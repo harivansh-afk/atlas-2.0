@@ -33,9 +33,9 @@ export interface CustomModel {
 
 // SINGLE SOURCE OF TRUTH for all model data
 export const MODELS = {
-  // Premium high-priority models
+  // Free tier high-priority models
   'claude-sonnet-4': {
-    tier: 'premium',
+    tier: 'free',
     priority: 100,
     recommended: true,
     lowQuality: false,
