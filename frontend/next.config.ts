@@ -1,7 +1,7 @@
-import { withSentryConfig } from '@sentry/nextjs';
+// import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
-let nextConfig: NextConfig = {
+const nextConfig: NextConfig = {
   webpack: (config) => {
     // This rule prevents issues with pdf.js and canvas
     config.externals = [...(config.externals || []), { canvas: 'canvas' }];
@@ -16,16 +16,17 @@ let nextConfig: NextConfig = {
   },
 };
 
-if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
-  nextConfig = withSentryConfig(nextConfig, {
-    org: 'Atlas-ai',
-    project: 'Atlas-nextjs',
-    silent: !process.env.CI,
-    widenClientFileUpload: true,
-    tunnelRoute: '/monitoring',
-    disableLogger: true,
-    automaticVercelMonitors: true,
-  });
-}
+// Temporarily disable Sentry to fix Vercel build
+// if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'production') {
+//   nextConfig = withSentryConfig(nextConfig, {
+//     org: 'Atlas-ai',
+//     project: 'Atlas-nextjs',
+//     silent: !process.env.CI,
+//     widenClientFileUpload: true,
+//     tunnelRoute: '/monitoring',
+//     disableLogger: true,
+//     automaticVercelMonitors: true,
+//   });
+// }
 
 export default nextConfig;
