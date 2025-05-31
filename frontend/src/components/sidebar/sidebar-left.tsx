@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Bot, Menu, Store } from 'lucide-react';
+import { Menu, Leaf, CircleDot } from 'lucide-react';
 
 import { NavAgents } from '@/components/sidebar/nav-agents';
 import { NavUserWithTeams } from '@/components/sidebar/nav-user-with-teams';
@@ -99,7 +99,10 @@ export function SidebarLeft({
       {...props}
     >
       <SidebarHeader className="px-2 py-2">
-        <div className="flex h-[40px] items-center px-1 relative">
+        <div className={cn(
+          "flex h-[40px] items-center px-1 relative",
+          state === 'collapsed' ? "justify-center" : ""
+        )}>
           <Link href="/dashboard">
             <KortixLogo />
           </Link>
@@ -108,29 +111,29 @@ export function SidebarLeft({
               {/* <span className="font-semibold"> SUNA</span> */}
             </div>
           )}
-          <div className="ml-auto flex items-center gap-2">
-            {state !== 'collapsed' && (
+          {state !== 'collapsed' && (
+            <div className="ml-auto flex items-center gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SidebarTrigger className="h-8 w-8" />
                 </TooltipTrigger>
                 <TooltipContent>Toggle sidebar (CMD+B)</TooltipContent>
               </Tooltip>
-            )}
-            {isMobile && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setOpenMobile(true)}
-                    className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent"
-                  >
-                    <Menu className="h-4 w-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Open menu</TooltipContent>
-              </Tooltip>
-            )}
-          </div>
+              {isMobile && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setOpenMobile(true)}
+                      className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent"
+                    >
+                      <Menu className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Open menu</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent className="[&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
@@ -139,26 +142,30 @@ export function SidebarLeft({
           <SidebarMenuButton className={cn({
             'bg-primary/10 font-medium': pathname === '/agents',
           })}>
-            <Bot className="h-4 w-4" />
+            {state === 'collapsed' && <CircleDot className="h-4 w-4" />}
             <span className="flex items-center justify-between w-full">
               Agents
-              <Badge variant="secondary" className="ml-2 text-xs border bg-blue-200/50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-                New
-              </Badge>
+              {state !== 'collapsed' && (
+                <Badge variant="secondary" className="ml-2 text-xs border bg-blue-200/50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                  New
+                </Badge>
+              )}
             </span>
           </SidebarMenuButton>
         </Link>
-        
+
         <Link href="/marketplace">
           <SidebarMenuButton className={cn({
             'bg-primary/10 font-medium': pathname === '/marketplace',
           })}>
-            <Store className="h-4 w-4" />
+            {state === 'collapsed' && <Leaf className="h-4 w-4" />}
             <span className="flex items-center justify-between w-full">
-              Marketplace
-              <Badge variant="secondary" className="ml-2 text-xs border bg-blue-200/50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-                New
-              </Badge>
+              Gardens
+              {state !== 'collapsed' && (
+                <Badge variant="secondary" className="ml-2 text-xs border bg-blue-200/50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                  New
+                </Badge>
+              )}
             </span>
           </SidebarMenuButton>
         </Link>

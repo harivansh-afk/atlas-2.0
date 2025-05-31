@@ -1,6 +1,5 @@
 'use client';
 
-import { FlickeringGrid } from '@/components/home/ui/flickering-grid';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { siteConfig } from '@/lib/home';
 import { ChevronRightIcon } from '@radix-ui/react-icons';
@@ -20,10 +19,10 @@ export function FooterSection() {
   }, []);
 
   const logoSrc = !mounted
-    ? '/kortix-logo.svg'
+    ? '/logo.png'
     : resolvedTheme === 'dark'
-      ? '/kortix-logo-white.svg'
-      : '/kortix-logo.svg';
+      ? '/logo.png'
+      : '/logo_black.png';
 
   return (
     <footer id="footer" className="w-full pb-0">
@@ -137,7 +136,7 @@ export function FooterSection() {
       >
         <div className="absolute inset-0 bg-gradient-to-t from-transparent to-background z-10 from-40%" />
         <div className="absolute inset-0 mx-6">
-          <FlickeringGrid
+          {/* <FlickeringGrid
             text={tablet ? 'Agents Agents Agents' : 'Agents Agents Agents'}
             fontSize={tablet ? 70 : 90}
             className="h-full w-full"
@@ -146,7 +145,7 @@ export function FooterSection() {
             color="#6B7280"
             maxOpacity={0.3}
             flickerChance={0.1}
-          />
+          /> */}
         </div>
       </Link>
     </footer>

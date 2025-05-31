@@ -1,4 +1,4 @@
-# Suna Backend
+# Atlas Backend
 
 ## Running the backend
 

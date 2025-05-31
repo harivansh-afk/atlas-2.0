@@ -17,13 +17,13 @@ export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
-  
+
   const { data: agents = [], isLoading, error } = useMarketplaceAgents({
     search: searchQuery,
     tags: selectedTags.length > 0 ? selectedTags : undefined,
     sort: sortBy
   });
-  
+
   const addToLibraryMutation = useAddAgentToLibrary();
 
   const handleAddToLibrary = async (agentId: string, agentName: string) => {
@@ -40,8 +40,8 @@ export default function MarketplacePage() {
   };
 
   const handleTagFilter = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
+    setSelectedTags(prev =>
+      prev.includes(tag)
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
@@ -83,7 +83,7 @@ export default function MarketplacePage() {
         <div className="space-y-4">
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Agent Marketplace
+              Agent Gardens
             </h1>
             <p className="text-md text-muted-foreground max-w-2xl">
               Discover and add powerful AI agents created by the community to your personal library
@@ -101,7 +101,7 @@ export default function MarketplacePage() {
               className="pl-10"
             />
           </div>
-          
+
           <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort by" />
@@ -184,10 +184,10 @@ export default function MarketplacePage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {agents.map((agent) => {
               const { avatar, color } = getAgentStyling(agent);
-              
+
               return (
-                <div 
-                  key={agent.agent_id} 
+                <div
+                  key={agent.agent_id}
                   className="bg-neutral-100 dark:bg-sidebar border border-border rounded-2xl overflow-hidden hover:bg-muted/50 transition-all duration-200 cursor-pointer group"
                 >
                   <div className={`h-50 flex items-center justify-center relative`} style={{ backgroundColor: color }}>
@@ -201,7 +201,7 @@ export default function MarketplacePage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-foreground font-medium text-lg line-clamp-1 flex-1">
@@ -211,7 +211,7 @@ export default function MarketplacePage() {
                     <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
                       {agent.description || 'No description available'}
                     </p>
-                    
+
                     {agent.tags && agent.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-3">
                         {agent.tags.slice(0, 2).map(tag => (
@@ -238,7 +238,7 @@ export default function MarketplacePage() {
                       </div>
                     </div>
 
-                    <Button 
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAddToLibrary(agent.agent_id, agent.name);

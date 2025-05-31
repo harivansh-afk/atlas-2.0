@@ -1,12 +1,12 @@
 services:
-  kortix-suna:
+  Atlas-Atlas:
     platform: linux/amd64
     build:
       context: .
       dockerfile: ${DOCKERFILE:-Dockerfile}
       args:
         TARGETPLATFORM: ${TARGETPLATFORM:-linux/amd64}
-    image: kortix/suna:0.1.2.8
+    image: Atlas/Atlas:0.1.2.8
     ports:
       - "6080:6080"  # noVNC web interface
       - "5901:5901"  # VNC port

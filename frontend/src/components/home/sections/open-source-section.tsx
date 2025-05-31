@@ -14,14 +14,14 @@ export function OpenSourceSection() {
           <h2 className="text-3xl md:text-4xl font-medium tracking-tighter text-center text-balance pb-1">
             100% Open Source
           </h2>
-          <p className="text-muted-foreground text-center text-balance font-medium">
+          <p className="text-base text-muted-foreground">
             Suna is fully open source. Join our community and help shape the
-            future of AI.
+            future of AI agents.
           </p>
         </SectionHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-12">
-          <div className="rounded-xl bg-[#F3F4F6] dark:bg-[#F9FAFB]/[0.02] border border-border p-6">
+          <div className="rounded-xl bg-[var(--features-card-bg)] border border-border p-6">
             <div className="flex flex-col gap-6">
               <div className="flex items-center gap-2 text-primary font-medium">
                 <Github className="h-5 w-5" />
@@ -31,9 +31,9 @@ export function OpenSourceSection() {
                 <h3 className="text-2xl font-semibold tracking-tight">
                   The Generalist AI Agent
                 </h3>
-                <p className="text-muted-foreground mt-2">
+                <p className="text-base text-muted-foreground">
                   Explore, contribute, or fork our repository. Suna is built
-                  with transparency and collaboration at its core.
+                  with transparency and collaboration in mind.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -76,12 +76,12 @@ export function OpenSourceSection() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-[#F3F4F6] dark:bg-[#F9FAFB]/[0.02] border border-border p-6">
+          <div className="rounded-xl bg-[var(--features-card-bg)] border border-border p-6">
             <div className="flex flex-col gap-6">
               <h3 className="text-xl md:text-2xl font-medium tracking-tight">
                 Transparency & Trust
               </h3>
-              <p className="text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 We believe AI should be open and accessible to everyone. Our
                 open source approach ensures accountability, innovation, and
                 community collaboration.

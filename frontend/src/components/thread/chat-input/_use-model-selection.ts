@@ -5,10 +5,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { isLocalMode } from '@/lib/config';
 import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model';
 
-export const STORAGE_KEY_MODEL = 'suna-preferred-model';
+export const STORAGE_KEY_MODEL = 'Atlas-preferred-model';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
 export const DEFAULT_FREE_MODEL_ID = 'deepseek';
 export const DEFAULT_PREMIUM_MODEL_ID = 'claude-sonnet-4';
+
+// Model constants for toggle selector
+export const SONNET4_MODEL_ID = 'claude-sonnet-4';
+export const GEMINI_MODEL_ID = 'gemini-flash-2.5'; // Use the working Gemini Flash model
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
 
@@ -30,129 +34,130 @@ export interface CustomModel {
 // SINGLE SOURCE OF TRUTH for all model data
 export const MODELS = {
   // Premium high-priority models
-  'claude-sonnet-4': { 
+  'claude-sonnet-4': {
     tier: 'premium',
-    priority: 100, 
+    priority: 100,
     recommended: true,
     lowQuality: false,
     description: 'Claude Sonnet 4 - Anthropic\'s latest and most advanced AI assistant'
   },
-  'claude-sonnet-3.7': { 
-    tier: 'premium', 
-    priority: 95, 
+  'claude-sonnet-3.7': {
+    tier: 'premium',
+    priority: 95,
     recommended: true,
     lowQuality: false,
     description: 'Claude 3.7 - Anthropic\'s most powerful AI assistant'
   },
-  'claude-sonnet-3.7-reasoning': { 
-    tier: 'premium', 
-    priority: 95, 
+  'claude-sonnet-3.7-reasoning': {
+    tier: 'premium',
+    priority: 95,
     recommended: true,
     lowQuality: false,
     description: 'Claude 3.7 with enhanced reasoning capabilities'
   },
-  'gpt-4.1': { 
-    tier: 'premium', 
+  'gpt-4.1': {
+    tier: 'premium',
     priority: 95,
     recommended: false,
     lowQuality: false,
     description: 'GPT-4.1 - OpenAI\'s most advanced model with enhanced reasoning'
   },
-  'gemini-2.5-pro-preview': { 
-    tier: 'premium', 
+  'gemini-2.5-pro-preview': {
+    tier: 'premium',
     priority: 95,
     recommended: true,
     lowQuality: false,
     description: 'Gemini Pro 2.5 - Google\'s latest powerful model with strong reasoning'
   },
-  'gemini-2.5-pro': { 
-    tier: 'premium', 
+  'gemini-2.5-pro': {
+    tier: 'premium',
     priority: 95,
     recommended: true,
     lowQuality: false,
     description: 'Gemini Pro 2.5 - Google\'s latest advanced model'
   },
-  'claude-3.5': { 
-    tier: 'premium', 
+
+  'claude-3.5': {
+    tier: 'premium',
     priority: 90,
     recommended: true,
     lowQuality: false,
     description: 'Claude 3.5 - Anthropic\'s balanced model with solid capabilities'
   },
-  'gemini-2.5': { 
-    tier: 'premium', 
+  'gemini-2.5': {
+    tier: 'premium',
     priority: 90,
     recommended: true,
     lowQuality: false,
     description: 'Gemini 2.5 - Google\'s powerful versatile model'
   },
-  'gemini-flash-2.5:thinking': { 
-    tier: 'premium', 
+  'gemini-flash-2.5:thinking': {
+    tier: 'premium',
     priority: 90,
     recommended: true,
     lowQuality: false,
     description: 'Gemini Flash 2.5 - Google\'s fast, responsive AI model'
   },
-  'gpt-4o': { 
-    tier: 'premium', 
+  'gpt-4o': {
+    tier: 'premium',
     priority: 85,
     recommended: false,
     lowQuality: false,
     description: 'GPT-4o - Optimized for speed, reliability, and cost-effectiveness'
   },
-  'gpt-4-turbo': { 
-    tier: 'premium', 
+  'gpt-4-turbo': {
+    tier: 'premium',
     priority: 85,
     recommended: false,
     lowQuality: false,
     description: 'GPT-4 Turbo - OpenAI\'s powerful model with a great balance of performance and cost'
   },
-  'gpt-4': { 
-    tier: 'premium', 
+  'gpt-4': {
+    tier: 'premium',
     priority: 80,
     recommended: false,
     lowQuality: false,
     description: 'GPT-4 - OpenAI\'s highly capable model with advanced reasoning'
   },
-  'deepseek-chat-v3-0324': { 
-    tier: 'premium', 
+  'deepseek-chat-v3-0324': {
+    tier: 'premium',
     priority: 75,
     recommended: true,
     lowQuality: false,
     description: 'DeepSeek Chat - Advanced AI assistant with strong reasoning'
   },
-  
+
   // Free tier models
-  'deepseek-r1': { 
-    tier: 'free', 
+  'deepseek-r1': {
+    tier: 'free',
     priority: 60,
     recommended: false,
     lowQuality: false,
     description: 'DeepSeek R1 - Advanced model with enhanced reasoning and coding capabilities'
   },
-  'deepseek': { 
-    tier: 'free', 
+  'deepseek': {
+    tier: 'free',
     priority: 50,
     recommended: false,
     lowQuality: true,
     description: 'DeepSeek - Free tier model with good general capabilities'
   },
-  'gemini-flash-2.5': { 
-    tier: 'free', 
-    priority: 50,
-    recommended: false,
-    lowQuality: true,
-    description: 'Gemini Flash - Google\'s faster, more efficient model'
+  'gemini-flash-2.5': {
+    tier: 'premium',
+    priority: 85,
+    recommended: true,
+    lowQuality: false,
+    description: 'Gemini Flash 2.5 - Google\'s fast, efficient model with strong performance'
   },
-  'grok-3-mini': { 
-    tier: 'free', 
+  'grok-3-mini': {
+    tier: 'free',
     priority: 45,
     recommended: false,
     lowQuality: true,
     description: 'Grok-3 Mini - Smaller, faster version of Grok-3 for simpler tasks'
   },
-  'qwen3': { 
-    tier: 'free', 
+  'qwen3': {
+    tier: 'free',
     priority: 40,
     recommended: false,
     lowQuality: true,
@@ -206,18 +211,18 @@ export const getPrefixedModelId = (modelId: string, isCustom: boolean): string =
 // Helper to get custom models from localStorage
 export const getCustomModels = (): CustomModel[] => {
   if (!isLocalMode() || typeof window === 'undefined') return [];
-  
+
   try {
     const storedModels = localStorage.getItem(STORAGE_KEY_CUSTOM_MODELS);
     if (!storedModels) return [];
-    
+
     const parsedModels = JSON.parse(storedModels);
     if (!Array.isArray(parsedModels)) return [];
-    
+
     return parsedModels
-      .filter((model: any) => 
-        model && typeof model === 'object' && 
-        typeof model.id === 'string' && 
+      .filter((model: any) =>
+        model && typeof model === 'object' &&
+        typeof model.id === 'string' &&
         typeof model.label === 'string');
   } catch (e) {
     console.error('Error parsing custom models:', e);
@@ -237,14 +242,14 @@ const saveModelPreference = (modelId: string): void => {
 export const useModelSelection = () => {
   const [selectedModel, setSelectedModel] = useState(DEFAULT_FREE_MODEL_ID);
   const [customModels, setCustomModels] = useState<CustomModel[]>([]);
-  
+
   const { data: subscriptionData } = useSubscription();
   const { data: modelsData, isLoading: isLoadingModels } = useAvailableModels({
     refetchOnMount: false,
   });
-  
-  const subscriptionStatus: SubscriptionStatus = subscriptionData?.status === 'active' 
-    ? 'active' 
+
+  const subscriptionStatus: SubscriptionStatus = subscriptionData?.status === 'active'
+    ? 'active'
     : 'no_subscription';
 
   // Function to refresh custom models from localStorage
@@ -263,21 +268,21 @@ export const useModelSelection = () => {
   // Generate model options list with consistent structure
   const MODEL_OPTIONS = useMemo(() => {
     let models = [];
-    
+
     // Default models if API data not available
     if (!modelsData?.models || isLoadingModels) {
       models = [
-        { 
-          id: DEFAULT_FREE_MODEL_ID, 
-          label: 'DeepSeek', 
+        {
+          id: DEFAULT_FREE_MODEL_ID,
+          label: 'DeepSeek',
           requiresSubscription: false,
           description: MODELS[DEFAULT_FREE_MODEL_ID]?.description || MODEL_TIERS.free.baseDescription,
           priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 50
         },
-        { 
-          id: DEFAULT_PREMIUM_MODEL_ID, 
-          label: 'Claude Sonnet 4', 
-          requiresSubscription: true, 
+        {
+          id: DEFAULT_PREMIUM_MODEL_ID,
+          label: 'Claude Sonnet 4',
+          requiresSubscription: true,
           description: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.description || MODEL_TIERS.premium.baseDescription,
           priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
         },
@@ -287,28 +292,28 @@ export const useModelSelection = () => {
       models = modelsData.models.map(model => {
         const shortName = model.short_name || model.id;
         const displayName = model.display_name || shortName;
-        
+
         // Format the display label
         let cleanLabel = displayName;
         if (cleanLabel.includes('/')) {
           cleanLabel = cleanLabel.split('/').pop() || cleanLabel;
         }
-        
+
         cleanLabel = cleanLabel
           .replace(/-/g, ' ')
           .split(' ')
           .map(word => word.charAt(0).toUpperCase() + word.slice(1))
           .join(' ');
-        
+
         // Get model data from our central MODELS constant
         const modelData = MODELS[shortName] || {};
         const isPremium = model?.requires_subscription || modelData.tier === 'premium' || false;
-        
+
         return {
           id: shortName,
           label: cleanLabel,
           requiresSubscription: isPremium,
-          description: modelData.description || 
+          description: modelData.description ||
             (isPremium ? MODEL_TIERS.premium.baseDescription : MODEL_TIERS.free.baseDescription),
           top: modelData.priority >= 90, // Mark high-priority models as "top"
           priority: modelData.priority || 0,
@@ -317,7 +322,7 @@ export const useModelSelection = () => {
         };
       });
     }
-    
+
     // Add custom models if in local mode
     if (isLocalMode() && customModels.length > 0) {
       const customModelOptions = customModels.map(model => ({
@@ -331,10 +336,10 @@ export const useModelSelection = () => {
         lowQuality: false,
         recommended: false
       }));
-      
+
       models = [...models, ...customModelOptions];
     }
-    
+
     // Sort models consistently in one place:
     // 1. First by free/premium (free first)
     // 2. Then by priority (higher first)
@@ -344,12 +349,12 @@ export const useModelSelection = () => {
       if (a.requiresSubscription !== b.requiresSubscription) {
         return a.requiresSubscription ? 1 : -1;
       }
-      
+
       // Then by priority (higher first)
       if (a.priority !== b.priority) {
         return b.priority - a.priority;
       }
-      
+
       // Finally by name
       return a.label.localeCompare(b.label);
     });
@@ -357,9 +362,9 @@ export const useModelSelection = () => {
 
   // Get filtered list of models the user can access (no additional sorting)
   const availableModels = useMemo(() => {
-    return isLocalMode() 
-      ? MODEL_OPTIONS 
-      : MODEL_OPTIONS.filter(model => 
+    return isLocalMode()
+      ? MODEL_OPTIONS
+      : MODEL_OPTIONS.filter(model =>
           canAccessModel(subscriptionStatus, model.requiresSubscription)
         );
   }, [MODEL_OPTIONS, subscriptionStatus]);
@@ -367,10 +372,10 @@ export const useModelSelection = () => {
   // Initialize selected model from localStorage or defaults
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     try {
       const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
-      
+
       // Local mode - allow any model
       if (isLocalMode()) {
         if (savedModel && MODEL_OPTIONS.find(option => option.id === savedModel)) {
@@ -381,17 +386,17 @@ export const useModelSelection = () => {
         }
         return;
       }
-      
+
       // Premium subscription - ALWAYS use premium model
       if (subscriptionStatus === 'active') {
         // If they had a premium model saved and it's still valid, use it
-        const hasSavedPremiumModel = savedModel && 
-          MODEL_OPTIONS.find(option => 
-            option.id === savedModel && 
-            option.requiresSubscription && 
+        const hasSavedPremiumModel = savedModel &&
+          MODEL_OPTIONS.find(option =>
+            option.id === savedModel &&
+            option.requiresSubscription &&
             canAccessModel(subscriptionStatus, true)
           );
-        
+
         // Otherwise use the default premium model
         if (hasSavedPremiumModel) {
           setSelectedModel(savedModel!);
@@ -401,7 +406,7 @@ export const useModelSelection = () => {
         }
         return;
       }
-      
+
       // No subscription - use saved model if accessible (free tier), or default free
       if (savedModel) {
         const modelOption = MODEL_OPTIONS.find(option => option.id === savedModel);
@@ -424,22 +429,22 @@ export const useModelSelection = () => {
   // Handle model selection change
   const handleModelChange = (modelId: string) => {
     console.log('handleModelChange', modelId);
-    
+
     // Refresh custom models from localStorage to ensure we have the latest
     if (isLocalMode()) {
       refreshCustomModels();
     }
-    
+
     // First check if it's a custom model in local mode
     const isCustomModel = isLocalMode() && customModels.some(model => model.id === modelId);
-    
+
     // Then check if it's in standard MODEL_OPTIONS
     const modelOption = MODEL_OPTIONS.find(option => option.id === modelId);
-    
+
     // Check if model exists in either custom models or standard options
     if (!modelOption && !isCustomModel) {
       console.warn('Model not found in options:', modelId, MODEL_OPTIONS, isCustomModel, customModels);
-      
+
       // Reset to default model when the selected model is not found
       const defaultModel = isLocalMode() ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID;
       setSelectedModel(defaultModel);
@@ -448,7 +453,7 @@ export const useModelSelection = () => {
     }
 
     // Check access permissions (except for custom models in local mode)
-    if (!isCustomModel && !isLocalMode() && 
+    if (!isCustomModel && !isLocalMode() &&
         !canAccessModel(subscriptionStatus, modelOption?.requiresSubscription ?? false)) {
       console.warn('Model not accessible:', modelId);
       return;

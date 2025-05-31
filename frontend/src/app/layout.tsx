@@ -27,11 +27,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: siteConfig.name,
-    template: `%s - ${siteConfig.name}`,
+    default: 'Atlas',
+    template: `%s - Atlas`,
   },
   description:
-    'Suna is a fully open source AI assistant that helps you accomplish real-world tasks with ease. Through natural conversation, Suna becomes your digital companion for research, data analysis, and everyday challenges.',
+    'Atlas is a fully open source AI assistant that helps you accomplish real-world tasks with ease. Through natural conversation, Atlas becomes your digital companion for research, data analysis, and everyday challenges.',
   keywords: [
     'AI',
     'artificial intelligence',
@@ -43,13 +43,13 @@ export const metadata: Metadata = {
     'research',
     'data analysis',
   ],
-  authors: [{ name: 'Kortix Team', url: 'https://suna.so' }],
+  authors: [{ name: 'Atlas Team', url: 'https://atlas.to' }],
   creator:
-    'Kortix Team - Adam Cohen Hillel, Marko Kraemer, Domenico Gagliardi, and Quoc Dat Le',
+    'Atlas Team - Adam Cohen Hillel, Marko Kraemer, Domenico Gagliardi, and Quoc Dat Le',
   publisher:
-    'Kortix Team - Adam Cohen Hillel, Marko Kraemer, Domenico Gagliardi, and Quoc Dat Le',
+    'Atlas Team - Adam Cohen Hillel, Marko Kraemer, Domenico Gagliardi, and Quoc Dat Le',
   category: 'Technology',
-  applicationName: 'Suna',
+  applicationName: 'Atlas',
   formatDetection: {
     telephone: false,
     email: false,
@@ -64,17 +64,17 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'Suna - Open Source Generalist AI Agent',
+    title: 'Atlas - Open Source Generalist AI Agent',
     description:
-      'Suna is a fully open source AI assistant that helps you accomplish real-world tasks with ease through natural conversation.',
-    url: siteConfig.url,
-    siteName: 'Suna',
+      'Atlas is a fully open source AI assistant that helps you accomplish real-world tasks with ease through natural conversation.',
+    url: 'https://atlasagents.ai/',
+    siteName: 'Atlas',
     images: [
       {
-        url: '/banner.png',
+        url: '/preview.png',
         width: 1200,
         height: 630,
-        alt: 'Suna - Open Source Generalist AI Agent',
+        alt: 'Atlas - Open Source Generalist AI Agent',
         type: 'image/png',
       },
     ],
@@ -83,27 +83,27 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Suna - Open Source Generalist AI Agent',
+    title: 'Atlas - Open Source Generalist AI Agent',
     description:
-      'Suna is a fully open source AI assistant that helps you accomplish real-world tasks with ease through natural conversation.',
-    creator: '@kortixai',
-    site: '@kortixai',
+      'Atlas is a fully open source AI assistant that helps you accomplish real-world tasks with ease through natural conversation.',
+    creator: '@atlasai',
+    site: '@atlasai',
     images: [
       {
-        url: '/banner.png',
+        url: '/preview.png',
         width: 1200,
         height: 630,
-        alt: 'Suna - Open Source Generalist AI Agent',
+        alt: 'Atlas - Open Source Generalist AI Agent',
       },
     ],
   },
   icons: {
-    icon: [{ url: '/favicon.png', sizes: 'any' }],
+    icon: [{ url: '/favicon.png', sizes: '32x32' }],
     shortcut: '/favicon.png',
   },
   // manifest: "/manifest.json",
   alternates: {
-    canonical: siteConfig.url,
+    canonical: 'https://atlasagents.ai/',
   },
 };
 
@@ -142,7 +142,7 @@ export default function RootLayout({
 
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >

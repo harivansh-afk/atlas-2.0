@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { useProjects, useAllThreads } from '@/hooks/react-query';
+import { getProjects, getThreads } from '@/lib/api';
 import Link from 'next/link';
 
 // Thread with associated project info for display in sidebar & search
@@ -32,15 +32,11 @@ export function SidebarSearch() {
   const [filteredThreads, setFilteredThreads] = useState<ThreadWithProject[]>(
     [],
   );
+  const [isLoading, setIsLoading] = useState(false);
   const [loadingThreadId, setLoadingThreadId] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const { state } = useSidebar();
-
-  // Use React Query hooks
-  const { data: projects = [], isLoading: projectsLoading } = useProjects();
-  const { data: allThreads = [], isLoading: threadsLoading } = useAllThreads();
-  const isLoading = projectsLoading || threadsLoading;
 
   // Helper to sort threads by updated_at (most recent first)
   const sortThreads = (
@@ -51,48 +47,64 @@ export function SidebarSearch() {
     });
   };
 
-  // Process threads with project data when data changes
-  useEffect(() => {
-    if (!projects.length || !allThreads.length) {
+  // Load threads (reusing the same logic from NavAgents)
+  const loadThreadsWithProjects = async () => {
+    try {
+      setIsLoading(true);
+
+      // Get all projects
+      const projects = await getProjects();
+
+      // If no projects are found, the user might not be logged in
+      if (projects.length === 0) {
+        setThreads([]);
+        return;
+      }
+
+      // Create a map of projects by ID for faster lookups
+      const projectsById = new Map();
+      projects.forEach((project) => {
+        projectsById.set(project.id, project);
+      });
+
+      // Get all threads at once
+      const allThreads = await getThreads();
+
+      // Create display objects for threads with their project info
+      const threadsWithProjects: ThreadWithProject[] = [];
+
+      for (const thread of allThreads) {
+        const projectId = thread.project_id;
+        // Skip threads without a project ID
+        if (!projectId) continue;
+
+        // Get the associated project
+        const project = projectsById.get(projectId);
+        if (!project) continue;
+
+        // Add to our list
+        threadsWithProjects.push({
+          threadId: thread.thread_id,
+          projectId: projectId,
+          projectName: project.name || 'Unnamed Project',
+          url: `/agents/${thread.thread_id}`,
+          updatedAt:
+            thread.updated_at || project.updated_at || new Date().toISOString(),
+        });
+      }
+
+      // Set threads, ensuring consistent sort order
+      const sortedThreads = sortThreads(threadsWithProjects);
+      setThreads(sortedThreads);
+      setFilteredThreads(sortedThreads);
+    } catch (err) {
+      console.error('Error loading threads for search:', err);
       setThreads([]);
       setFilteredThreads([]);
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    // Create a map of projects by ID for faster lookups
-    const projectsById = new Map();
-    projects.forEach((project) => {
-      projectsById.set(project.id, project);
-    });
-
-    // Create display objects for threads with their project info
-    const threadsWithProjects: ThreadWithProject[] = [];
-
-    for (const thread of allThreads) {
-      const projectId = thread.project_id;
-      // Skip threads without a project ID
-      if (!projectId) continue;
-
-      // Get the associated project
-      const project = projectsById.get(projectId);
-      if (!project) continue;
-
-      // Add to our list
-      threadsWithProjects.push({
-        threadId: thread.thread_id,
-        projectId: projectId,
-        projectName: project.name || 'Unnamed Project',
-        url: `/agents/${thread.thread_id}`,
-        updatedAt:
-          thread.updated_at || project.updated_at || new Date().toISOString(),
-      });
-    }
-
-    // Set threads, ensuring consistent sort order
-    const sortedThreads = sortThreads(threadsWithProjects);
-    setThreads(sortedThreads);
-    setFilteredThreads(sortedThreads);
-  }, [projects, allThreads]);
+  };
 
   // Filter threads based on search query
   const filterThreads = useCallback(
@@ -117,7 +129,10 @@ export function SidebarSearch() {
     filterThreads(query);
   }, [query, filterThreads]);
 
-  // Data is automatically loaded by React Query hooks
+  // Load threads when the component mounts
+  useEffect(() => {
+    loadThreadsWithProjects();
+  }, []);
 
   // Reset loading state when navigation completes
   useEffect(() => {

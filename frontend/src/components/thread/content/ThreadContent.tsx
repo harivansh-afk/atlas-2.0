@@ -13,7 +13,7 @@ import {
     getUserFriendlyToolName,
     safeJsonParse,
 } from '@/components/thread/utils';
-import { KortixLogo } from '@/components/sidebar/kortix-logo';
+import { AiAvatarOrb } from '@/components/ui/ai-avatar-orb';
 import { AgentLoader } from './loader';
 import { parseXmlToolCalls, isNewXmlFormat, extractToolNameFromStream } from '@/components/thread/tool-views/xml-parser';
 import { parseToolResult } from '@/components/thread/tool-views/tool-result-parser';
@@ -93,11 +93,11 @@ export function renderMarkdownContent(
     if (isNewXmlFormat(content)) {
         const contentParts: React.ReactNode[] = [];
         let lastIndex = 0;
-        
+
         // Find all function_calls blocks
         const functionCallsRegex = /<function_calls>([\s\S]*?)<\/function_calls>/gi;
         let match;
-        
+
         while ((match = functionCallsRegex.exec(content)) !== null) {
             // Add text before the function_calls block
             if (match.index > lastIndex) {
@@ -110,14 +110,14 @@ export function renderMarkdownContent(
                     );
                 }
             }
-            
+
             // Parse the tool calls in this block
             const toolCalls = parseXmlToolCalls(match[0]);
-            
+
             toolCalls.forEach((toolCall, index) => {
                 const toolName = toolCall.functionName.replace(/_/g, '-');
                 const IconComponent = getToolIcon(toolName);
-                
+
                 // Extract primary parameter for display
                 let paramDisplay = '';
                 if (toolCall.parameters.file_path) {
@@ -129,7 +129,7 @@ export function renderMarkdownContent(
                 } else if (toolCall.parameters.url) {
                     paramDisplay = toolCall.parameters.url;
                 }
-                
+
                 contentParts.push(
                     <div key={`tool-${match.index}-${index}`} className="my-1">
                         <button
@@ -145,10 +145,10 @@ export function renderMarkdownContent(
                     </div>
                 );
             });
-            
+
             lastIndex = match.index + match[0].length;
         }
-        
+
         // Add any remaining text after the last function_calls block
         if (lastIndex < content.length) {
             const remainingText = content.substring(lastIndex);
@@ -160,7 +160,7 @@ export function renderMarkdownContent(
                 );
             }
         }
-        
+
         return contentParts.length > 0 ? contentParts : <Markdown className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none break-words">{content}</Markdown>;
     }
 
@@ -286,7 +286,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     // React Query file preloader
     const { preloadFiles } = useFilePreloader();
 
-    const containerClassName = isPreviewMode 
+    const containerClassName = isPreviewMode
         ? "flex-1 overflow-y-auto scrollbar-thin scrollbar-track-secondary/0 scrollbar-thumb-primary/10 scrollbar-thumb-rounded-full hover:scrollbar-thumb-primary/10 px-6 py-4 pb-72"
         : "flex-1 overflow-y-auto scrollbar-thin scrollbar-track-secondary/0 scrollbar-thumb-primary/10 scrollbar-thumb-rounded-full hover:scrollbar-thumb-primary/10 px-6 py-4 pb-72 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60";
 
@@ -504,11 +504,11 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                         return (
                                             <div key={group.key} ref={groupIndex === groupedMessages.length - 1 ? latestMessageRef : null}>
                                                 <div className="flex items-start gap-3">
-                                                    <div className="flex-shrink-0 w-5 h-5 mt-2 rounded-md flex items-center justify-center ml-auto mr-2">
-                                                        <KortixLogo />
+                                                    <div className="flex-shrink-0 w-8 h-8 mt-2 rounded-md flex items-center justify-center ml-auto mr-2">
+                                                        <AiAvatarOrb width={32} height={32} />
                                                     </div>
                                                     <div className="flex-1">
-                                                        <div className="flex max-w-[90%] rounded-lg px-4 text-sm break-words overflow-hidden">
+                                                        <div className="flex max-w-[90%] rounded-lg px-4 py-3 text-sm break-words overflow-hidden bg-background/50">
                                                             <div className="space-y-2 min-w-0 flex-1">
                                                                 {(() => {
                                                                     // In debug mode, just show raw messages content
@@ -586,7 +586,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                                 })()}
 
                                                                 {groupIndex === groupedMessages.length - 1 && !readOnly && (streamHookStatus === 'streaming' || streamHookStatus === 'connecting') && (
-                                                                    <div className="mt-2">
+                                                                    <div className="mt-2 max-w-[90%] rounded-lg px-4 py-3 text-sm bg-background/50">
                                                                         {(() => {
                                                                             // In debug mode, show raw streaming content
                                                                             if (debugMode && streamingTextContent) {
@@ -690,7 +690,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
                                                                 {/* For playback mode, show streaming text and tool calls */}
                                                                 {readOnly && groupIndex === groupedMessages.length - 1 && isStreamingText && (
-                                                                    <div className="mt-2">
+                                                                    <div className="mt-2 max-w-[90%] rounded-lg px-4 py-3 text-sm bg-background/50">
                                                                         {(() => {
                                                                             let detectedTag: string | null = null;
                                                                             let tagStartIndex = -1;
@@ -766,12 +766,12 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                             {((agentStatus === 'running' || agentStatus === 'connecting') && !streamingTextContent &&
                                 !readOnly &&
                                 (messages.length === 0 || messages[messages.length - 1].type === 'user')) && (
-                                    <div ref={latestMessageRef} className='w-full h-22 rounded'>
-                                        <div className="flex items-start gap-3">
-                                            <div className="flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center bg-primary/10">
-                                                <KortixLogo />
+                                    <div ref={latestMessageRef} className='w-full rounded'>
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex-shrink-0 w-8 h-16 rounded-md flex items-center justify-center">
+                                                <AiAvatarOrb width={32} height={32} isLoading={true} />
                                             </div>
-                                            <div className="flex-1 space-y-2 w-full h-12">
+                                            <div className="flex-1 space-y-2 w-full">
                                                 <AgentLoader />
                                             </div>
                                         </div>
@@ -782,8 +782,8 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                             {readOnly && currentToolCall && (
                                 <div ref={latestMessageRef}>
                                     <div className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-5 h-5 mt-2 rounded-md flex items-center justify-center bg-primary/10">
-                                            <KortixLogo />
+                                        <div className="flex-shrink-0 w-8 h-8 mt-2 rounded-md flex items-center justify-center">
+                                            <AiAvatarOrb width={32} height={32} isLoading={true} />
                                         </div>
                                         <div className="flex-1 space-y-2">
                                             <div className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-medium text-primary bg-primary/10 rounded-md border border-primary/20">
@@ -801,11 +801,11 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                             {readOnly && visibleMessages && visibleMessages.length === 0 && isStreamingText && (
                                 <div ref={latestMessageRef}>
                                     <div className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-5 h-5 mt-2 rounded-md flex items-center justify-center bg-primary/10">
-                                            <KortixLogo />
+                                        <div className="flex-shrink-0 w-8 h-8 mt-2 rounded-md flex items-center justify-center">
+                                            <AiAvatarOrb width={32} height={32} isLoading={true} />
                                         </div>
                                         <div className="flex-1 space-y-2">
-                                            <div className="max-w-[90%] px-4 py-3 text-sm">
+                                            <div className="max-w-[90%] px-4 py-3 text-sm rounded-lg bg-background/50">
                                                 <div className="flex items-center gap-1.5 py-1">
                                                     <div className="h-1.5 w-1.5 rounded-full bg-primary/50 animate-pulse" />
                                                     <div className="h-1.5 w-1.5 rounded-full bg-primary/50 animate-pulse delay-150" />
@@ -837,4 +837,4 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     );
 };
 
-export default ThreadContent; 
+export default ThreadContent;

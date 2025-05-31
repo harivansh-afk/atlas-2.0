@@ -7,7 +7,7 @@ export function QuoteSection() {
   return (
     <section
       id="quote"
-      className="flex flex-col items-center justify-center gap-8 w-full p-14 bg-accent z-20"
+      className="flex flex-col items-center justify-center gap-8 w-full p-14 bg-[var(--features-card-bg)] z-20"
     >
       <blockquote className="max-w-3xl text-left px-4">
         <p className="text-xl md:text-2xl text-primary leading-relaxed tracking-tighter font-medium mb-6">

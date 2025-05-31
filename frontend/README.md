@@ -1,4 +1,4 @@
-# Suna frontend
+# Atlas frontend
 
 ## Getting Started
 

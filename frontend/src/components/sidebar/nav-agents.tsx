@@ -141,7 +141,7 @@ export function NavAgents() {
 
   // Function to handle thread click with loading state
   const handleThreadClick = (e: React.MouseEvent<HTMLAnchorElement>, threadId: string, url: string) => {
-    // If thread is selected, prevent navigation 
+    // If thread is selected, prevent navigation
     if (selectedThreads.has(threadId)) {
       e.preventDefault();
       return;

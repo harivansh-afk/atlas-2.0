@@ -28,7 +28,7 @@ import { ModalProviders } from '@/providers/modal-providers';
 import { AgentSelector } from '@/components/dashboard/agent-selector';
 import { cn } from '@/lib/utils';
 import { useModal } from '@/hooks/use-modal-store';
-import { Examples } from './_components/suggestions/examples';
+
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -166,7 +166,7 @@ function DashboardContent() {
               <h1 className="tracking-tight text-4xl text-muted-foreground leading-tight">
                 Hey, I am
               </h1>
-              <AgentSelector 
+              <AgentSelector
                 selectedAgentId={selectedAgentId}
                 onAgentSelect={setSelectedAgentId}
                 variant="heading"
@@ -176,7 +176,7 @@ function DashboardContent() {
               What would you like to do today?
             </p>
           </div>
-          
+
           <div className={cn(
             "w-full mb-2",
             "max-w-full",
@@ -192,8 +192,8 @@ function DashboardContent() {
               hideAttachments={false}
             />
           </div>
-          
-          <Examples onSelectPrompt={setInputValue} />
+
+
         </div>
 
         <BillingErrorAlert

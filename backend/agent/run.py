@@ -83,12 +83,12 @@ async def run_agent(
         logger.info(f"Using custom tool configuration from agent")
     
     # Register tools based on configuration
-    # If no agent config (enabled_tools is None), register ALL tools for full Suna capabilities
+    # If no agent config (enabled_tools is None), register ALL tools for full Atlas capabilities
     # If agent config exists, only register explicitly enabled tools
     
     if enabled_tools is None:
-        # No agent specified - register ALL tools for full Suna experience
-        logger.info("No agent specified - registering all tools for full Suna capabilities")
+        # No agent specified - register ALL tools for full Atlas experience
+        logger.info("No agent specified - registering all tools for full Atlas capabilities")
         thread_manager.add_tool(SandboxShellTool, project_id=project_id, thread_manager=thread_manager)
         thread_manager.add_tool(SandboxFilesTool, project_id=project_id, thread_manager=thread_manager)
         thread_manager.add_tool(SandboxBrowserTool, project_id=project_id, thread_id=thread_id, thread_manager=thread_manager)

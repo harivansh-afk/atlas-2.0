@@ -92,10 +92,8 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       selectedModel,
       setSelectedModel: handleModelChange,
       subscriptionStatus,
-      allModels: modelOptions,
       canAccessModel,
       getActualModelId,
-      refreshCustomModels,
     } = useModelSelection();
 
     const deleteFileMutation = useFileDelete();
@@ -249,25 +247,25 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             }
           }}
         >
-          <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">            
-            <CardContent className={`w-full p-1.5 pb-2 ${bgColor} rounded-2xl border`}>              
-              {onAgentSelect && (                
-                <div className="mb-2 px-2">                  
-                <AgentSelector                    
-                selectedAgentId={selectedAgentId}                    
-                onAgentSelect={onAgentSelect}                    
-                disabled={loading || disabled}                    
-                className="w-full"                 
-                />                
-                </div>              
-              )}                            
-              <AttachmentGroup                
-              files={uploadedFiles || []}                
-              sandboxId={sandboxId}                
-              onRemove={removeUploadedFile}                
-              layout="inline"                
-              maxHeight="216px"                
-              showPreviews={true}              
+          <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
+            <CardContent className={`w-full p-1.5 pb-2 ${bgColor} rounded-2xl border`}>
+              {onAgentSelect && (
+                <div className="mb-2 px-2">
+                <AgentSelector
+                selectedAgentId={selectedAgentId}
+                onAgentSelect={onAgentSelect}
+                disabled={loading || disabled}
+                className="w-full"
+                />
+                </div>
+              )}
+              <AttachmentGroup
+              files={uploadedFiles || []}
+              sandboxId={sandboxId}
+              onRemove={removeUploadedFile}
+              layout="inline"
+              maxHeight="216px"
+              showPreviews={true}
               />
 
               <MessageInput
@@ -295,10 +293,8 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
 
                 selectedModel={selectedModel}
                 onModelChange={handleModelChange}
-                modelOptions={modelOptions}
                 subscriptionStatus={subscriptionStatus}
                 canAccessModel={canAccessModel}
-                refreshCustomModels={refreshCustomModels}
               />
             </CardContent>
           </div>
@@ -312,7 +308,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           >
             <div className="text-xs text-muted-foreground flex items-center gap-2">
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span>{agentName ? `${agentName} is working...` : 'Suna is working...'}</span>
+              <span>{agentName ? `${agentName} is working...` : 'Atlas is working...'}</span>
             </div>
           </motion.div>
         )}

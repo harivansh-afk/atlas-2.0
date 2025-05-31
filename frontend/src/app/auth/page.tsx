@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { Input } from '@/components/ui/input';
 import GoogleSignIn from '@/components/GoogleSignIn';
-import { FlickeringGrid } from '@/components/home/ui/flickering-grid';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useScroll } from 'motion/react';
@@ -19,6 +18,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import { EtherealBackground } from '@/components/ui/ethereal-background';
 
 import {
   Dialog,
@@ -299,86 +299,53 @@ function LoginContent() {
   }
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen w-full">
-      <div className="w-full divide-y divide-border">
-        {/* Hero-like header with flickering grid */}
+    <main className="flex flex-col items-center justify-center min-h-screen w-full relative">
+      {/* Ethereal Background */}
+      <EtherealBackground
+        color="rgba(0, 0, 0, 0.8)"
+        animation={{
+          scale: 100,
+          speed: 90
+        }}
+        noise={{
+          opacity: 1,
+          scale: 1.2
+        }}
+        sizing="fill"
+        className="w-full h-full"
+      />
+
+      <div className="w-full divide-y divide-border relative z-10">
+        {/* Hero-like header */}
         <section className="w-full relative overflow-hidden">
           <div className="relative flex flex-col items-center w-full px-6">
-            {/* Left side flickering grid with gradient fades */}
-            <div className="absolute left-0 top-0 h-[600px] md:h-[800px] w-1/3 -z-10 overflow-hidden">
-              {/* Horizontal fade from left to right */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background z-10" />
-
-              {/* Vertical fade from top */}
-              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background via-background/90 to-transparent z-10" />
-
-              {/* Vertical fade to bottom */}
-              <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/90 to-transparent z-10" />
-
-              <div className="h-full w-full">
-                <FlickeringGrid
-                  className="h-full w-full"
-                  squareSize={mounted && tablet ? 2 : 2.5}
-                  gridGap={mounted && tablet ? 2 : 2.5}
-                  color="var(--secondary)"
-                  maxOpacity={0.4}
-                  flickerChance={isScrolling ? 0.01 : 0.03}
-                />
-              </div>
-            </div>
-
-            {/* Right side flickering grid with gradient fades */}
-            <div className="absolute right-0 top-0 h-[600px] md:h-[800px] w-1/3 -z-10 overflow-hidden">
-              {/* Horizontal fade from right to left */}
-              <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background z-10" />
-
-              {/* Vertical fade from top */}
-              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background via-background/90 to-transparent z-10" />
-
-              {/* Vertical fade to bottom */}
-              <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background via-background/90 to-transparent z-10" />
-
-              <div className="h-full w-full">
-                <FlickeringGrid
-                  className="h-full w-full"
-                  squareSize={mounted && tablet ? 2 : 2.5}
-                  gridGap={mounted && tablet ? 2 : 2.5}
-                  color="var(--secondary)"
-                  maxOpacity={0.4}
-                  flickerChance={isScrolling ? 0.01 : 0.03}
-                />
-              </div>
-            </div>
-
-            {/* Center content background with rounded bottom */}
-            <div className="absolute inset-x-1/4 top-0 h-[600px] md:h-[800px] -z-20 bg-background rounded-b-xl"></div>
 
             {/* Header content */}
             <div className="relative z-10 pt-24 pb-8 max-w-md mx-auto h-full w-full flex flex-col gap-2 items-center justify-center">
               <Link
                 href="/"
-                className="group border border-border/50 bg-background hover:bg-accent/20 rounded-full text-sm h-8 px-3 flex items-center gap-2 transition-all duration-200 shadow-sm mb-6"
+                className="group border border-border/50 bg-background/60 backdrop-blur-sm hover:bg-accent/20 rounded-full text-sm h-8 px-3 flex items-center gap-2 transition-all duration-200 shadow-sm mb-6"
               >
                 <ArrowLeft className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium text-muted-foreground text-xs tracking-wide">
                   Back to home
                 </span>
               </Link>
+            </div>
+          </div>
 
+          {/* Auth form card */}
+          <div className="relative z-10 flex justify-center px-6 pb-24">
+            <div className="w-full max-w-md rounded-xl bg-background/60 dark:bg-[#F9FAFB]/[0.02] backdrop-blur-sm border border-border p-8">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tighter text-center text-balance text-primary">
-                {isSignUp ? 'Join Suna' : 'Welcome back'}
+                {isSignUp ? 'Join Atlas' : 'Welcome back'}
               </h1>
               <p className="text-base md:text-lg text-center text-muted-foreground font-medium text-balance leading-relaxed tracking-tight mt-2 mb-6">
                 {isSignUp
                   ? 'Create your account and start building with AI'
                   : 'Sign in to your account to continue'}
               </p>
-            </div>
-          </div>
 
-          {/* Auth form card */}
-          <div className="relative z-10 flex justify-center px-6 pb-24">
-            <div className="w-full max-w-md rounded-xl bg-[#F3F4F6] dark:bg-[#F9FAFB]/[0.02] border border-border p-8">
               {/* Non-registration related messages */}
               {message && !isSuccessMessage && (
                 <div className="mb-6 p-4 rounded-lg flex items-center gap-3 bg-secondary/10 border border-secondary/20 text-secondary">
@@ -388,21 +355,9 @@ function LoginContent() {
               )}
 
               {/* Google Sign In */}
-              <div className="w-full">
+              {/* <div className="w-full">
                 <GoogleSignIn returnUrl={returnUrl || undefined} />
-              </div>
-
-              {/* Divider */}
-              <div className="relative my-8">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-[#F3F4F6] dark:bg-[#F9FAFB]/[0.02] text-muted-foreground">
-                    or continue with email
-                  </span>
-                </div>
-              </div>
+              </div> */}
 
               {/* Form */}
               <form className="space-y-4">
@@ -509,7 +464,7 @@ function LoginContent() {
 
       {/* Forgot Password Dialog */}
       <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
-        <DialogContent className="sm:max-w-md rounded-xl bg-[#F3F4F6] dark:bg-[#17171A] border border-border [&>button]:hidden">
+        <DialogContent className="sm:max-w-md rounded-xl bg-background/80 dark:bg-[#F9FAFB]/[0.02] border border-border">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-medium">

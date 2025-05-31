@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { UploadedFile } from './chat-input';
 import { FileUploadHandler } from './file-upload-handler';
 import { VoiceRecorder } from './voice-recorder';
-import { ModelSelector } from './model-selector';
+import { ModelToggle } from './model-toggle';
 import { SubscriptionStatus } from './_use-model-selection';
 import { isLocalMode } from '@/lib/config';
 import { TooltipContent } from '@/components/ui/tooltip';
@@ -37,10 +37,8 @@ interface MessageInputProps {
 
   selectedModel: string;
   onModelChange: (model: string) => void;
-  modelOptions: any[];
   subscriptionStatus: SubscriptionStatus;
   canAccessModel: (modelId: string) => boolean;
-  refreshCustomModels?: () => void;
 }
 
 export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
@@ -69,10 +67,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
       selectedModel,
       onModelChange,
-      modelOptions,
       subscriptionStatus,
       canAccessModel,
-      refreshCustomModels,
     },
     ref,
   ) => {
@@ -149,6 +145,11 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               onTranscription={onTranscription}
               disabled={loading || (disabled && !isAgentRunning)}
             />
+            <ModelToggle
+              selectedModel={selectedModel}
+              onModelChange={onModelChange}
+              canAccessModel={canAccessModel}
+            />
           </div>
           {subscriptionStatus === 'no_subscription' && !isLocalMode() &&
             <TooltipProvider>
@@ -162,20 +163,12 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>The free tier is severely limited by inferior models; upgrade to experience the true full Suna experience.</p>
+                  <p>The free tier is severely limited by inferior models; upgrade to experience the true full Atlas experience.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           }
           <div className='flex items-center gap-2'>
-            <ModelSelector
-              selectedModel={selectedModel}
-              onModelChange={onModelChange}
-              modelOptions={modelOptions}
-              subscriptionStatus={subscriptionStatus}
-              canAccessModel={canAccessModel}
-              refreshCustomModels={refreshCustomModels}
-            />
             <Button
               type="submit"
               onClick={isAgentRunning && onStopAgent ? onStopAgent : onSubmit}
