@@ -601,11 +601,15 @@ function PricingTier({
 interface PricingSectionProps {
   returnUrl?: string;
   showTitleAndTabs?: boolean;
+  insideDialog?: boolean;
+  hideFree?: boolean;
 }
 
 export function PricingSection({
   returnUrl = typeof window !== 'undefined' ? window.location.href : '/',
   showTitleAndTabs = true,
+  insideDialog = false,
+  hideFree = false,
 }: PricingSectionProps) {
   const [deploymentType, setDeploymentType] = useState<'cloud' | 'self-hosted'>(
     'cloud',
@@ -706,7 +710,9 @@ export function PricingSection({
 
       {deploymentType === 'cloud' && (
         <div className="grid min-[650px]:grid-cols-2 min-[900px]:grid-cols-3 gap-4 w-full max-w-6xl mx-auto px-6">
-          {siteConfig.cloudPricingItems.map((tier) => (
+          {siteConfig.cloudPricingItems
+            .filter((tier) => !hideFree || tier.name.toLowerCase() !== 'free')
+            .map((tier) => (
             <PricingTier
               key={tier.name}
               tier={tier}

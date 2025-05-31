@@ -44,14 +44,14 @@ export const Component: FC<ComponentProps> = ({
       float q = dot(c, vec3(0.211, -0.523, 0.312));
       return vec3(y, i, q);
     }
-    
+
     vec3 yiq2rgb(vec3 c) {
       float r = c.x + 0.956 * c.y + 0.621 * c.z;
       float g = c.x - 0.272 * c.y - 0.647 * c.z;
       float b = c.x - 1.106 * c.y + 1.703 * c.z;
       return vec3(r, g, b);
     }
-    
+
     vec3 adjustHue(vec3 color, float hueDeg) {
       float hueRad = hueDeg * 3.14159265 / 180.0;
       vec3 yiq = rgb2yiq(color);
@@ -63,7 +63,7 @@ export const Component: FC<ComponentProps> = ({
       yiq.z = q;
       return yiq2rgb(yiq);
     }
-    
+
     vec3 hash33(vec3 p3) {
       p3 = fract(p3 * vec3(0.1031, 0.11369, 0.13787));
       p3 += dot(p3, p3.yxz + 19.19);
@@ -73,7 +73,7 @@ export const Component: FC<ComponentProps> = ({
         p3.y + p3.z
       ) * p3.zyx);
     }
-    
+
     float snoise3(vec3 p) {
       const float K1 = 0.333333333;
       const float K2 = 0.166666667;
@@ -99,75 +99,75 @@ export const Component: FC<ComponentProps> = ({
       );
       return dot(vec4(31.316), n);
     }
-    
+
     vec4 extractAlpha(vec3 colorIn) {
       float a = max(max(colorIn.r, colorIn.g), colorIn.b);
       return vec4(colorIn.rgb / (a + 1e-5), a);
     }
-    
+
     const vec3 baseColor1 = vec3(0.611765, 0.262745, 0.996078);
     const vec3 baseColor2 = vec3(0.298039, 0.760784, 0.913725);
     const vec3 baseColor3 = vec3(0.062745, 0.078431, 0.600000);
     const float innerRadius = 0.6;
     const float noiseScale = 0.65;
-    
+
     float light1(float intensity, float attenuation, float dist) {
       return intensity / (1.0 + dist * attenuation);
     }
-    
+
     float light2(float intensity, float attenuation, float dist) {
       return intensity / (1.0 + dist * dist * attenuation);
     }
-    
+
     vec4 draw(vec2 uv) {
       vec3 color1 = adjustHue(baseColor1, hue);
       vec3 color2 = adjustHue(baseColor2, hue);
       vec3 color3 = adjustHue(baseColor3, hue);
-      
+
       float ang = atan(uv.y, uv.x);
       float len = length(uv);
       float invLen = len > 0.0 ? 1.0 / len : 0.0;
-      
+
       float n0 = snoise3(vec3(uv * noiseScale, iTime * 0.5)) * 0.5 + 0.5;
       float r0 = mix(mix(innerRadius, 1.0, 0.4), mix(innerRadius, 1.0, 0.6), n0);
       float d0 = distance(uv, (r0 * invLen) * uv);
       float v0 = light1(1.0, 10.0, d0);
       v0 *= smoothstep(r0 * 1.05, r0, len);
       float cl = cos(ang + iTime * 2.0) * 0.5 + 0.5;
-      
+
       float a = iTime * -1.0;
       vec2 pos = vec2(cos(a), sin(a)) * r0;
       float d = distance(uv, pos);
       float v1 = light2(1.5, 5.0, d);
       v1 *= light1(1.0, 50.0, d0);
-      
+
       float v2 = smoothstep(1.0, mix(innerRadius, 1.0, n0 * 0.5), len);
       float v3 = smoothstep(innerRadius, mix(innerRadius, 1.0, 0.5), len);
-      
+
       vec3 col = mix(color1, color2, cl);
       col = mix(color3, col, v0);
       col = (col + v1) * v2 * v3;
       col = clamp(col, 0.0, 1.0);
-      
+
       return extractAlpha(col);
     }
-    
+
     vec4 mainImage(vec2 fragCoord) {
       vec2 center = iResolution.xy * 0.5;
       float size = min(iResolution.x, iResolution.y);
       vec2 uv = (fragCoord - center) / size * 2.0;
-      
+
       float angle = rot;
       float s = sin(angle);
       float c = cos(angle);
       uv = vec2(c * uv.x - s * uv.y, s * uv.x + c * uv.y);
-      
+
       uv.x += hover * hoverIntensity * 0.1 * sin(uv.y * 10.0 + iTime);
       uv.y += hover * hoverIntensity * 0.1 * sin(uv.x * 10.0 + iTime);
-      
+
       return draw(uv);
     }
-    
+
     void main() {
       vec2 fragCoord = vUv * iResolution.xy;
       vec4 col = mainImage(fragCoord);
@@ -180,30 +180,49 @@ export const Component: FC<ComponentProps> = ({
     if (!container) return;
 
     let rendererInstance: Renderer | null = null;
-    let glContext: WebGLRenderingContext | WebGL2RenderingContext | null = null;
+    let rawGl: WebGLRenderingContext | WebGL2RenderingContext | null = null;
     let rafId: number;
-    
+
     try {
         rendererInstance = new Renderer({ alpha: true, premultipliedAlpha: false, antialias: true, dpr: window.devicePixelRatio || 1 });
-        glContext = rendererInstance.gl;
-        glContext.clearColor(0, 0, 0, 0);
-        
+        rawGl = rendererInstance.gl;
+        if (!rawGl) {
+          console.error("Failed to get WebGL context from Renderer.");
+          return;
+        }
+        rawGl.clearColor(0, 0, 0, 0);
+
         if (container.firstChild) {
             container.removeChild(container.firstChild);
         }
-        container.appendChild(glContext.canvas);
 
-        const geometry = new Triangle(glContext);
-        const program = new Program(glContext, {
+        if (!(rawGl.canvas instanceof HTMLCanvasElement)) {
+          console.error(
+            'Error: rawGl.canvas is not an instance of HTMLCanvasElement. Cannot append to container.',
+            rawGl.canvas,
+          );
+          return;
+        }
+        container.appendChild(rawGl.canvas);
+
+        type OGLRenderingContext = (WebGLRenderingContext | WebGL2RenderingContext) & {
+            renderer: Renderer;
+            canvas: HTMLCanvasElement;
+        };
+
+        const gl = rawGl as OGLRenderingContext;
+
+        const geometry = new Triangle(gl);
+        const program = new Program(gl, {
         vertex: vert,
         fragment: frag,
         uniforms: {
             iTime: { value: 0 },
             iResolution: {
             value: new Vec3(
-                glContext.canvas.width,
-                glContext.canvas.height,
-                glContext.canvas.width / glContext.canvas.height
+                gl.canvas.width,
+                gl.canvas.height,
+                gl.canvas.width / gl.canvas.height
             ),
             },
             hue: { value: hue },
@@ -213,29 +232,28 @@ export const Component: FC<ComponentProps> = ({
         },
         });
 
-        const mesh = new Mesh(glContext, { geometry, program });
+        const mesh = new Mesh(gl, { geometry, program });
 
         const resize = () => {
-            if (!container || !rendererInstance || !glContext) return;
-            const dpr = window.devicePixelRatio || 1; // Use actual DPR for sizing
+            if (!container || !rendererInstance || !gl) return;
+            const dpr = window.devicePixelRatio || 1;
             const width = container.clientWidth;
             const height = container.clientHeight;
 
-            // Check if dimensions are valid before resizing
             if (width === 0 || height === 0) return;
 
-            rendererInstance.setSize(width * dpr, height * dpr); // Set renderer size with DPR
-            glContext.canvas.style.width = width + "px";
-            glContext.canvas.style.height = height + "px";
-            
+            rendererInstance.setSize(width * dpr, height * dpr);
+            gl.canvas.style.width = width + "px";
+            gl.canvas.style.height = height + "px";
+
             program.uniforms.iResolution.value.set(
-                glContext.canvas.width, // Use drawing buffer width/height
-                glContext.canvas.height,
-                glContext.canvas.width / glContext.canvas.height
+                gl.canvas.width,
+                gl.canvas.height,
+                gl.canvas.width / gl.canvas.height
             );
         };
         window.addEventListener("resize", resize);
-        resize(); // Initial resize
+        resize();
 
         let targetHover = 0;
         let lastTime = 0;
@@ -299,29 +317,27 @@ export const Component: FC<ComponentProps> = ({
           if (container) {
             container.removeEventListener("mousemove", handleMouseMove);
             container.removeEventListener("mouseleave", handleMouseLeave);
-            if (glContext && glContext.canvas && glContext.canvas.parentNode === container) {
-              container.removeChild(glContext.canvas);
+            if (gl && gl.canvas && gl.canvas.parentNode === container) {
+              container.removeChild(gl.canvas);
             }
           }
-          if (glContext) {
-            glContext.getExtension("WEBGL_lose_context")?.loseContext();
+          if (gl) {
+            gl.getExtension("WEBGL_lose_context")?.loseContext();
           }
-          // OGL doesn't have explicit dispose methods for Program/Mesh/Geometry in same way as Three.js
-          // Losing context is the primary cleanup for WebGL resources managed by OGL
         };
 
     } catch (error) {
         console.error("Error initializing OGL Orb:", error);
-        if (container && container.firstChild) { // Clean up canvas if error occurred after append
+        if (container && container.firstChild) {
             container.removeChild(container.firstChild);
         }
-        return () => { // Basic cleanup if init fails early
-             window.removeEventListener("resize", () => {}); // Placeholder if resize wasn't set up
+        return () => {
+             window.removeEventListener("resize", () => {});
         };
     }
 
 
-  }, [hue, hoverIntensity, rotateOnHover, forceHoverState, vert, frag]); // Added vert and frag as they are part of program
+  }, [hue, hoverIntensity, rotateOnHover, forceHoverState, vert, frag]);
 
   return <div ref={ctnDom} className="w-full h-full" />;
 };
