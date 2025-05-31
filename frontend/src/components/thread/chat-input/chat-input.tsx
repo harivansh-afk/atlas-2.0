@@ -8,7 +8,7 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { handleFiles } from './file-upload-handler';
 import { MessageInput } from './message-input';
@@ -91,7 +91,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const {
       selectedModel,
       setSelectedModel: handleModelChange,
-      subscriptionStatus,
       canAccessModel,
       getActualModelId,
     } = useModelSelection();
@@ -293,7 +292,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
 
                 selectedModel={selectedModel}
                 onModelChange={handleModelChange}
-                subscriptionStatus={subscriptionStatus}
                 canAccessModel={canAccessModel}
               />
             </CardContent>

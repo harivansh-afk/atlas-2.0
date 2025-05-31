@@ -111,7 +111,7 @@ export const siteConfig = {
       buttonText: 'Try Free',
       buttonColor: 'bg-secondary text-white',
       isPopular: false,
-      hours: '60 min',
+      hours: '1000 hours',
       features: ['Public Projects', 'Basic Model (Limited capabilities)'],
       stripePriceId: config.SUBSCRIPTION_TIERS.FREE.priceId,
       upgradePlans: [],
