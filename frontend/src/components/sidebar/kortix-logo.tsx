@@ -5,11 +5,9 @@ import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 interface KortixLogoProps {
-  width?: number;
-  height?: number;
+  size?: number;
 }
-
-export function KortixLogo({ width = 32, height = 32 }: KortixLogoProps) {
+export function KortixLogo({ size = 24 }: KortixLogoProps) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 

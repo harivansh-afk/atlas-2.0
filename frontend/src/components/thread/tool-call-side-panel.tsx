@@ -203,7 +203,34 @@ export function ToolCallSidePanel({
     currentToolCall?.assistantCall?.name || 'unknown',
   );
   const isStreaming = displayToolCall?.toolResult?.content === 'STREAMING';
-  const isSuccess = displayToolCall?.toolResult?.isSuccess ?? true;
+
+  // Extract actual success value from tool content with fallbacks
+  const getActualSuccess = (toolCall: any): boolean => {
+    const content = toolCall?.toolResult?.content;
+    if (!content) return toolCall?.toolResult?.isSuccess ?? true;
+
+    const safeParse = (data: any) => {
+      try { return typeof data === 'string' ? JSON.parse(data) : data; }
+      catch { return null; }
+    };
+
+    const parsed = safeParse(content);
+    if (!parsed) return toolCall?.toolResult?.isSuccess ?? true;
+
+    if (parsed.content) {
+      const inner = safeParse(parsed.content);
+      if (inner?.tool_execution?.result?.success !== undefined) {
+        return inner.tool_execution.result.success;
+      }
+    }
+    const success = parsed.tool_execution?.result?.success ??
+      parsed.result?.success ??
+      parsed.success;
+
+    return success !== undefined ? success : (toolCall?.toolResult?.isSuccess ?? true);
+  };
+
+  const isSuccess = isStreaming ? true : getActualSuccess(displayToolCall);
 
   const internalNavigate = React.useCallback((newIndex: number, source: string = 'internal') => {
     if (newIndex < 0 || newIndex >= totalCalls) return;
@@ -443,7 +470,7 @@ export function ToolCallSidePanel({
                 <div className="ml-2 flex items-center gap-2">
                   <Computer className="h-4 w-4" />
                   <h2 className="text-md font-medium text-zinc-900 dark:text-zinc-100">
-                    Atlas's Computer
+                    {agentName ? `${agentName}'s Computer` : 'Atlas\'s Computer'}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -490,7 +517,7 @@ export function ToolCallSidePanel({
               <div className="ml-2 flex items-center gap-2">
                 <Computer className="h-4 w-4" />
                 <h2 className="text-md font-medium text-zinc-900 dark:text-zinc-100">
-                  Atlas's Computer
+                  {agentName ? `${agentName}'s Computer` : 'Atlas\'s Computer'}
                 </h2>
               </div>
               <Button
@@ -520,7 +547,7 @@ export function ToolCallSidePanel({
         toolContent={displayToolCall.toolResult?.content}
         assistantTimestamp={displayToolCall.assistantCall.timestamp}
         toolTimestamp={displayToolCall.toolResult?.timestamp}
-        isSuccess={isStreaming ? true : (displayToolCall.toolResult?.isSuccess ?? true)}
+        isSuccess={isSuccess}
         isStreaming={isStreaming}
         project={project}
         messages={messages}
