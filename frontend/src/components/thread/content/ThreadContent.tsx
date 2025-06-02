@@ -17,6 +17,7 @@ import { AiAvatarOrb } from '@/components/ui/ai-avatar-orb';
 import { AgentLoader } from './loader';
 import { parseXmlToolCalls, isNewXmlFormat, extractToolNameFromStream } from '@/components/thread/tool-views/xml-parser';
 import { parseToolResult } from '@/components/thread/tool-views/tool-result-parser';
+import { KortixLogo } from '@/components/sidebar/kortix-logo';
 
 // Define the set of tags whose raw XML should be hidden during streaming
 const HIDE_STREAMING_XML_TAGS = new Set([

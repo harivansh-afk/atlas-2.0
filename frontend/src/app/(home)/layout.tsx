@@ -20,7 +20,7 @@ export default function MainPagesLayout({
   const header = (
     <div className="w-full flex items-center text-sm py-4 pl-4 relative z-50">
       <Link href={'/'} className="flex items-center">
-        <KortixLogo width={100} height={100} />
+        <KortixLogo size={32} />
       </Link>
       {/* Begin button, matching CTA section */}
       <div className="absolute top-0 right-0 mt-4 mr-4">
