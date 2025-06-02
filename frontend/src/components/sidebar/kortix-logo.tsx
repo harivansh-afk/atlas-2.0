@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 interface KortixLogoProps {
   size?: number;
 }
-export function KortixLogo({ size = 24 }: KortixLogoProps) {
+export function KortixLogo({ size = 32 }: KortixLogoProps) {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -21,8 +21,8 @@ export function KortixLogo({ size = 24 }: KortixLogoProps) {
       <Image
         src="/favicon.png"
         alt="Atlas"
-        width={width}
-        height={height}
+        width={size}
+        height={size}
         className="rounded-lg"
       />
     </div>
