@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
+import { Component as Orb } from '@/components/ui/orb';
 
 const items = [
     { id: 1, content: "Initializing neural pathways..." },
@@ -34,8 +35,10 @@ export const AgentLoader = () => {
   }, []);
 
   return (
-    <div className="flex py-2 items-center w-full">
-      <div>✨</div>
+    <div className="flex py-2 px-3 items-center w-full border rounded-lg">
+      <div className="w-6 h-6 flex-shrink-0">
+        <Orb hue={280} hoverIntensity={0.3} rotateOnHover={true} forceHoverState={true} />
+      </div>
             <AnimatePresence>
             <motion.div
                 key={items[index].id}
