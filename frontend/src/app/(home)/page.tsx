@@ -1,26 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
-import FeaturesSection from "@/components/features-8";
+import Features from "@/components/features-11";
 import InteractiveFolder from "@/components/ui/interactive-folder";
 import Link from "next/link";
-import { Component as EtherealShadow } from "@/components/ui/ethereal-shadow";
+import HeroSectionFive from "@/components/hero-section-five";
 
 export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      {/* Full Viewport Hero Section - With Ethereal Shadow */}
-      <section id="hero" className="relative w-full h-screen overflow-hidden">
-        <EtherealShadow
-          color="rgba(0, 0, 0, 0.8)"
-          animation={{ scale: 100, speed: 90 }}
-          noise={{ opacity: 1, scale: 1.2 }}
-          sizing="fill"
-          className="absolute inset-0"
-        />
-      </section>
+      <HeroSectionFive />
 
       <main className="flex-1 w-full mx-auto px-4 flex flex-col gap-12 md:gap-16 items-center">{/* Content sections start here */}
+
+        {/* Features Section (Bento Grid) */}
+        <section id="features">
+          <Features />
+        </section>
 
         {/* Target Audience Section - moved above bento grid */}
         <section className="w-full max-w-5xl py-12 md:py-16">
@@ -67,11 +63,6 @@ export default async function Home() {
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Features Section (Bento Grid) */}
-        <section id="features">
-          <FeaturesSection />
         </section>
 
         {/* How It Works Section */}
