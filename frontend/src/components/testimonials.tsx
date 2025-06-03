@@ -61,8 +61,7 @@ const MetricCard = ({
   logoAlt,
   className,
   bgColor,
-  isThinkr = false,
-  invertLogo = true
+  isThinkr = false
 }: {
   title: string;
   subtitle?: string;
@@ -72,31 +71,41 @@ const MetricCard = ({
   className?: string;
   bgColor?: string;
   isThinkr?: boolean;
-  invertLogo?: boolean;
 }) => {
   // Determine the appropriate styling based on the logo and flags
   const isCollectiveLogo = logoSrc.includes('collective');
   const isPhiaLogo = logoSrc.includes('phia');
 
-  // Use white background for ThinkAI, Phia, and Collective in light mode
+  // Use violet background for ThinkAI, Phia, and Collective cards
   let cardBgColor = 'bg-neutral-800 dark:bg-neutral-800';
-  if (isThinkr || isCollectiveLogo) {
-    cardBgColor = 'bg-white dark:bg-white';
+  let useVioletBg = false;
+
+  if (isThinkr || isPhiaLogo || isCollectiveLogo) {
+    cardBgColor = 'bg-transparent border-0';
+    useVioletBg = true;
   } else if (bgColor) {
     cardBgColor = bgColor;
   }
 
-  // Set text colors based on background
-  const isLightBg = isThinkr || isCollectiveLogo || isPhiaLogo;
-  const textColor = isLightBg ? 'text-black dark:text-black' : 'text-white dark:text-white';
-  const subtextColor = isLightBg ? 'text-gray-600 dark:text-gray-600' : 'text-gray-400 dark:text-gray-400';
-
-  // Only invert the logo if specified and needed (ThinkAI logo on white bg)
-  const logoInvert = (isThinkr && invertLogo && !isPhiaLogo) ? 'invert' : '';
+  // Set text colors based on background - all cards with violet bg use white text
+  const textColor = useVioletBg ? 'text-white' : 'text-white dark:text-white';
+  const subtextColor = useVioletBg ? 'text-white/90' : 'text-gray-400 dark:text-gray-400';
 
   return (
-    <Card className={cn("p-6 rounded-2xl border-0", cardBgColor, textColor, className)}>
-      <div className="flex flex-col h-full justify-between">
+    <Card className={cn("p-6 rounded-2xl border-0 relative overflow-hidden", cardBgColor, textColor, className)}>
+      {useVioletBg && (
+        <div className="absolute inset-0 w-full h-full">
+          <Image
+            src="/violet.png"
+            alt="Background pattern"
+            fill
+            className="object-cover !relative"
+            priority
+            unoptimized
+          />
+        </div>
+      )}
+      <div className={cn("flex flex-col h-full justify-between", useVioletBg && "relative z-20")}>
         <div>
           <h3 className="text-2xl md:text-3xl font-bold mb-1">{title}</h3>
           {subtitle && <h4 className="text-xl md:text-2xl font-bold mb-2">{subtitle}</h4>}
@@ -109,7 +118,7 @@ const MetricCard = ({
               alt={logoAlt}
               width={120}
               height={24}
-              className={`h-6 w-auto object-contain opacity-80 ${logoInvert}`}
+              className="h-6 w-auto object-contain opacity-80 brightness-0 invert"
             />
           </div>
         </div>
@@ -130,14 +139,14 @@ export default function TestimonialsSection() {
         Atlas Agents helps some of the best global businesses save time and increase efficiency.
       </p>
 
-      {/* First row - ThinkAI: Aditya + 50 Hours + 20X */}
+      {/* First row - ThinkAI: Andrew + 50 Hours + 20X */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* First testimonial - Aditya Behera */}
+        {/* First testimonial - Andrew Somers */}
         <TweetCard
-          quote="Atlas helped us 20x our productivity with our internal tasks across all our tools."
-          name="Aditya Behera"
-          title="Co-founder, CTO"
-          profileImage="https://media.licdn.com/dms/image/v2/D4E03AQFHr57y_-j2Pg/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1723036080263?e=1754524800&v=beta&t=XDMUz47OCdw6LhAU6AG5Hlf0CC6pLnf5R7WRdTRWAFc"
+          quote="Atlas recovered 50 hours per week for our team by automating operations that used to consume our entire workflow. Game-changing for any growing company."
+          name="Andrew Somers"
+          title="Co-founder, CEO"
+          profileImage="https://media.licdn.com/dms/image/v2/D4E03AQHbfNd5y86ykg/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1704315845243?e=2147483647&v=beta&t=4X_5gv25adIIRZ7umPkxrqAw3SAJvqyQlE5u9hNkNyc"
         />
 
         {/* First metric card - 50 Hours Saved */}
@@ -168,7 +177,6 @@ export default function TestimonialsSection() {
           description="from Atlas outbound"
           logoSrc="/collective.png"
           logoAlt="Collective Logo"
-          bgColor="bg-neutral-200"
         />
 
         {/* 60 Hours Saved */}
@@ -177,12 +185,11 @@ export default function TestimonialsSection() {
           description="Saved"
           logoSrc="/collective.png"
           logoAlt="Collective Logo"
-          bgColor="bg-neutral-200"
         />
 
         {/* Third testimonial - Tram Tran */}
         <TweetCard
-          quote="60 Hours Saved & $20k Raised: How Collective Esports used Atlas to save their national tournament in 12 days"
+          quote="Atlas saved our national tournament. In just 12 days, we recovered 60 hours and raised $20k through automated outreach. Incredible results under pressure."
           name="Tram Tran"
           title="Co-Founder, CEO"
           profileImage="https://images.squarespace-cdn.com/content/v1/622648e95c84313853870272/47e216b1-c2b2-4629-84ad-f861570d02bd/2022+Tram+Headshot.jpg"
@@ -191,12 +198,12 @@ export default function TestimonialsSection() {
 
       {/* Third row - Phia themed row (same style as first row) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Case Study 1 - Andrew Somers */}
+        {/* Case Study 1 - Harivansh Rathi */}
         <TweetCard
-          quote="50 Hours/Week Recovered: How thinktAI Automates Operations with Atlas Agents"
-          name="Andrew Somers"
-          title="Co-founder, CEO"
-          profileImage="https://media.licdn.com/dms/image/v2/D4E03AQHbfNd5y86ykg/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1704315845243?e=2147483647&v=beta&t=4X_5gv25adIIRZ7umPkxrqAw3SAJvqyQlE5u9hNkNyc"
+          quote="Atlas saved me hours of searching through Slack and Notion, and lets me accomplish tasks I never thought possible—all from my phone with one click."
+          name="Harivansh Rathi"
+          title="Intern"
+          profileImage="https://media.licdn.com/dms/image/v2/D4D03AQEyWpUj8waBmw/profile-displayphoto-shrink_200_200/B4DZXJ0suHHAAY-/0/1742847790664?e=2147483647&v=beta&t=XQ_a0fu4XRi3ViornniL2U2f9SIsB8-CEBBpRlgQcxI"
         />
 
         {/* Phia related metric cards - using the same pattern as first row */}
@@ -207,7 +214,6 @@ export default function TestimonialsSection() {
           logoSrc="/phia.png"
           logoAlt="Phia Logo"
           isThinkr={true}
-          invertLogo={false}
         />
 
         <MetricCard
@@ -216,7 +222,6 @@ export default function TestimonialsSection() {
           logoSrc="/phia.png"
           logoAlt="Phia Logo"
           isThinkr={true}
-          invertLogo={false}
         />
       </div>
 
