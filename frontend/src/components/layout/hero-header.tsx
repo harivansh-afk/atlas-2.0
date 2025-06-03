@@ -10,8 +10,8 @@ const menuItems = [
     { name: 'Features', href: '#features' },
     { name: 'Use Cases', href: '#use-cases' },
     { name: 'Integrations', href: '#integrations' },
-    { name: 'FAQ', href: '#faq' },
     { name: 'Customers', href: '#testimonials' },
+    { name: 'FAQ', href: '#faq' },
 ]
 
 export const HeroHeader = () => {

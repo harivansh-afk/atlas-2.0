@@ -165,54 +165,26 @@ export default function IntegrationsSection() {
         app.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Responsive icon rows - different layouts for different screen sizes
-    const getIconsPerRow = () => {
-        // Mobile: 4, 5, 6, 5, 4
-        // Tablet: 6, 7, 8, 7, 6
-        // Desktop: 9, 10, 11, 10, 9
-        return [
-            { mobile: 4, tablet: 6, desktop: 9 },
-            { mobile: 5, tablet: 7, desktop: 10 },
-            { mobile: 6, tablet: 8, desktop: 11 }, // center row
-            { mobile: 5, tablet: 7, desktop: 10 },
-            { mobile: 4, tablet: 6, desktop: 9 }
-        ];
-    };
-
-    const iconRows = getIconsPerRow();
-    const centerRowIndex = Math.floor(iconRows.length / 2);
-
-    // Responsive icon counts for center row GIF placement
-    const getCenterRowIconCounts = () => ({
-        mobile: { before: 2, after: 3 }, // 2 + GIF + 3 = 6 total
-        tablet: { before: 3, after: 4 }, // 3 + GIF + 4 = 8 total
-        desktop: { before: 5, after: 5 } // 5 + GIF + 5 = 11 total
-    });
-
-    const centerCounts = getCenterRowIconCounts();
-    let currentIconIndex = 0;
-
-    // Create responsive rows
-    const createResponsiveRows = () => {
+    // Create responsive layouts
+    const createMobileLayout = () => {
+        const mobileRows = [4, 5, 6, 5, 4]; // Mobile: fewer icons per row
+        const centerRowIndex = Math.floor(mobileRows.length / 2);
+        let currentIconIndex = 0;
         const rows = [];
 
-        for (let i = 0; i < iconRows.length; i++) {
-            const rowConfig = iconRows[i];
-
-            // Create mobile row
-            const mobileIcons = [];
-            const tabletIcons = [];
-            const desktopIcons = [];
+        for (let i = 0; i < mobileRows.length; i++) {
+            const rowIcons = [];
+            const numIconsThisRow = mobileRows[i];
 
             if (i === centerRowIndex) {
-                // Mobile center row
-                for (let j = 0; j < centerCounts.mobile.before; j++) {
+                // Mobile center row: 2 + GIF + 3 = 6 total
+                for (let j = 0; j < 2; j++) {
                     if (currentIconIndex < displayed_apps.length) {
                         const app = displayed_apps[currentIconIndex++];
-                        mobileIcons.push(<IntegrationCard key={`mobile-center-${app.name}`}><app.icon /></IntegrationCard>);
+                        rowIcons.push(<IntegrationCard key={`mobile-center-left-${app.name}`}><app.icon /></IntegrationCard>);
                     }
                 }
-                mobileIcons.push(
+                rowIcons.push(
                     <div key="mobile-hero-gif" className="relative size-12 sm:size-14 md:size-16 transform hover:scale-105 transition-transform duration-300">
                         <Image
                             src="/hero_gif.gif"
@@ -223,35 +195,83 @@ export default function IntegrationsSection() {
                         />
                     </div>
                 );
-                for (let j = 0; j < centerCounts.mobile.after; j++) {
+                for (let j = 0; j < 3; j++) {
                     if (currentIconIndex < displayed_apps.length) {
                         const app = displayed_apps[currentIconIndex++];
-                        mobileIcons.push(<IntegrationCard key={`mobile-center-after-${app.name}`}><app.icon /></IntegrationCard>);
+                        rowIcons.push(<IntegrationCard key={`mobile-center-right-${app.name}`}><app.icon /></IntegrationCard>);
                     }
                 }
             } else {
-                // Regular mobile row
-                for (let j = 0; j < rowConfig.mobile; j++) {
+                for (let j = 0; j < numIconsThisRow; j++) {
                     if (currentIconIndex < displayed_apps.length) {
                         const app = displayed_apps[currentIconIndex++];
-                        mobileIcons.push(<IntegrationCard key={`mobile-${app.name}-${i}-${j}`}><app.icon /></IntegrationCard>);
-                    } else {
-                        mobileIcons.push(<div key={`mobile-placeholder-${i}-${j}`} className="size-12 sm:size-14 md:size-16"></div>);
+                        rowIcons.push(<IntegrationCard key={`mobile-${app.name}-${i}-${j}`}><app.icon /></IntegrationCard>);
                     }
                 }
             }
-
             rows.push(
-                <div key={`row-${i}`} className="mx-auto mb-2 sm:mb-3 flex w-fit justify-center gap-2 sm:gap-3 items-center">
-                    {mobileIcons}
+                <div key={`mobile-row-${i}`} className="mx-auto mb-2 sm:mb-3 flex w-fit justify-center gap-2 sm:gap-3 items-center">
+                    {rowIcons}
                 </div>
             );
         }
-
         return rows;
     };
 
-    const rows = createResponsiveRows();
+    const createDesktopLayout = () => {
+        const desktopRows = [9, 10, 11, 10, 9]; // Desktop: full layout
+        const centerRowIndex = Math.floor(desktopRows.length / 2);
+        let currentIconIndex = 0;
+        const rows = [];
+
+        for (let i = 0; i < desktopRows.length; i++) {
+            const rowIcons = [];
+            const numIconsThisRow = desktopRows[i];
+
+            if (i === centerRowIndex) {
+                // Desktop center row: 5 + GIF + 5 = 11 total
+                for (let j = 0; j < 5; j++) {
+                    if (currentIconIndex < displayed_apps.length) {
+                        const app = displayed_apps[currentIconIndex++];
+                        rowIcons.push(<IntegrationCard key={`desktop-center-left-${app.name}`}><app.icon /></IntegrationCard>);
+                    }
+                }
+                rowIcons.push(
+                    <div key="desktop-hero-gif" className="relative size-12 sm:size-14 md:size-16 transform hover:scale-105 transition-transform duration-300">
+                        <Image
+                            src="/hero_gif.gif"
+                            alt="Atlas Hero"
+                            fill
+                            className="object-contain rounded-lg sm:rounded-xl"
+                            unoptimized
+                        />
+                    </div>
+                );
+                for (let j = 0; j < 5; j++) {
+                    if (currentIconIndex < displayed_apps.length) {
+                        const app = displayed_apps[currentIconIndex++];
+                        rowIcons.push(<IntegrationCard key={`desktop-center-right-${app.name}`}><app.icon /></IntegrationCard>);
+                    }
+                }
+            } else {
+                for (let j = 0; j < numIconsThisRow; j++) {
+                    if (currentIconIndex < displayed_apps.length) {
+                        const app = displayed_apps[currentIconIndex++];
+                        rowIcons.push(<IntegrationCard key={`desktop-${app.name}-${i}-${j}`}><app.icon /></IntegrationCard>);
+                    }
+                }
+            }
+            rows.push(
+                <div key={`desktop-row-${i}`} className="mx-auto mb-2 sm:mb-3 flex w-fit justify-center gap-2 sm:gap-3 items-center">
+                    {rowIcons}
+                </div>
+            );
+        }
+        return rows;
+    };
+
+    const mobileRows = createMobileLayout();
+    const desktopRows = createDesktopLayout();
 
     return (
         <section id="integrations">
@@ -317,7 +337,14 @@ export default function IntegrationsSection() {
                             className="bg-radial to-background dark:to-background absolute inset-0 z-10 from-transparent to-75%">
                         </div>
                         <div className="relative z-20 p-6 sm:p-8 md:p-12">
-                           {rows}
+                           {/* Mobile layout: visible on small screens */}
+                           <div className="block md:hidden">
+                               {mobileRows}
+                           </div>
+                           {/* Desktop layout: visible on medium screens and up */}
+                           <div className="hidden md:block">
+                               {desktopRows}
+                           </div>
                         </div>
                     </div>
                 </div>
