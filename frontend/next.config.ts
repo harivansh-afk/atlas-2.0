@@ -2,6 +2,9 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  images: {
+    domains: ['randomuser.me', 'framerusercontent.com', 'cdn.prod.website-files.com', 'media.licdn.com', 'images.squarespace-cdn.com'],
+  },
   webpack: (config) => {
     // This rule prevents issues with pdf.js and canvas
     config.externals = [...(config.externals || []), { canvas: 'canvas' }];

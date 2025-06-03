@@ -8,9 +8,10 @@ import { cn } from '@/lib/utils'
 
 const menuItems = [
     { name: 'Features', href: '#features' },
-    { name: 'How It Works', href: '#how-it-works' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'About', href: '#link' },
+    { name: 'Use Cases', href: '#use-cases' },
+    { name: 'Integrations', href: '#integrations' },
+    { name: 'FAQ', href: '#faq' },
+    { name: 'Customers', href: '#testimonials' },
 ]
 
 export const HeroHeader = () => {
@@ -36,7 +37,7 @@ export const HeroHeader = () => {
         }
     }, [])
     return (
-        <header className="fixed top-0 left-0 right-0 z-50">
+        <header className="fixed top-0 left-0 right-0 z-50 pt-4">
             <nav
                 className="w-full px-2">
                 <div className={cn(
@@ -109,8 +110,8 @@ export const HeroHeader = () => {
                                             isScrolled && !menuState ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"
                                         )}
                                     >
-                                        <Link href="/auth">
-                                            <span>Begin</span>
+                                        <Link href="/auth" className="inline-flex items-center justify-center">
+                                            Begin
                                         </Link>
                                     </Button>
                                 </div>

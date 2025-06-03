@@ -9,7 +9,7 @@ export default function Features() {
             <div className="mx-auto max-w-5xl px-6">
                 <SectionBadge>Features</SectionBadge>
                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-center mb-6">
-                    AI Agents For Your Internal Ops
+                    AI Agents For Your <span className="italic font-light">Internal Ops</span>
                 </h2>
                 <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto text-center mb-10">
                     Use Atlas to execute on tasks from product management to GTM to customer support and more — fully autonomously
@@ -97,7 +97,7 @@ export default function Features() {
 
                     <Card className="group relative shadow-zinc-950/5 sm:col-span-9 sm:rounded-none border border-border rounded-2xl bg-background/80">
                         <div className="p-8">
-                            <h3 className="text-xl md:text-2xl font-medium">150+ integrations supported</h3>
+                            <h3 className="text-xl md:text-2xl font-medium">140+ integrations supported</h3>
                             <p className="text-muted-foreground mt-2 text-sm">On board all of your internal tools with one click.</p>
                         </div>
 
