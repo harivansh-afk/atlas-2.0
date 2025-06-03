@@ -63,7 +63,7 @@ export const HeroHeader = () => {
                             </button>
                         </div>
 
-                        <div className="absolute inset-x-0 top-1/2 hidden -translate-y-1/2 transform items-center justify-center lg:flex">
+                        <div className="absolute inset-x-0 top-1/2 hidden -translate-y-1/2 transform items-center justify-center lg:flex z-40">
                             <ul className="flex gap-x-6 xl:gap-x-8 text-sm font-medium">
                                 {menuItems.map((item, index) => (
                                     <li key={index}>
@@ -77,15 +77,25 @@ export const HeroHeader = () => {
                             </ul>
                         </div>
 
+                        {/* Desktop Button - Always visible on large screens */}
+                        <div className="hidden lg:flex lg:items-center lg:justify-end relative z-50">
+                            <Button
+                                asChild
+                                className="button-prominent-shadow px-8 py-3 text-base md:text-lg font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 relative z-50"
+                            >
+                                <Link href="/auth" className="inline-flex items-center justify-center relative z-50">
+                                    Begin
+                                </Link>
+                            </Button>
+                        </div>
+
+                        {/* Mobile Menu */}
                         <div className={cn(
-                            'w-full lg:w-fit lg:flex lg:items-center lg:justify-end',
-                            menuState ? 'block animate-accordion-down mt-4 lg:mt-0' : 'hidden'
+                            'w-full lg:hidden',
+                            menuState ? 'block animate-accordion-down mt-4' : 'hidden'
                         )}>
-                            <div className={cn(
-                                'bg-transparent rounded-3xl lg:bg-transparent',
-                                menuState ? 'border border-border p-6 shadow-2xl shadow-zinc-900/10 dark:shadow-zinc-900/20 lg:border-transparent lg:p-0 lg:shadow-none' : ''
-                            )}>
-                                <div className="lg:hidden mb-6">
+                            <div className="border border-border p-6 shadow-2xl shadow-zinc-900/10 dark:shadow-zinc-900/20 bg-background rounded-3xl">
+                                <div className="mb-6">
                                     <ul className="space-y-5 text-base font-medium">
                                         {menuItems.map((item, index) => (
                                             <li key={index}>
@@ -99,16 +109,10 @@ export const HeroHeader = () => {
                                         ))}
                                     </ul>
                                 </div>
-                                <div className={cn(
-                                     "flex w-full flex-col space-y-3 sm:flex-row sm:justify-center sm:gap-3 sm:space-y-0 lg:w-fit",
-                                     menuState && "pt-6 border-t border-border"
-                                )}>
+                                <div className="pt-6 border-t border-border">
                                     <Button
                                         asChild
-                                        className={cn(
-                                            "w-full sm:w-auto button-prominent-shadow px-8 py-3 text-base md:text-lg font-semibold rounded-xl",
-                                            isScrolled && !menuState ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-primary text-primary-foreground hover:bg-primary/90"
-                                        )}
+                                        className="w-full button-prominent-shadow px-8 py-3 text-base font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                                     >
                                         <Link href="/auth" className="inline-flex items-center justify-center">
                                             Begin
