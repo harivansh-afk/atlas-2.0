@@ -143,7 +143,7 @@ export const MODELS = {
     description: 'DeepSeek - Free tier model with good general capabilities'
   },
   'gemini-flash-2.5': {
-    tier: 'premium',
+    tier: 'free',
     priority: 85,
     recommended: true,
     lowQuality: false,
