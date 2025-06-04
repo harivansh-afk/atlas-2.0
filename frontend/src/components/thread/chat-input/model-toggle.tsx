@@ -3,7 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { OPUS4_MODEL_ID, HAIKU_MODEL_ID } from './_use-model-selection';
+import { HAIKU_MODEL_ID } from './_use-model-selection';
 
 interface ModelToggleProps {
   selectedModel: string;
@@ -16,19 +16,19 @@ export const ModelToggle: React.FC<ModelToggleProps> = ({
   onModelChange,
   canAccessModel,
 }) => {
-  // Determine if we're in AL1 mode (Claude Opus 4) or fast mode (Claude Haiku 3.5)
-  const isAL1Mode = selectedModel === OPUS4_MODEL_ID;
+  // Determine if we're in AL1 mode (Claude Sonnet 4) or fast mode (Claude Haiku 3.5)
+  const isAL1Mode = selectedModel === 'sonnet-4';
 
   const handleToggle = () => {
-    const newModel = isAL1Mode ? HAIKU_MODEL_ID : OPUS4_MODEL_ID;
+    const newModel = isAL1Mode ? HAIKU_MODEL_ID : 'sonnet-4';
 
     if (canAccessModel(newModel)) {
       onModelChange(newModel);
 
       // Show toast notification based on the NEW model we're switching TO
-      if (newModel === OPUS4_MODEL_ID) {
+      if (newModel === 'sonnet-4') {
         toast.success('Advanced language mode enabled', {
-          description: 'Switched to Claude Opus 4',
+          description: 'Switched to Claude Sonnet 4',
           duration: 2000,
         });
       } else {

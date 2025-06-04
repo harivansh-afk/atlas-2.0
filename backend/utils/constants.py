@@ -6,6 +6,7 @@ MODEL_ACCESS_TIERS = {
         "anthropic/claude-3-5-haiku-20241022",
         "anthropic/claude-3-7-sonnet-20250219",
         "anthropic/claude-opus-4-20250514",
+        "anthropic/claude-sonnet-4-20250514",
     ],
     "tier_2_20": [
         "openrouter/deepseek/deepseek-chat",
@@ -112,6 +113,7 @@ MODEL_NAME_ALIASES = {
     "sonnet-3.5": "openrouter/anthropic/claude-3-5-sonnet-latest",
     "haiku-3.5": "anthropic/claude-3-5-haiku-20241022",
     "claude-opus-4": "anthropic/claude-opus-4-20250514",
+    "sonnet-4": "anthropic/claude-sonnet-4-20250514",
     # "gpt-4.1": "openai/gpt-4.1-2025-04-14",  # Commented out in constants.py
     "gpt-4o": "openai/gpt-4o",
     "gpt-4.1": "openai/gpt-4.1",
