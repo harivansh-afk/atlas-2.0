@@ -7,12 +7,12 @@ import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model'
 
 export const STORAGE_KEY_MODEL = 'Atlas-preferred-model';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
-export const DEFAULT_FREE_MODEL_ID = 'deepseek';
-export const DEFAULT_PREMIUM_MODEL_ID = 'claude-sonnet-4';
+export const DEFAULT_FREE_MODEL_ID = 'haiku-3.5';
+export const DEFAULT_PREMIUM_MODEL_ID = 'claude-opus-4';
 
 // Model constants for toggle selector
-export const SONNET4_MODEL_ID = 'claude-sonnet-4';
-export const GEMINI_MODEL_ID = 'gemini-flash-2.5'; // Use the working Gemini Flash model
+export const OPUS4_MODEL_ID = 'claude-opus-4';
+export const HAIKU_MODEL_ID = 'haiku-3.5'; // Claude Haiku 3.5 for fast responses
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
 
@@ -34,12 +34,19 @@ export interface CustomModel {
 // SINGLE SOURCE OF TRUTH for all model data
 export const MODELS = {
   // Free tier high-priority models
-  'claude-sonnet-4': {
-    tier: 'free',
+  'claude-opus-4': {
+    tier: 'premium',
     priority: 100,
     recommended: true,
     lowQuality: false,
-    description: 'Claude Sonnet 4 - Anthropic\'s latest and most advanced AI assistant'
+    description: 'Claude Opus 4 - Anthropic\'s most powerful and capable AI assistant'
+  },
+  'haiku-3.5': {
+    tier: 'free',
+    priority: 95,
+    recommended: true,
+    lowQuality: false,
+    description: 'Claude Haiku 3.5 - Fast, efficient AI responses from Anthropic'
   },
   'claude-sonnet-3.7': {
     tier: 'premium',
@@ -274,14 +281,14 @@ export const useModelSelection = () => {
       models = [
         {
           id: DEFAULT_FREE_MODEL_ID,
-          label: 'DeepSeek',
+          label: 'Claude Haiku 3.5',
           requiresSubscription: false,
           description: MODELS[DEFAULT_FREE_MODEL_ID]?.description || MODEL_TIERS.free.baseDescription,
-          priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 50
+          priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 95
         },
         {
           id: DEFAULT_PREMIUM_MODEL_ID,
-          label: 'Claude Sonnet 4',
+          label: 'Claude Opus 4',
           requiresSubscription: true,
           description: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.description || MODEL_TIERS.premium.baseDescription,
           priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100

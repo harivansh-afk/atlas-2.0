@@ -3,7 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { SONNET4_MODEL_ID, GEMINI_MODEL_ID } from './_use-model-selection';
+import { OPUS4_MODEL_ID, HAIKU_MODEL_ID } from './_use-model-selection';
 
 interface ModelToggleProps {
   selectedModel: string;
@@ -16,24 +16,24 @@ export const ModelToggle: React.FC<ModelToggleProps> = ({
   onModelChange,
   canAccessModel,
 }) => {
-  // Determine if we're in AL1 mode (Claude Sonnet) or normal mode (Gemini)
-  const isAL1Mode = selectedModel === SONNET4_MODEL_ID;
+  // Determine if we're in AL1 mode (Claude Opus 4) or fast mode (Claude Haiku 3.5)
+  const isAL1Mode = selectedModel === OPUS4_MODEL_ID;
 
   const handleToggle = () => {
-    const newModel = isAL1Mode ? GEMINI_MODEL_ID : SONNET4_MODEL_ID;
+    const newModel = isAL1Mode ? HAIKU_MODEL_ID : OPUS4_MODEL_ID;
 
     if (canAccessModel(newModel)) {
       onModelChange(newModel);
 
       // Show toast notification based on the NEW model we're switching TO
-      if (newModel === SONNET4_MODEL_ID) {
+      if (newModel === OPUS4_MODEL_ID) {
         toast.success('Advanced language mode enabled', {
-          description: 'Switched to Claude Sonnet 4',
+          description: 'Switched to Claude Opus 4',
           duration: 2000,
         });
       } else {
-        toast.success('Quick mode enabled', {
-          description: 'Switched to Gemini Flash 2.5',
+        toast.success('Fast mode enabled', {
+          description: 'Switched to Claude Haiku 3.5',
           duration: 2000,
         });
       }
@@ -59,7 +59,7 @@ export const ModelToggle: React.FC<ModelToggleProps> = ({
         type="button"
         role="switch"
         aria-checked={isAL1Mode}
-        aria-label={`Switch to ${isAL1Mode ? 'quick' : 'advanced language'} mode`}
+        aria-label={`Switch to ${isAL1Mode ? 'fast' : 'advanced language'} mode`}
       >
         {/* Toggle circle */}
         <span
@@ -75,7 +75,7 @@ export const ModelToggle: React.FC<ModelToggleProps> = ({
         "text-xs text-muted-foreground select-none",
         isAL1Mode ? "font-bold text-blue-600 dark:text-blue-400" : "font-normal"
       )}>
-        AL1
+        {isAL1Mode ? "AL1" : "AL0"}
       </span>
     </div>
   );
