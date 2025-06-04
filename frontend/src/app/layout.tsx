@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: `%s - Atlas`,
   },
   description:
-    'Atlas is a fully open source AI assistant that helps you accomplish real-world tasks with ease. Through natural conversation, Atlas becomes your digital companion for research, data analysis, and everyday challenges.',
+    'Atlas is an operations AI agent that helps you accomplish real-world tasks with ease through natural conversation.',
   keywords: [
     'AI',
     'artificial intelligence',
@@ -39,7 +39,6 @@ export const metadata: Metadata = {
     'web scraping',
     'file management',
     'AI assistant',
-    'open source',
     'research',
     'data analysis',
   ],
@@ -64,9 +63,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'Atlas - Open Source Generalist AI Agent',
+    title: 'Atlas Agents',
     description:
-      'Atlas is a fully open source AI assistant that helps you accomplish real-world tasks with ease through natural conversation.',
+      'Atlas is an operations AI agent that helps you accomplish real-world tasks with ease through natural conversation.',
     url: 'https://atlasagents.ai/',
     siteName: 'Atlas',
     images: [
@@ -74,7 +73,7 @@ export const metadata: Metadata = {
         url: '/preview.png',
         width: 1200,
         height: 630,
-        alt: 'Atlas - Open Source Generalist AI Agent',
+        alt: 'Atlas - The Operations AI Agent',
         type: 'image/png',
       },
     ],
@@ -83,9 +82,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Atlas - Open Source Generalist AI Agent',
+    title: 'Atlas - The Operations AI Agent',
     description:
-      'Atlas is a fully open source AI assistant that helps you accomplish real-world tasks with ease through natural conversation.',
+      'Atlas is an operations AI agent that helps you accomplish real-world tasks with ease through natural conversation.',
     creator: '@atlasai',
     site: '@atlasai',
     images: [
@@ -93,7 +92,7 @@ export const metadata: Metadata = {
         url: '/preview.png',
         width: 1200,
         height: 630,
-        alt: 'Atlas - Open Source Generalist AI Agent',
+        alt: 'Atlas - The Operations AI Agent',
       },
     ],
   },

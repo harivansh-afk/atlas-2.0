@@ -53,7 +53,7 @@ export const siteConfig = {
   description: 'The Generalist AI Agent that can act on your behalf.',
   cta: 'Start Free',
   url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-  keywords: ['AI Agent', 'Generalist AI', 'Open Source AI', 'Autonomous Agent'],
+  keywords: ['AI Agent', 'Generalist AI', 'Autonomous Agent', 'Operations AI'],
   links: {
     email: 'support@Atlas.ai',
     twitter: 'https://x.com/atlasagents_ai',
