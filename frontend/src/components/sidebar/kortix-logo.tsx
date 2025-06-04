@@ -17,13 +17,13 @@ export function KortixLogo({ size = 32 }: KortixLogoProps) {
   }, []);
 
   return (
-    <div className="flex h-8 w-8 items-center justify-center flex-shrink-0">
+    <div className="flex h-8 w-8 items-center justify-center flex-shrink-0 pointer-events-none">
       <Image
         src="/favicon.png"
         alt="Atlas"
         width={size}
         height={size}
-        className="rounded-lg"
+        className="rounded-lg pointer-events-none"
       />
     </div>
   );

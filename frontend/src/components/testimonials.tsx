@@ -1,7 +1,9 @@
 import React from 'react';
 import { SectionBadge } from '@/components/ui/section-badge';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 // TweetCard component for standardized tweet displays
@@ -135,9 +137,17 @@ export default function TestimonialsSection() {
         Our Customers Save Up to <br /> <span className="italic font-light">20 Hours Per Week Per Employee</span>
         <br />With Atlas
       </h2>
-      <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto text-center mb-10">
+      <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto text-center mb-6">
         Atlas Agents helps some of the best global businesses save time and increase efficiency.
       </p>
+
+      <div className="flex justify-center mb-10">
+        <Link href="/cases">
+          <Button variant="default" className="gap-2 rounded-full px-6 text-base">
+            <span>View All Case Studies</span>
+          </Button>
+        </Link>
+      </div>
 
       {/* First row - ThinkAI: Andrew + 50 Hours + 20X */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -152,8 +162,8 @@ export default function TestimonialsSection() {
         {/* First metric card - 50 Hours Saved */}
         <MetricCard
           title="50 Hours"
-          subtitle="Saved"
-          description="per week"
+          subtitle=""
+          description="Saved per week"
           logoSrc="https://cdn.prod.website-files.com/679aad5af65da94e21f9992c/679c096939826730a9072c26_logo-transparent-png.png"
           logoAlt="ThinkAI Logo"
           isThinkr={true}
@@ -208,17 +218,17 @@ export default function TestimonialsSection() {
 
         {/* Phia related metric cards - using the same pattern as first row */}
         <MetricCard
-          title="30 Hours"
-          subtitle="Saved"
-          description="per agent"
+          title="15+ Hours"
+          subtitle=""
+          description="Saved"
           logoSrc="/phia.png"
           logoAlt="Phia Logo"
           isThinkr={true}
         />
 
         <MetricCard
-          title="15X"
-          description="Increase Efficiency"
+          title="10X"
+          description="Increased Efficiency"
           logoSrc="/phia.png"
           logoAlt="Phia Logo"
           isThinkr={true}

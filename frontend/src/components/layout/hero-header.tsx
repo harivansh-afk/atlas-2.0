@@ -51,7 +51,7 @@ export const HeroHeader = () => {
                             <Link
                                 href="/"
                                 aria-label="home"
-                                className="flex items-center space-x-2">
+                                className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity relative z-50">
                                 <KortixLogo size={32} />
                             </Link>
 
