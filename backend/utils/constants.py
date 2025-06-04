@@ -4,6 +4,8 @@ MODEL_ACCESS_TIERS = {
         "openrouter/qwen/qwen3-235b-a22b",
         "openrouter/google/gemini-2.5-flash-preview-05-20",
         "anthropic/claude-3-5-haiku-20241022",
+        "anthropic/claude-3-7-sonnet-20250219",
+        "anthropic/claude-opus-4-20250514",
     ],
     "tier_2_20": [
         "openrouter/deepseek/deepseek-chat",

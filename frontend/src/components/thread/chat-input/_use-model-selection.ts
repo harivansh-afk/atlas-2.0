@@ -35,7 +35,7 @@ export interface CustomModel {
 export const MODELS = {
   // Free tier high-priority models
   'claude-opus-4': {
-    tier: 'premium',
+    tier: 'free',
     priority: 100,
     recommended: true,
     lowQuality: false,
@@ -49,7 +49,7 @@ export const MODELS = {
     description: 'Claude Haiku 3.5 - Fast, efficient AI responses from Anthropic'
   },
   'claude-sonnet-3.7': {
-    tier: 'premium',
+    tier: 'free',
     priority: 95,
     recommended: true,
     lowQuality: false,
