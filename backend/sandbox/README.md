@@ -5,6 +5,7 @@ This directory contains the agent sandbox implementation - a Docker-based virtua
 ## Overview
 
 The sandbox provides a complete containerized Linux environment with:
+
 - Chrome browser for web interactions
 - VNC server for accessing the Web User
 - Web server for serving content (port 8080) -> loading html files from the /workspace directory
@@ -20,7 +21,7 @@ You can modify the sandbox environment for development or to add new capabilitie
    ```
    cd backend/sandbox/docker
    docker compose build
-   docker push Atlas/Atlas:0.1.2
+   docker push kortix/suna:0.1.3
    ```
 3. Test your changes locally using docker-compose
 

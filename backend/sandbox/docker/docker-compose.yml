@@ -6,13 +6,13 @@ services:
       dockerfile: ${DOCKERFILE:-Dockerfile}
       args:
         TARGETPLATFORM: ${TARGETPLATFORM:-linux/amd64}
-    image: Atlas/Atlas:0.1.2.8
+    image: kortix/suna:0.1.3
     ports:
-      - "6080:6080"  # noVNC web interface
-      - "5901:5901"  # VNC port
-      - "9222:9222"  # Chrome remote debugging port
-      - "8000:8000"  # API server port
-      - "8080:8080"  # HTTP server port
+      - "6080:6080" # noVNC web interface
+      - "5901:5901" # VNC port
+      - "9222:9222" # Chrome remote debugging port
+      - "8003:8003" # API server port
+      - "8080:8080" # HTTP server port
     environment:
       - ANONYMIZED_TELEMETRY=${ANONYMIZED_TELEMETRY:-false}
       - CHROME_PATH=/usr/bin/google-chrome
@@ -31,7 +31,7 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
     restart: unless-stopped
-    shm_size: '2gb'
+    shm_size: "2gb"
     cap_add:
       - SYS_ADMIN
     security_opt:
