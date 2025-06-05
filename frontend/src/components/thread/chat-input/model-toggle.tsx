@@ -54,7 +54,7 @@ export const ModelToggle: React.FC<ModelToggleProps> = ({
           "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
           isAL1Mode
             ? "bg-blue-600"
-            : "bg-gray-300 dark:bg-gray-600"
+            : "bg-muted"
         )}
         type="button"
         role="switch"
@@ -73,7 +73,7 @@ export const ModelToggle: React.FC<ModelToggleProps> = ({
       {/* Mode label */}
       <span className={cn(
         "text-xs text-muted-foreground select-none",
-        isAL1Mode ? "font-bold text-blue-600 dark:text-blue-400" : "font-normal"
+        isAL1Mode ? "font-bold" : "font-normal"
       )}>
         {isAL1Mode ? "AL1" : "AL0"}
       </span>

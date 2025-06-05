@@ -169,4 +169,4 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             {getIcon()}
         </Button>
     );
-}; 
+};

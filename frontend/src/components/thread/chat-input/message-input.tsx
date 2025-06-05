@@ -7,6 +7,7 @@ import { UploadedFile } from './chat-input';
 import { FileUploadHandler } from './file-upload-handler';
 import { VoiceRecorder } from './voice-recorder';
 import { ModelToggle } from './model-toggle';
+import { CursorStyleAgentSelector } from './cursor-style-agent-selector';
 
 
 
@@ -35,6 +36,9 @@ interface MessageInputProps {
   selectedModel: string;
   onModelChange: (model: string) => void;
   canAccessModel: (modelId: string) => boolean;
+
+  selectedAgentId?: string;
+  onAgentSelect?: (agentId: string | undefined) => void;
 }
 
 export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
@@ -64,6 +68,9 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       selectedModel,
       onModelChange,
       canAccessModel,
+
+      selectedAgentId,
+      onAgentSelect,
     },
     ref,
   ) => {
@@ -122,6 +129,13 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
         <div className="flex items-center justify-between mt-1 ml-3 mb-1 pr-2">
           <div className="flex items-center gap-3">
+            {onAgentSelect && (
+              <CursorStyleAgentSelector
+                selectedAgentId={selectedAgentId}
+                onAgentSelect={onAgentSelect}
+                disabled={loading || disabled}
+              />
+            )}
             {!hideAttachments && (
               <FileUploadHandler
                 ref={fileInputRef}
