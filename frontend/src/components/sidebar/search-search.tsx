@@ -104,7 +104,41 @@ export function SidebarSearch() {
     } finally {
       setIsLoading(false);
     }
-  };
+
+    // Create a map of projects by ID for faster lookups
+    const projectsById = new Map();
+    projects.forEach((project) => {
+      projectsById.set(project.id, project);
+    });
+
+    // Create display objects for threads with their project info
+    const threadsWithProjects: ThreadWithProject[] = [];
+
+    for (const thread of allThreads) {
+      const projectId = thread.project_id;
+      // Skip threads without a project ID
+      if (!projectId) continue;
+
+      // Get the associated project
+      const project = projectsById.get(projectId);
+      if (!project) continue;
+
+      // Add to our list
+      threadsWithProjects.push({
+        threadId: thread.thread_id,
+        projectId: projectId,
+        projectName: project.name || 'Unnamed Project',
+        url: `/projects/${projectId}/thread/${thread.thread_id}`,
+        updatedAt:
+          thread.updated_at || project.updated_at || new Date().toISOString(),
+      });
+    }
+
+    // Set threads, ensuring consistent sort order
+    const sortedThreads = sortThreads(threadsWithProjects);
+    setThreads(sortedThreads);
+    setFilteredThreads(sortedThreads);
+  }, [projects, allThreads]);
 
   // Filter threads based on search query
   const filterThreads = useCallback(
