@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Search } from 'lucide-react';
 
 // TweetCard component for standardized tweet displays
 const TweetCard = ({
@@ -144,6 +145,7 @@ export default function TestimonialsSection() {
       <div className="flex justify-center mb-10">
         <Link href="/cases">
           <Button variant="default" className="gap-2 rounded-full px-6 text-base">
+            <Search className="h-4 w-4" />
             <span>View All Case Studies</span>
           </Button>
         </Link>

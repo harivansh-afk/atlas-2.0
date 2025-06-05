@@ -12,6 +12,7 @@ const menuItems = [
     { name: 'Integrations', href: '#integrations' },
     { name: 'Customers', href: '#testimonials' },
     { name: 'FAQ', href: '#faq' },
+    { name: 'Demo', href: '#book-demo' },
 ]
 
 export const HeroHeader = () => {

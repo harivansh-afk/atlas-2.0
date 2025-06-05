@@ -9,6 +9,7 @@ import TestimonialsSection from "@/components/testimonials";
 import FAQSection from "@/components/faq";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
+import { BookDemoSection } from "@/components/home/sections/book-demo-section";
 
 export default async function Home() {
 
@@ -145,6 +146,9 @@ export default async function Home() {
         {/* FAQ Section */}
         <FAQSection />
 
+        {/* Book Demo Section */}
+        <BookDemoSection />
+
         {/* CTA Card Section */}
         <section className="w-full flex justify-center items-end my-8 sm:my-12 mb-16 sm:mb-24 px-4 sm:px-6 md:px-8">
           <div className="w-full max-w-6xl">
@@ -172,18 +176,18 @@ export default async function Home() {
                 <Button
                   asChild
                   size="lg"
-                  className="w-full sm:w-auto px-6 sm:px-8 py-3 text-sm sm:text-base md:text-lg font-semibold rounded-lg sm:rounded-xl button-prominent-shadow bg-white text-black dark:bg-black dark:text-white hover:bg-white/90 dark:hover:bg-black/90"
+                  className="w-full sm:w-[160px] h-12 flex items-center justify-center px-6 py-3 text-base md:text-lg font-semibold rounded-xl button-prominent-shadow bg-white text-black dark:bg-black dark:text-white hover:bg-white/90 dark:hover:bg-black/90"
                 >
-                  <Link href="/auth">
+                  <Link href="/auth" className="flex items-center justify-center w-full h-full">
                     <span className="text-nowrap">Get Started</span>
                   </Link>
                 </Button>
                 <Button
                   asChild
                   size="lg"
-                  className="w-full sm:w-auto px-6 sm:px-8 py-3 text-sm sm:text-base md:text-lg font-semibold rounded-lg sm:rounded-xl button-prominent-shadow bg-black text-white dark:bg-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90"
+                  className="w-full sm:w-[160px] h-12 flex items-center justify-center px-6 py-3 text-base md:text-lg font-semibold rounded-xl button-prominent-shadow bg-black text-white dark:bg-white dark:text-black hover:bg-black/90 dark:hover:bg-white/90"
                 >
-                  <Link href="#link">
+                  <Link href="#book-demo" className="flex items-center justify-center w-full h-full">
                     <span className="text-nowrap">Book a Demo</span>
                   </Link>
                 </Button>

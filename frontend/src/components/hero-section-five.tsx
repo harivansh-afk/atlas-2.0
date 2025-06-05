@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { Highlight } from '@/components/ui/hero-highlight'
 
 export default function HeroSectionFive() {
     return (
@@ -18,7 +19,7 @@ export default function HeroSectionFive() {
                             className="rounded-[1.5rem] prominent-shadow"
                         />
                     </div>
-                    <h1 className="mx-auto mt-2 max-w-2xl text-balance text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl text-neutral-900 dark:text-white">Automate Your Internal Ops At Scale</h1>
+                    <h1 className="mx-auto mt-2 max-w-2xl text-balance text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl text-neutral-900 dark:text-white">Automate Your Internal Ops <Highlight className="text-neutral-900 dark:text-white">At Scale</Highlight></h1>
                     <p className="text-muted-foreground mx-auto mb-6 mt-5 text-balance text-lg md:text-xl max-w-xl">Custom AI Agents for all your tasks - at 10x speed.</p>
 
                     <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:*:w-auto">
@@ -38,8 +39,8 @@ export default function HeroSectionFive() {
                             size="lg"
                             className="px-8 py-3 text-base md:text-lg font-semibold rounded-xl button-prominent-shadow hover:bg-neutral-100 dark:hover:bg-neutral-800"
                         >
-                            <Link href="#link">
-                                <span className="text-nowrap">View Demo</span>
+                            <Link href="/cases">
+                                <span className="text-nowrap">View Cases</span>
                             </Link>
                         </Button>
                     </div>
