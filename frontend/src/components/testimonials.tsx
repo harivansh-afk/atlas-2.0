@@ -142,15 +142,6 @@ export default function TestimonialsSection() {
         Atlas Agents helps some of the best global businesses save time and increase efficiency.
       </p>
 
-      <div className="flex justify-center mb-10">
-        <Link href="/cases">
-          <Button variant="default" className="gap-2 rounded-full px-6 text-base">
-            <Search className="h-4 w-4" />
-            <span>View All Case Studies</span>
-          </Button>
-        </Link>
-      </div>
-
       {/* First row - ThinkAI: Andrew + 50 Hours + 20X */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* First testimonial - Andrew Somers */}

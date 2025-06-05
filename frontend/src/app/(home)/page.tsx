@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Search } from "lucide-react";
 import Features from "@/components/features-11";
 import Link from "next/link";
 import HeroSectionFive from "@/components/hero-section-five";
@@ -27,6 +27,16 @@ export default async function Home() {
         {/* Use Cases Section */}
         <section id="use-cases" className="w-full max-w-6xl py-8 sm:py-12 md:py-16 px-4 sm:px-6">
           <SectionBadge>Use Cases</SectionBadge>
+
+          <div className="flex justify-center mt-6 mb-8 sm:mb-10">
+            <Link href="/cases">
+              <Button variant="default" className="gap-2 rounded-full px-6 text-base">
+                <Search className="h-4 w-4" />
+                <span>View all use cases</span>
+              </Button>
+            </Link>
+          </div>
+
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-center mb-4 sm:mb-6">
             AI Agents for <span className="italic font-light">Every Use Case</span>
           </h2>

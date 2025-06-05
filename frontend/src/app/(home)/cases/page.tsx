@@ -131,7 +131,7 @@ export default function CasesPage() {
             {/* Header */}
             <div className="text-center mb-6 sm:mb-8 md:mb-12">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 sm:mb-6 md:mb-8">
-                Case Studies
+                Use Cases
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto mb-6 sm:mb-8 md:mb-12 px-4">
                 See how Atlas Agents help teams save hours and increase efficiency across different industries
