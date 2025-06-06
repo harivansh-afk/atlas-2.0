@@ -16,18 +16,17 @@ from services.llm import make_llm_api_call
 from agentpress.tool import Tool
 from agentpress.tool_registry import ToolRegistry
 from agentpress.context_manager import ContextManager
-from agentpress.response_processor import (
-    ResponseProcessor,
-    ProcessorConfig
-)
+from agentpress.response_processor import ResponseProcessor, ProcessorConfig
 from services.supabase import DBConnection
 from utils.logger import logger
 from langfuse.client import StatefulGenerationClient, StatefulTraceClient
 from services.langfuse import langfuse
 import datetime
+from litellm import token_counter
 
 # Type alias for tool choice
 ToolChoice = Literal["auto", "required", "none"]
+
 
 class ThreadManager:
     """Manages conversation threads with LLM models and tool execution.
@@ -37,7 +36,12 @@ class ThreadManager:
     XML-based tool execution patterns.
     """
 
-    def __init__(self, trace: Optional[StatefulTraceClient] = None, is_agent_builder: bool = False, target_agent_id: Optional[str] = None):
+    def __init__(
+        self,
+        trace: Optional[StatefulTraceClient] = None,
+        is_agent_builder: bool = False,
+        target_agent_id: Optional[str] = None,
+    ):
         """Initialize ThreadManager.
 
         Args:
@@ -57,11 +61,262 @@ class ThreadManager:
             add_message_callback=self.add_message,
             trace=self.trace,
             is_agent_builder=self.is_agent_builder,
-            target_agent_id=self.target_agent_id
+            target_agent_id=self.target_agent_id,
         )
         self.context_manager = ContextManager()
 
-    def add_tool(self, tool_class: Type[Tool], function_names: Optional[List[str]] = None, **kwargs):
+    def _is_tool_result_message(self, msg: Dict[str, Any]) -> bool:
+        if not ("content" in msg and msg["content"]):
+            return False
+        content = msg["content"]
+        if isinstance(content, str) and "ToolResult" in content:
+            return True
+        if isinstance(content, dict) and "tool_execution" in content:
+            return True
+        if isinstance(content, str):
+            try:
+                parsed_content = json.loads(content)
+                if (
+                    isinstance(parsed_content, dict)
+                    and "tool_execution" in parsed_content
+                ):
+                    return True
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return False
+
+    def _compress_message(
+        self,
+        msg_content: Union[str, dict],
+        message_id: Optional[str] = None,
+        max_length: int = 3000,
+    ) -> Union[str, dict]:
+        """Compress the message content."""
+        # print("max_length", max_length)
+        if isinstance(msg_content, str):
+            if len(msg_content) > max_length:
+                return (
+                    msg_content[:max_length]
+                    + "... (truncated)"
+                    + f'\n\nThis message is too long, use the expand-message tool with message_id "{message_id}" to see the full message'
+                )
+            else:
+                return msg_content
+        elif isinstance(msg_content, dict):
+            if len(json.dumps(msg_content)) > max_length:
+                return (
+                    json.dumps(msg_content)[:max_length]
+                    + "... (truncated)"
+                    + f'\n\nThis message is too long, use the expand-message tool with message_id "{message_id}" to see the full message'
+                )
+            else:
+                return msg_content
+
+    def _safe_truncate(
+        self, msg_content: Union[str, dict], max_length: int = 200000
+    ) -> Union[str, dict]:
+        """Truncate the message content safely."""
+        if isinstance(msg_content, str):
+            if len(msg_content) > max_length:
+                return (
+                    msg_content[:max_length]
+                    + f"\n\nThis message is too long, repeat relevant information in your response to remember it"
+                )
+            else:
+                return msg_content
+        elif isinstance(msg_content, dict):
+            if len(json.dumps(msg_content)) > max_length:
+                return (
+                    json.dumps(msg_content)[:max_length]
+                    + f"\n\nThis message is too long, repeat relevant information in your response to remember it"
+                )
+            else:
+                return msg_content
+
+    def _compress_tool_result_messages(
+        self,
+        messages: List[Dict[str, Any]],
+        llm_model: str,
+        max_tokens: Optional[int],
+        token_threshold: Optional[int] = 1000,
+    ) -> List[Dict[str, Any]]:
+        """Compress the tool result messages except the most recent one."""
+        uncompressed_total_token_count = token_counter(
+            model=llm_model, messages=messages
+        )
+
+        if uncompressed_total_token_count > (max_tokens or (64 * 1000)):
+            _i = 0  # Count the number of ToolResult messages
+            for msg in reversed(messages):  # Start from the end and work backwards
+                if self._is_tool_result_message(
+                    msg
+                ):  # Only compress ToolResult messages
+                    _i += 1  # Count the number of ToolResult messages
+                    msg_token_count = token_counter(
+                        messages=[msg]
+                    )  # Count the number of tokens in the message
+                    if msg_token_count > token_threshold:  # If the message is too long
+                        if _i > 1:  # If this is not the most recent ToolResult message
+                            message_id = msg.get("message_id")  # Get the message_id
+                            if message_id:
+                                msg["content"] = self._compress_message(
+                                    msg["content"], message_id, token_threshold * 3
+                                )
+                            else:
+                                logger.warning(
+                                    f"UNEXPECTED: Message has no message_id {str(msg)[:100]}"
+                                )
+                        else:
+                            msg["content"] = self._safe_truncate(
+                                msg["content"], int(max_tokens * 2)
+                            )
+        return messages
+
+    def _compress_user_messages(
+        self,
+        messages: List[Dict[str, Any]],
+        llm_model: str,
+        max_tokens: Optional[int],
+        token_threshold: Optional[int] = 1000,
+    ) -> List[Dict[str, Any]]:
+        """Compress the user messages except the most recent one."""
+        uncompressed_total_token_count = token_counter(
+            model=llm_model, messages=messages
+        )
+
+        if uncompressed_total_token_count > (max_tokens or (100 * 1000)):
+            _i = 0  # Count the number of User messages
+            for msg in reversed(messages):  # Start from the end and work backwards
+                if msg.get("role") == "user":  # Only compress User messages
+                    _i += 1  # Count the number of User messages
+                    msg_token_count = token_counter(
+                        messages=[msg]
+                    )  # Count the number of tokens in the message
+                    if msg_token_count > token_threshold:  # If the message is too long
+                        if _i > 1:  # If this is not the most recent User message
+                            message_id = msg.get("message_id")  # Get the message_id
+                            if message_id:
+                                msg["content"] = self._compress_message(
+                                    msg["content"], message_id, token_threshold * 3
+                                )
+                            else:
+                                logger.warning(
+                                    f"UNEXPECTED: Message has no message_id {str(msg)[:100]}"
+                                )
+                        else:
+                            msg["content"] = self._safe_truncate(
+                                msg["content"], int(max_tokens * 2)
+                            )
+        return messages
+
+    def _compress_assistant_messages(
+        self,
+        messages: List[Dict[str, Any]],
+        llm_model: str,
+        max_tokens: Optional[int],
+        token_threshold: Optional[int] = 1000,
+    ) -> List[Dict[str, Any]]:
+        """Compress the assistant messages except the most recent one."""
+        uncompressed_total_token_count = token_counter(
+            model=llm_model, messages=messages
+        )
+        if uncompressed_total_token_count > (max_tokens or (100 * 1000)):
+            _i = 0  # Count the number of Assistant messages
+            for msg in reversed(messages):  # Start from the end and work backwards
+                if msg.get("role") == "assistant":  # Only compress Assistant messages
+                    _i += 1  # Count the number of Assistant messages
+                    msg_token_count = token_counter(
+                        messages=[msg]
+                    )  # Count the number of tokens in the message
+                    if msg_token_count > token_threshold:  # If the message is too long
+                        if _i > 1:  # If this is not the most recent Assistant message
+                            message_id = msg.get("message_id")  # Get the message_id
+                            if message_id:
+                                msg["content"] = self._compress_message(
+                                    msg["content"], message_id, token_threshold * 3
+                                )
+                            else:
+                                logger.warning(
+                                    f"UNEXPECTED: Message has no message_id {str(msg)[:100]}"
+                                )
+                        else:
+                            msg["content"] = self._safe_truncate(
+                                msg["content"], int(max_tokens * 2)
+                            )
+
+        return messages
+
+    def _compress_messages(
+        self,
+        messages: List[Dict[str, Any]],
+        llm_model: str,
+        max_tokens: Optional[int] = 41000,
+        token_threshold: Optional[int] = 4096,
+        max_iterations: int = 5,
+    ) -> List[Dict[str, Any]]:
+        """Compress the messages.
+        token_threshold: must be a power of 2
+        """
+
+        if "sonnet" in llm_model.lower():
+            max_tokens = 200 * 1000 - 64000
+        elif "gpt" in llm_model.lower():
+            max_tokens = 128 * 1000 - 28000
+        elif "gemini" in llm_model.lower():
+            max_tokens = 1000 * 1000 - 300000
+        elif "deepseek" in llm_model.lower():
+            max_tokens = 163 * 1000 - 32000
+        else:
+            max_tokens = 41 * 1000 - 10000
+
+        if max_iterations <= 0:
+            logger.warning(
+                f"_compress_messages: Max iterations reached, returning uncompressed messages"
+            )
+            return messages
+
+        result = messages
+
+        uncompressed_total_token_count = token_counter(
+            model=llm_model, messages=messages
+        )
+
+        result = self._compress_tool_result_messages(
+            result, llm_model, max_tokens, token_threshold
+        )
+        result = self._compress_user_messages(
+            result, llm_model, max_tokens, token_threshold
+        )
+        result = self._compress_assistant_messages(
+            result, llm_model, max_tokens, token_threshold
+        )
+
+        compressed_token_count = token_counter(model=llm_model, messages=result)
+
+        logger.info(
+            f"_compress_messages: {uncompressed_total_token_count} -> {compressed_token_count}"
+        )  # Log the token compression for debugging later
+
+        if compressed_token_count > max_tokens:
+            logger.warning(
+                f"Further token compression is needed: {compressed_token_count} > {max_tokens}"
+            )
+            result = self._compress_messages(
+                messages,
+                llm_model,
+                max_tokens,
+                int(token_threshold / 2),
+                max_iterations - 1,
+            )
+
+        return result
+
+    def add_tool(
+        self,
+        tool_class: Type[Tool],
+        function_names: Optional[List[str]] = None,
+        **kwargs,
+    ):
         """Add a tool to the ThreadManager."""
         self.tool_registry.register_tool(tool_class, function_names, **kwargs)
 
@@ -71,7 +326,7 @@ class ThreadManager:
         type: str,
         content: Union[Dict[str, Any], List[Any], str],
         is_llm_message: bool = False,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         """Add a message to the thread in the database.
 
@@ -90,25 +345,38 @@ class ThreadManager:
 
         # Prepare data for insertion
         data_to_insert = {
-            'thread_id': thread_id,
-            'type': type,
-            'content': content,
-            'is_llm_message': is_llm_message,
-            'metadata': metadata or {},
+            "thread_id": thread_id,
+            "type": type,
+            "content": content,
+            "is_llm_message": is_llm_message,
+            "metadata": metadata or {},
         }
 
         try:
             # Add returning='representation' to get the inserted row data including the id
-            result = await client.table('messages').insert(data_to_insert, returning='representation').execute()
+            result = (
+                await client.table("messages")
+                .insert(data_to_insert, returning="representation")
+                .execute()
+            )
             logger.info(f"Successfully added message to thread {thread_id}")
 
-            if result.data and len(result.data) > 0 and isinstance(result.data[0], dict) and 'message_id' in result.data[0]:
+            if (
+                result.data
+                and len(result.data) > 0
+                and isinstance(result.data[0], dict)
+                and "message_id" in result.data[0]
+            ):
                 return result.data[0]
             else:
-                logger.error(f"Insert operation failed or did not return expected data structure for thread {thread_id}. Result data: {result.data}")
+                logger.error(
+                    f"Insert operation failed or did not return expected data structure for thread {thread_id}. Result data: {result.data}"
+                )
                 return None
         except Exception as e:
-            logger.error(f"Failed to add message to thread {thread_id}: {str(e)}", exc_info=True)
+            logger.error(
+                f"Failed to add message to thread {thread_id}: {str(e)}", exc_info=True
+            )
             raise
 
     async def get_llm_messages(self, thread_id: str) -> List[Dict[str, Any]]:
@@ -128,7 +396,14 @@ class ThreadManager:
 
         try:
             # result = await client.rpc('get_llm_formatted_messages', {'p_thread_id': thread_id}).execute()
-            result = await client.table('messages').select('message_id, content').eq('thread_id', thread_id).eq('is_llm_message', True).order('created_at').execute()
+            result = (
+                await client.table("messages")
+                .select("message_id, content")
+                .eq("thread_id", thread_id)
+                .eq("is_llm_message", True)
+                .order("created_at")
+                .execute()
+            )
 
             # Parse the returned data which might be stringified JSON
             if not result.data:
@@ -137,22 +412,25 @@ class ThreadManager:
             # Return properly parsed JSON objects
             messages = []
             for item in result.data:
-                if isinstance(item['content'], str):
+                if isinstance(item["content"], str):
                     try:
-                        parsed_item = json.loads(item['content'])
-                        parsed_item['message_id'] = item['message_id']
+                        parsed_item = json.loads(item["content"])
+                        parsed_item["message_id"] = item["message_id"]
                         messages.append(parsed_item)
                     except json.JSONDecodeError:
                         logger.error(f"Failed to parse message: {item['content']}")
                 else:
-                    content = item['content']
-                    content['message_id'] = item['message_id']
+                    content = item["content"]
+                    content["message_id"] = item["message_id"]
                     messages.append(content)
 
             return messages
 
         except Exception as e:
-            logger.error(f"Failed to get messages for thread {thread_id}: {str(e)}", exc_info=True)
+            logger.error(
+                f"Failed to get messages for thread {thread_id}: {str(e)}",
+                exc_info=True,
+            )
             return []
 
     async def run_thread(
@@ -170,7 +448,7 @@ class ThreadManager:
         max_xml_tool_calls: int = 0,
         include_xml_examples: bool = False,
         enable_thinking: Optional[bool] = False,
-        reasoning_effort: Optional[str] = 'low',
+        reasoning_effort: Optional[str] = "low",
         enable_context_manager: bool = True,
         generation: Optional[StatefulGenerationClient] = None,
     ) -> Union[Dict[str, Any], AsyncGenerator]:
@@ -201,8 +479,12 @@ class ThreadManager:
         logger.info(f"Starting thread execution for thread {thread_id}")
         logger.info(f"Using model: {llm_model}")
         # Log parameters
-        logger.info(f"Parameters: model={llm_model}, temperature={llm_temperature}, max_tokens={llm_max_tokens}")
-        logger.info(f"Auto-continue: max={native_max_auto_continues}, XML tool limit={max_xml_tool_calls}")
+        logger.info(
+            f"Parameters: model={llm_model}, temperature={llm_temperature}, max_tokens={llm_max_tokens}"
+        )
+        logger.info(
+            f"Auto-continue: max={native_max_auto_continues}, XML tool limit={max_xml_tool_calls}"
+        )
 
         # Log model info
         logger.info(f"🤖 Thread {thread_id}: Using model {llm_model}")
@@ -239,23 +521,35 @@ Here are the XML tools available with examples:
                 # except Exception as e:
                 #     logger.error(f"Failed to save XML examples to file: {e}")
 
-                system_content = working_system_prompt.get('content')
+                system_content = working_system_prompt.get("content")
 
                 if isinstance(system_content, str):
-                    working_system_prompt['content'] += examples_content
-                    logger.debug("Appended XML examples to string system prompt content.")
+                    working_system_prompt["content"] += examples_content
+                    logger.debug(
+                        "Appended XML examples to string system prompt content."
+                    )
                 elif isinstance(system_content, list):
                     appended = False
-                    for item in working_system_prompt['content']: # Modify the copy
-                        if isinstance(item, dict) and item.get('type') == 'text' and 'text' in item:
-                            item['text'] += examples_content
-                            logger.debug("Appended XML examples to the first text block in list system prompt content.")
+                    for item in working_system_prompt["content"]:  # Modify the copy
+                        if (
+                            isinstance(item, dict)
+                            and item.get("type") == "text"
+                            and "text" in item
+                        ):
+                            item["text"] += examples_content
+                            logger.debug(
+                                "Appended XML examples to the first text block in list system prompt content."
+                            )
                             appended = True
                             break
                     if not appended:
-                        logger.warning("System prompt content is a list but no text block found to append XML examples.")
+                        logger.warning(
+                            "System prompt content is a list but no text block found to append XML examples."
+                        )
                 else:
-                    logger.warning(f"System prompt content is of unexpected type ({type(system_content)}), cannot add XML examples.")
+                    logger.warning(
+                        f"System prompt content is of unexpected type ({type(system_content)}), cannot add XML examples."
+                    )
         # Control whether we need to auto-continue due to tool_calls finish reason
         auto_continue = True
         auto_continue_count = 0
@@ -273,11 +567,14 @@ Here are the XML tools available with examples:
                 # 2. Check token count before proceeding
                 token_count = 0
                 try:
-                    from litellm import token_counter
                     # Use the potentially modified working_system_prompt for token counting
-                    token_count = token_counter(model=llm_model, messages=[working_system_prompt] + messages)
+                    token_count = token_counter(
+                        model=llm_model, messages=[working_system_prompt] + messages
+                    )
                     token_threshold = self.context_manager.token_threshold
-                    logger.info(f"Thread {thread_id} token count: {token_count}/{token_threshold} ({(token_count/token_threshold)*100:.1f}%)")
+                    logger.info(
+                        f"Thread {thread_id} token count: {token_count}/{token_threshold} ({(token_count/token_threshold)*100:.1f}%)"
+                    )
 
                     # if token_count >= token_threshold and enable_context_manager:
                     #     logger.info(f"Thread token count ({token_count}) exceeds threshold ({token_threshold}), summarizing...")
@@ -308,7 +605,7 @@ Here are the XML tools available with examples:
                 # Find the last user message index
                 last_user_index = -1
                 for i, msg in enumerate(messages):
-                    if msg.get('role') == 'user':
+                    if msg.get("role") == "user":
                         last_user_index = i
 
                 # Insert temporary message before the last user message if it exists
@@ -322,33 +619,21 @@ Here are the XML tools available with examples:
                     prepared_messages.extend(messages)
                     if temp_msg:
                         prepared_messages.append(temp_msg)
-                        logger.debug("Added temporary message to the end of prepared messages")
+                        logger.debug(
+                            "Added temporary message to the end of prepared messages"
+                        )
 
                 # 4. Prepare tools for LLM call
                 openapi_tool_schemas = None
                 if processor_config.native_tool_calling:
                     openapi_tool_schemas = self.tool_registry.get_openapi_schemas()
-                    logger.debug(f"Retrieved {len(openapi_tool_schemas) if openapi_tool_schemas else 0} OpenAPI tool schemas")
+                    logger.debug(
+                        f"Retrieved {len(openapi_tool_schemas) if openapi_tool_schemas else 0} OpenAPI tool schemas"
+                    )
 
-
-                uncompressed_total_token_count = token_counter(model=llm_model, messages=prepared_messages)
-
-                if uncompressed_total_token_count > (llm_max_tokens or (100 * 1000)):
-                    _i = 0 # Count the number of ToolResult messages
-                    for msg in reversed(prepared_messages): # Start from the end and work backwards
-                        if "content" in msg and msg['content'] and "ToolResult" in msg['content']: # Only compress ToolResult messages
-                            _i += 1 # Count the number of ToolResult messages
-                            msg_token_count = token_counter(messages=[msg]) # Count the number of tokens in the message
-                            if msg_token_count > 5000: # If the message is too long
-                                if _i > 1: # If this is not the most recent ToolResult message
-                                    message_id = msg.get('message_id') # Get the message_id
-                                    if message_id:
-                                        msg["content"] = msg["content"][:10000] + "... (truncated)" + f"\n\nThis message is too long, use the expand-message tool with message_id \"{message_id}\" to see the full message" # Truncate the message
-                                else:
-                                    msg["content"] = msg["content"][:200000] + f"\n\nThis message is too long, repeat relevant information in your response to remember it" # Truncate to 300k characters to avoid overloading the context at once, but don't truncate otherwise
-
-                compressed_total_token_count = token_counter(model=llm_model, messages=prepared_messages)
-                logger.info(f"token_compression: {uncompressed_total_token_count} -> {compressed_total_token_count}") # Log the token compression for debugging later
+                prepared_messages = self._compress_messages(
+                    prepared_messages, llm_model
+                )
 
                 # 5. Make LLM API call
                 logger.debug("Making LLM API call")
@@ -359,79 +644,99 @@ Here are the XML tools available with examples:
                             start_time=datetime.datetime.now(datetime.timezone.utc),
                             model=llm_model,
                             model_parameters={
-                              "max_tokens": llm_max_tokens,
-                              "temperature": llm_temperature,
-                              "enable_thinking": enable_thinking,
-                              "reasoning_effort": reasoning_effort,
-                              "tool_choice": tool_choice,
-                              "tools": openapi_tool_schemas,
-                            }
+                                "max_tokens": llm_max_tokens,
+                                "temperature": llm_temperature,
+                                "enable_thinking": enable_thinking,
+                                "reasoning_effort": reasoning_effort,
+                                "tool_choice": tool_choice,
+                                "tools": openapi_tool_schemas,
+                            },
                         )
                     llm_response = await make_llm_api_call(
-                        prepared_messages, # Pass the potentially modified messages
+                        prepared_messages,  # Pass the potentially modified messages
                         llm_model,
                         temperature=llm_temperature,
                         max_tokens=llm_max_tokens,
                         tools=openapi_tool_schemas,
-                        tool_choice=tool_choice if processor_config.native_tool_calling else None,
+                        tool_choice=(
+                            tool_choice
+                            if processor_config.native_tool_calling
+                            else None
+                        ),
                         stream=stream,
                         enable_thinking=enable_thinking,
-                        reasoning_effort=reasoning_effort
+                        reasoning_effort=reasoning_effort,
                     )
-                    logger.debug("Successfully received raw LLM API response stream/object")
+                    logger.debug(
+                        "Successfully received raw LLM API response stream/object"
+                    )
 
                 except Exception as e:
-                    logger.error(f"Failed to make LLM API call: {str(e)}", exc_info=True)
+                    logger.error(
+                        f"Failed to make LLM API call: {str(e)}", exc_info=True
+                    )
                     raise
 
                 # 6. Process LLM response using the ResponseProcessor
                 if stream:
                     logger.debug("Processing streaming response")
-                    response_generator = self.response_processor.process_streaming_response(
-                        llm_response=llm_response,
-                        thread_id=thread_id,
-                        config=processor_config,
-                        prompt_messages=prepared_messages,
-                        llm_model=llm_model,
+                    response_generator = (
+                        self.response_processor.process_streaming_response(
+                            llm_response=llm_response,
+                            thread_id=thread_id,
+                            config=processor_config,
+                            prompt_messages=prepared_messages,
+                            llm_model=llm_model,
+                        )
                     )
 
                     return response_generator
                 else:
                     logger.debug("Processing non-streaming response")
                     # Pass through the response generator without try/except to let errors propagate up
-                    response_generator = self.response_processor.process_non_streaming_response(
-                        llm_response=llm_response,
-                        thread_id=thread_id,
-                        config=processor_config,
-                        prompt_messages=prepared_messages,
-                        llm_model=llm_model,
+                    response_generator = (
+                        self.response_processor.process_non_streaming_response(
+                            llm_response=llm_response,
+                            thread_id=thread_id,
+                            config=processor_config,
+                            prompt_messages=prepared_messages,
+                            llm_model=llm_model,
+                        )
                     )
-                    return response_generator # Return the generator
+                    return response_generator  # Return the generator
 
             except Exception as e:
                 logger.error(f"Error in run_thread: {str(e)}", exc_info=True)
                 # Return the error as a dict to be handled by the caller
-                return {
-                    "status": "error",
-                    "message": str(e)
-                }
+                return {"status": "error", "message": str(e)}
 
         # Define a wrapper generator that handles auto-continue logic
         async def auto_continue_wrapper():
             nonlocal auto_continue, auto_continue_count
 
-            while auto_continue and (native_max_auto_continues == 0 or auto_continue_count < native_max_auto_continues):
+            while auto_continue and (
+                native_max_auto_continues == 0
+                or auto_continue_count < native_max_auto_continues
+            ):
                 # Reset auto_continue for this iteration
                 auto_continue = False
 
                 # Run the thread once, passing the potentially modified system prompt
                 # Pass temp_msg only on the first iteration
                 try:
-                    response_gen = await _run_once(temporary_message if auto_continue_count == 0 else None)
+                    response_gen = await _run_once(
+                        temporary_message if auto_continue_count == 0 else None
+                    )
 
                     # Handle error responses
-                    if isinstance(response_gen, dict) and "status" in response_gen and response_gen["status"] == "error":
-                        logger.error(f"Error in auto_continue_wrapper: {response_gen.get('message', 'Unknown error')}")
+                    if (
+                        isinstance(response_gen, dict)
+                        and "status" in response_gen
+                        and response_gen["status"] == "error"
+                    ):
+                        logger.error(
+                            f"Error in auto_continue_wrapper: {response_gen.get('message', 'Unknown error')}"
+                        )
                         yield response_gen
                         return  # Exit the generator on error
 
@@ -439,18 +744,25 @@ Here are the XML tools available with examples:
                     try:
                         async for chunk in response_gen:
                             # Check if this is a finish reason chunk with tool_calls or xml_tool_limit_reached
-                            if chunk.get('type') == 'finish':
-                                if chunk.get('finish_reason') == 'tool_calls':
+                            if chunk.get("type") == "finish":
+                                if chunk.get("finish_reason") == "tool_calls":
                                     # Only auto-continue if enabled (max > 0)
                                     if native_max_auto_continues > 0:
-                                        logger.info(f"Detected finish_reason='tool_calls', auto-continuing ({auto_continue_count + 1}/{native_max_auto_continues})")
+                                        logger.info(
+                                            f"Detected finish_reason='tool_calls', auto-continuing ({auto_continue_count + 1}/{native_max_auto_continues})"
+                                        )
                                         auto_continue = True
                                         auto_continue_count += 1
                                         # Don't yield the finish chunk to avoid confusing the client
                                         continue
-                                elif chunk.get('finish_reason') == 'xml_tool_limit_reached':
+                                elif (
+                                    chunk.get("finish_reason")
+                                    == "xml_tool_limit_reached"
+                                ):
                                     # Don't auto-continue if XML tool limit was reached
-                                    logger.info(f"Detected finish_reason='xml_tool_limit_reached', stopping auto-continue")
+                                    logger.info(
+                                        f"Detected finish_reason='xml_tool_limit_reached', stopping auto-continue"
+                                    )
                                     auto_continue = False
                                     # Still yield the chunk to inform the client
 
@@ -462,29 +774,36 @@ Here are the XML tools available with examples:
                             break
                     except Exception as e:
                         # If there's an exception, log it, yield an error status, and stop execution
-                        logger.error(f"Error in auto_continue_wrapper generator: {str(e)}", exc_info=True)
+                        logger.error(
+                            f"Error in auto_continue_wrapper generator: {str(e)}",
+                            exc_info=True,
+                        )
                         yield {
                             "type": "status",
                             "status": "error",
-                            "message": f"Error in thread processing: {str(e)}"
+                            "message": f"Error in thread processing: {str(e)}",
                         }
                         return  # Exit the generator on any error
                 except Exception as outer_e:
                     # Catch exceptions from _run_once itself
-                    logger.error(f"Error executing thread: {str(outer_e)}", exc_info=True)
+                    logger.error(
+                        f"Error executing thread: {str(outer_e)}", exc_info=True
+                    )
                     yield {
                         "type": "status",
                         "status": "error",
-                        "message": f"Error executing thread: {str(outer_e)}"
+                        "message": f"Error executing thread: {str(outer_e)}",
                     }
                     return  # Exit immediately on exception from _run_once
 
             # If we've reached the max auto-continues, log a warning
             if auto_continue and auto_continue_count >= native_max_auto_continues:
-                logger.warning(f"Reached maximum auto-continue limit ({native_max_auto_continues}), stopping.")
+                logger.warning(
+                    f"Reached maximum auto-continue limit ({native_max_auto_continues}), stopping."
+                )
                 yield {
                     "type": "content",
-                    "content": f"\n[Agent reached maximum auto-continue limit of {native_max_auto_continues}]"
+                    "content": f"\n[Agent reached maximum auto-continue limit of {native_max_auto_continues}]",
                 }
 
         # If auto-continue is disabled (max=0), just run once
