@@ -14,6 +14,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { UploadedFile } from './chat-input';
+import { cn } from '@/lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
@@ -233,24 +234,31 @@ export const FileUploadHandler = forwardRef<
     return (
       <>
         <TooltipProvider>
-          <Tooltip>
+          <Tooltip delayDuration={200}>
             <TooltipTrigger asChild>
               <Button
                 type="button"
-                onClick={handleFileUpload}
                 variant="ghost"
-                size="default"
-                className="h-7 rounded-md text-muted-foreground"
-                disabled={
-                  loading || (disabled && !isAgentRunning) || isUploading
-                }
+                size="sm"
+                className={cn(
+                  "relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                  "h-8 w-8 p-0",
+                  disabled ? "cursor-not-allowed opacity-60" : "hover:bg-muted/80",
+                  isUploading ? "cursor-wait" : ""
+                )}
+                onClick={handleFileUpload}
+                disabled={disabled || isUploading}
+                aria-label="Attach files"
               >
                 {isUploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="sr-only">Uploading...</span>
+                  </>
                 ) : (
                   <Paperclip className="h-4 w-4" />
                 )}
-                <span className="text-sm sm:block hidden">Attachments</span>
+                {/* <span className="text-sm sm:block hidden">Attachments</span> */}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">

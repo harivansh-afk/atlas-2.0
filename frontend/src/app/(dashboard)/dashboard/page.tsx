@@ -25,9 +25,10 @@ import { useAccounts } from '@/hooks/use-accounts';
 import { config } from '@/lib/config';
 import { useInitiateAgentWithInvalidation } from '@/hooks/react-query/dashboard/use-initiate-agent';
 import { ModalProviders } from '@/providers/modal-providers';
-import { AgentSelector } from '@/components/dashboard/agent-selector';
+
 import { cn } from '@/lib/utils';
 import { useModal } from '@/hooks/use-modal-store';
+import { Examples } from './_components/suggestions/examples';
 
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
@@ -175,13 +176,8 @@ function DashboardContent() {
           <div className="flex flex-col items-center text-center w-full">
             <div className="flex items-center gap-1">
               <h1 className="tracking-tight text-4xl text-muted-foreground leading-tight">
-                Hey, I am
+                Hey
               </h1>
-              <AgentSelector
-                selectedAgentId={selectedAgentId}
-                onAgentSelect={setSelectedAgentId}
-                variant="heading"
-              />
             </div>
             <p className="tracking-tight text-3xl font-normal text-muted-foreground/80 mt-2">
               What would you like to do today?
@@ -201,9 +197,19 @@ function DashboardContent() {
               value={inputValue}
               onChange={setInputValue}
               hideAttachments={false}
+              selectedAgentId={selectedAgentId}
+              onAgentSelect={setSelectedAgentId}
             />
           </div>
 
+          {/* Suggestions */}
+          <div className="mt-3 w-full">
+            <Examples
+              onSelectPrompt={(query) => {
+                setInputValue(query);
+              }}
+            />
+          </div>
 
         </div>
 

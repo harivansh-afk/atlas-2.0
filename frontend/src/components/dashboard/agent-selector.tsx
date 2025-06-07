@@ -35,9 +35,6 @@ export function AgentSelector({
     sort_order: 'asc'
   });
 
-  const { flags, loading: flagsLoading } = useFeatureFlags(['custom_agents']);
-  const customAgentsEnabled = flags.custom_agents;
-
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);

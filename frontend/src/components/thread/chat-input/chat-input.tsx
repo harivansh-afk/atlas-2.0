@@ -14,7 +14,7 @@ import { handleFiles } from './file-upload-handler';
 import { MessageInput } from './message-input';
 import { AttachmentGroup } from '../attachment-group';
 import { useModelSelection } from './_use-model-selection';
-import { AgentSelector } from './agent-selector';
+
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -248,16 +248,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
         >
           <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
             <CardContent className={`w-full p-1.5 pb-2 ${bgColor} rounded-2xl border`}>
-              {onAgentSelect && (
-                <div className="mb-2 px-2">
-                <AgentSelector
-                selectedAgentId={selectedAgentId}
-                onAgentSelect={onAgentSelect}
-                disabled={loading || disabled}
-                className="w-full"
-                />
-                </div>
-              )}
+
               <AttachmentGroup
               files={uploadedFiles || []}
               sandboxId={sandboxId}
@@ -293,6 +284,9 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                 selectedModel={selectedModel}
                 onModelChange={handleModelChange}
                 canAccessModel={canAccessModel}
+
+                selectedAgentId={selectedAgentId}
+                onAgentSelect={onAgentSelect}
               />
             </CardContent>
           </div>

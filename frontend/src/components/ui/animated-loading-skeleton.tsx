@@ -21,44 +21,17 @@ const AnimatedLoadingSkeleton = ({ variant = 'full', className = '' }: AnimatedL
     const [windowWidth, setWindowWidth] = useState(0) // State to store window width for responsiveness
     const controls = useAnimation() // Controls for Framer Motion animations
 
-    // Dynamically calculates grid configuration based on window width and variant
+    // Simplified grid configuration - always 3 cards
     const getGridConfig = (width: number): GridConfig => {
-        if (variant === 'chat') {
-            // Smaller configuration for chat loading
-            const numCards = 3
-            const cols = width >= 768 ? 3 : width >= 640 ? 2 : 1
-            return {
-                numCards,
-                cols,
-                xBase: 20,
-                yBase: 30,
-                xStep: 120,
-                yStep: 140
-            }
-        } else if (variant === 'dashboard') {
-            // Medium configuration for dashboard
-            const numCards = 4
-            const cols = width >= 1024 ? 2 : 1
-            return {
-                numCards,
-                cols,
-                xBase: 30,
-                yBase: 40,
-                xStep: 160,
-                yStep: 180
-            }
-        } else {
-            // Full configuration (original)
-            const numCards = 6
-            const cols = width >= 1024 ? 3 : width >= 640 ? 2 : 1
-            return {
-                numCards,
-                cols,
-                xBase: 40,
-                yBase: 60,
-                xStep: 210,
-                yStep: 230
-            }
+        const numCards = 3
+        const cols = width >= 768 ? 3 : width >= 640 ? 2 : 1
+        return {
+            numCards,
+            cols,
+            xBase: 20,
+            yBase: 20,
+            xStep: 120,
+            yStep: 140
         }
     }
 
@@ -81,7 +54,7 @@ const AnimatedLoadingSkeleton = ({ variant = 'full', className = '' }: AnimatedL
         }
 
         // Shuffle positions to create random animations
-        const numRandomCards = Math.min(4, allPositions.length)
+        const numRandomCards = Math.min(3, allPositions.length)
         const shuffledPositions = allPositions
             .sort(() => Math.random() - 0.5)
             .slice(0, numRandomCards)
@@ -151,97 +124,55 @@ const AnimatedLoadingSkeleton = ({ variant = 'full', className = '' }: AnimatedL
 
     const config = getGridConfig(windowWidth) // Get current grid configuration
 
-    // Different container styles based on variant
-    const getContainerClasses = () => {
-        if (variant === 'chat') {
-            return `w-full max-w-2xl mx-auto p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg border ${className}`
-        } else if (variant === 'dashboard') {
-            return `w-full max-w-3xl mx-auto p-6 bg-background rounded-xl border ${className}`
-        } else {
-            return `w-full max-w-4xl mx-auto p-6 bg-background rounded-xl shadow-lg border ${className}`
-        }
-    }
-
-    const getInnerClasses = () => {
-        if (variant === 'chat') {
-            return "relative overflow-hidden rounded-lg bg-gradient-to-br from-muted/50 to-muted/30 p-6"
-        } else {
-            return "relative overflow-hidden rounded-lg bg-gradient-to-br from-muted/50 to-muted/30 p-8"
-        }
-    }
-
     return (
         <motion.div
-            className={getContainerClasses()}
+            className={`relative w-full max-w-2xl mx-auto p-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg border overflow-hidden ${className}`}
             variants={frameVariants}
             initial="hidden"
             animate="visible"
         >
-            <div className={getInnerClasses()}>
-                {/* Search icon with animation */}
+            {/* Search icon with animation */}
+            <motion.div
+                className="absolute z-10 pointer-events-none"
+                animate={controls}
+                style={{ left: 16, top: 16 }}
+            >
                 <motion.div
-                    className="absolute z-10 pointer-events-none"
-                    animate={controls}
-                    style={{ left: 24, top: 24 }}
+                    className="bg-primary/20 p-3 rounded-full backdrop-blur-sm"
+                    variants={glowVariants}
+                    animate="animate"
                 >
-                    <motion.div
-                        className="bg-primary/20 p-3 rounded-full backdrop-blur-sm"
-                        variants={glowVariants}
-                        animate="animate"
+                    <svg
+                        className="w-6 h-6 text-primary"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                     >
-                        <svg
-                            className="w-6 h-6 text-primary"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                        </svg>
-                    </motion.div>
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                    </svg>
                 </motion.div>
+            </motion.div>
 
-                {/* Grid of animated cards */}
-                <div className={`grid gap-4 ${variant === 'chat' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' : variant === 'dashboard' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
-                    {[...Array(config.numCards)].map((_, i) => (
-                        <motion.div
-                            key={i}
-                            variants={cardVariants}
-                            initial="hidden"
-                            animate="visible"
-                            custom={i} // Index-based animation delay
-                            whileHover={{ scale: 1.02 }} // Slight scale on hover
-                            className="bg-card rounded-lg shadow-sm p-4 border"
-                        >
-                            {/* Card placeholders */}
-                            <motion.div
-                                className={`${variant === 'chat' ? 'h-20' : 'h-32'} bg-muted rounded-md mb-3`}
-                                animate={{
-                                    opacity: [0.3, 0.6, 0.3],
-                                }}
-                                transition={{ duration: 1.5, repeat: Infinity }}
-                            />
-                            <motion.div
-                                className="h-3 w-3/4 bg-muted rounded mb-2"
-                                animate={{
-                                    opacity: [0.3, 0.6, 0.3],
-                                }}
-                                transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
-                            />
-                            <motion.div
-                                className="h-3 w-1/2 bg-muted rounded"
-                                animate={{
-                                    opacity: [0.3, 0.6, 0.3],
-                                }}
-                                transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }}
-                            />
-                        </motion.div>
-                    ))}
-                </div>
+            {/* Grid of simple animated cards */}
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                {[...Array(3)].map((_, i) => (
+                    <motion.div
+                        key={i}
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={i} // Index-based animation delay
+                        whileHover={{ scale: 1.02 }} // Slight scale on hover
+                        className="bg-card rounded-lg shadow-sm p-4 border h-32"
+                    >
+                        {/* Empty card - no internal skeleton components */}
+                    </motion.div>
+                ))}
             </div>
         </motion.div>
     )

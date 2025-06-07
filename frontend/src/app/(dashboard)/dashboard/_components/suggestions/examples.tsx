@@ -137,7 +137,7 @@ const allPrompts: PromptExample[] = [
 ];
 
 // Function to get random prompts
-const getRandomPrompts = (count: number = 3): PromptExample[] => {
+const getRandomPrompts = (count: number = 9): PromptExample[] => {
   const shuffled = [...allPrompts].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 };
@@ -152,34 +152,34 @@ export const Examples = ({
 
   // Initialize with random prompts on mount
   useEffect(() => {
-    setDisplayedPrompts(getRandomPrompts(3));
+    setDisplayedPrompts(getRandomPrompts(9));
   }, []);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    setDisplayedPrompts(getRandomPrompts(3));
+    setDisplayedPrompts(getRandomPrompts(9));
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4">
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-xs text-muted-foreground font-medium">Quick starts</span>
+    <div className="w-full max-w-4xl mx-auto px-4">
+      <div className="flex justify-between items-center mb-4">
+        <span className="text-sm text-muted-foreground font-medium">Quick starts</span>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleRefresh}
-          className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+          className="h-7 px-3 text-xs text-muted-foreground hover:text-foreground"
         >
           <motion.div
             animate={{ rotate: isRefreshing ? 360 : 0 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
           >
-            <RefreshCw size={10} />
+            <RefreshCw size={12} />
           </motion.div>
         </Button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {displayedPrompts.map((prompt, index) => (
           <motion.div
             key={`${prompt.title}-${index}`}
@@ -192,15 +192,15 @@ export const Examples = ({
             }}
           >
             <Card
-              className="group cursor-pointer h-full shadow-none transition-all bg-sidebar hover:bg-neutral-100 dark:hover:bg-neutral-800/60 p-0 justify-center"
+              className="group cursor-pointer h-full shadow-none transition-all bg-sidebar hover:bg-neutral-100 dark:hover:bg-neutral-800/60 p-0 justify-center min-h-[80px]"
               onClick={() => onSelectPrompt && onSelectPrompt(prompt.query)}
             >
-              <CardHeader className="p-2 grid-rows-1">
-                <div className="flex items-start justify-center gap-1.5">
-                  <div className="flex-shrink-0 mt-0.5">
-                    {React.cloneElement(prompt.icon as React.ReactElement, { size: 14 })}
+              <CardHeader className="p-4 h-full flex flex-col justify-center">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    {React.cloneElement(prompt.icon as React.ReactElement, { size: 18 })}
                   </div>
-                  <CardTitle className="font-normal group-hover:text-foreground transition-all text-muted-foreground text-xs leading-relaxed line-clamp-3">
+                  <CardTitle className="font-medium group-hover:text-foreground transition-all text-muted-foreground text-sm leading-relaxed line-clamp-2">
                     {prompt.title}
                   </CardTitle>
                 </div>

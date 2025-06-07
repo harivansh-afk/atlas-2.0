@@ -43,24 +43,20 @@ export function LargeNameFooter() {
   const instagramLink = "https://www.instagram.com/atlasagents.ai";
 
   return (
-    <footer className="py-12 px-4 md:px-6 bg-background text-foreground border-t">
-      <div className="container mx-auto px-4 md:px-6 lg:px-8">
+    <footer className="py-12 bg-background text-foreground border-t">
+      <div className="w-full max-w-6xl mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-start gap-8">
           {/* Contact/Share Button */}
-          <div className="">
-            <div className="mt-2">
-              <Link href={twitterLink} target="_blank" rel="noopener noreferrer">
-                <ButtonColorful>
-                  <span className="flex items-center gap-2">
-                    Share Your Thoughts On
-                    <Icons.twitter className="w-5 h-5" aria-label="X (Twitter)" />
-                  </span>
-                </ButtonColorful>
-              </Link>
-              <div className="mt-4 flex">
-                <ThemeToggle />
-              </div>
-            </div>
+          <div className="flex flex-col gap-4 ml-0 md:-ml-6">
+            <Link href={twitterLink} target="_blank" rel="noopener noreferrer">
+              <ButtonColorful>
+                <span className="flex items-center gap-2">
+                  Share Your Thoughts On
+                  <Icons.twitter className="w-5 h-5" aria-label="X (Twitter)" />
+                </span>
+              </ButtonColorful>
+            </Link>
+            <ThemeToggle />
           </div>
 
           {/* Navigation Links */}
