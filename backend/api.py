@@ -15,6 +15,7 @@ from collections import OrderedDict
 from typing import Dict, Any
 
 from pydantic import BaseModel
+
 # Import the agent API module
 from agent import api as agent_api
 from sandbox import api as sandbox_api
@@ -39,37 +40,38 @@ instance_id = "single"
 ip_tracker = OrderedDict()
 MAX_CONCURRENT_IPS = 25
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"Starting up FastAPI application with instance ID: {instance_id} in {config.ENV_MODE.value} mode")
+    logger.info(
+        f"Starting up FastAPI application with instance ID: {instance_id} in {config.ENV_MODE.value} mode"
+    )
     try:
         await db.initialize()
-        
-        agent_api.initialize(
-            db,
-            instance_id
-        )
-        
+
+        agent_api.initialize(db, instance_id)
+
         sandbox_api.initialize(db)
-        
+
         # Initialize Redis connection
         from services import redis
+
         try:
             await redis.initialize_async()
             logger.info("Redis connection initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Redis connection: {e}")
             # Continue without Redis - the application will handle Redis failures gracefully
-        
+
         # Start background tasks
         # asyncio.create_task(agent_api.restore_running_agent_runs())
-        
+
         yield
-        
+
         # Clean up agent resources
         logger.info("Cleaning up agent resources")
         await agent_api.cleanup()
-        
+
         # Clean up Redis connection
         try:
             logger.info("Closing Redis connection")
@@ -77,7 +79,7 @@ async def lifespan(app: FastAPI):
             logger.info("Redis connection closed successfully")
         except Exception as e:
             logger.error(f"Error closing Redis connection: {e}")
-        
+
         # Clean up database connection
         logger.info("Disconnecting from database")
         await db.disconnect()
@@ -85,7 +87,9 @@ async def lifespan(app: FastAPI):
         logger.error(f"Error during application startup: {e}")
         raise
 
+
 app = FastAPI(lifespan=lifespan)
+
 
 @app.middleware("http")
 async def log_requests_middleware(request: Request, call_next):
@@ -95,22 +99,33 @@ async def log_requests_middleware(request: Request, call_next):
     url = str(request.url)
     path = request.url.path
     query_params = str(request.query_params)
-    
+
     # Log the incoming request
-    logger.info(f"Request started: {method} {path} from {client_ip} | Query: {query_params}")
-    
+    logger.info(
+        f"Request started: {method} {path} from {client_ip} | Query: {query_params}"
+    )
+
     try:
         response = await call_next(request)
         process_time = time.time() - start_time
-        logger.debug(f"Request completed: {method} {path} | Status: {response.status_code} | Time: {process_time:.2f}s")
+        logger.debug(
+            f"Request completed: {method} {path} | Status: {response.status_code} | Time: {process_time:.2f}s"
+        )
         return response
     except Exception as e:
         process_time = time.time() - start_time
-        logger.error(f"Request failed: {method} {path} | Error: {str(e)} | Time: {process_time:.2f}s")
+        logger.error(
+            f"Request failed: {method} {path} | Error: {str(e)} | Time: {process_time:.2f}s"
+        )
         raise
 
+
 # Define allowed origins based on environment
-allowed_origins = ["https://www.suna.so", "https://suna.so", "http://localhost:3000"]
+allowed_origins = [
+    "https://www.atlasagents.ai",
+    "https://atlasagents.ai",
+    "http://localhost:3000",
+]
 allow_origin_regex = None
 
 # Add staging-specific origins
@@ -143,15 +158,17 @@ app.include_router(transcription_api.router, prefix="/api")
 
 app.include_router(email_api.router, prefix="/api")
 
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint to verify API is working."""
     logger.info("Health check endpoint called")
     return {
-        "status": "ok", 
+        "status": "ok",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "instance_id": instance_id
+        "instance_id": instance_id,
     }
+
 
 class CustomMCPDiscoverRequest(BaseModel):
     type: str
@@ -168,19 +185,14 @@ async def discover_custom_mcp_tools(request: CustomMCPDiscoverRequest):
         logger.error(f"Error discovering custom MCP tools: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 if __name__ == "__main__":
     import uvicorn
-    
+
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-    
+
     workers = 1
-    
+
     logger.info(f"Starting server on 0.0.0.0:8000 with {workers} workers")
-    uvicorn.run(
-        "api:app", 
-        host="0.0.0.0", 
-        port=8000,
-        workers=workers,
-        loop="asyncio"
-    )
+    uvicorn.run("api:app", host="0.0.0.0", port=8000, workers=workers, loop="asyncio")

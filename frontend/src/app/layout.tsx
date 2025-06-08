@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     siteName: 'Atlas',
     images: [
       {
-        url: '/preview.png',
+        url: `${siteConfig.url}preview.png`,
         width: 1200,
         height: 630,
         alt: 'Atlas - The Operations AI Agent',
@@ -85,11 +85,11 @@ export const metadata: Metadata = {
     title: 'Atlas - The Operations AI Agent',
     description:
       'Atlas is an operations AI agent that helps you accomplish real-world tasks with ease through natural conversation.',
-    creator: '@atlasai',
-    site: '@atlasai',
+    creator: '@atlasagents_ai',
+    site: '@atlasagents_ai',
     images: [
       {
-        url: '/preview.png',
+        url: `${siteConfig.url}preview.png`,
         width: 1200,
         height: 630,
         alt: 'Atlas - The Operations AI Agent',
