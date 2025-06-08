@@ -13,13 +13,12 @@ import {
     getUserFriendlyToolName,
     safeJsonParse,
 } from '@/components/thread/utils';
-import { AiAvatarOrb } from '@/components/ui/ai-avatar-orb';
+import { KortixLogo } from '@/components/sidebar/kortix-logo';
 import { AgentLoader } from './loader';
 import { parseXmlToolCalls, isNewXmlFormat, extractToolNameFromStream } from '@/components/thread/tool-views/xml-parser';
 import { parseToolResult } from '@/components/thread/tool-views/tool-result-parser';
-import { KortixLogo } from '@/components/sidebar/kortix-logo';
 
-// Define the set of tags whose raw XML should be hidden during streaming
+// Define the set of  tags whose raw XML should be hidden during streaming
 const HIDE_STREAMING_XML_TAGS = new Set([
     'execute-command',
     'create-file',
@@ -94,11 +93,11 @@ export function renderMarkdownContent(
     if (isNewXmlFormat(content)) {
         const contentParts: React.ReactNode[] = [];
         let lastIndex = 0;
-
+        
         // Find all function_calls blocks
         const functionCallsRegex = /<function_calls>([\s\S]*?)<\/function_calls>/gi;
         let match;
-
+        
         while ((match = functionCallsRegex.exec(content)) !== null) {
             // Add text before the function_calls block
             if (match.index > lastIndex) {
@@ -111,45 +110,64 @@ export function renderMarkdownContent(
                     );
                 }
             }
-
+            
             // Parse the tool calls in this block
             const toolCalls = parseXmlToolCalls(match[0]);
-
+            
             toolCalls.forEach((toolCall, index) => {
                 const toolName = toolCall.functionName.replace(/_/g, '-');
-                const IconComponent = getToolIcon(toolName);
-
-                // Extract primary parameter for display
-                let paramDisplay = '';
-                if (toolCall.parameters.file_path) {
-                    paramDisplay = toolCall.parameters.file_path;
-                } else if (toolCall.parameters.command) {
-                    paramDisplay = toolCall.parameters.command;
-                } else if (toolCall.parameters.query) {
-                    paramDisplay = toolCall.parameters.query;
-                } else if (toolCall.parameters.url) {
-                    paramDisplay = toolCall.parameters.url;
+                
+                if (toolName === 'ask') {
+                    // Handle ask tool specially - extract text and attachments
+                    const askText = toolCall.parameters.text || '';
+                    const attachments = toolCall.parameters.attachments || [];
+                    
+                    // Convert single attachment to array for consistent handling
+                    const attachmentArray = Array.isArray(attachments) ? attachments : 
+                                          (typeof attachments === 'string' ? attachments.split(',').map(a => a.trim()) : []);
+                    
+                    // Render ask tool content with attachment UI
+                    contentParts.push(
+                        <div key={`ask-${match.index}-${index}`} className="space-y-3">
+                            <Markdown className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3">{askText}</Markdown>
+                            {renderAttachments(attachmentArray, fileViewerHandler, sandboxId, project)}
+                        </div>
+                    );
+                } else {
+                    const IconComponent = getToolIcon(toolName);
+                    
+                    // Extract primary parameter for display
+                    let paramDisplay = '';
+                    if (toolCall.parameters.file_path) {
+                        paramDisplay = toolCall.parameters.file_path;
+                    } else if (toolCall.parameters.command) {
+                        paramDisplay = toolCall.parameters.command;
+                    } else if (toolCall.parameters.query) {
+                        paramDisplay = toolCall.parameters.query;
+                    } else if (toolCall.parameters.url) {
+                        paramDisplay = toolCall.parameters.url;
+                    }
+                    
+                    contentParts.push(
+                        <div key={`tool-${match.index}-${index}`} className="my-1">
+                            <button
+                                onClick={() => handleToolClick(messageId, toolName)}
+                                className="inline-flex items-center gap-1.5 py-1 px-1 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-md transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+                            >
+                                <div className='border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600'>
+                                    <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                </div>
+                                <span className="font-mono text-xs text-foreground">{getUserFriendlyToolName(toolName)}</span>
+                                {paramDisplay && <span className="ml-1 text-muted-foreground truncate max-w-[200px]" title={paramDisplay}>{paramDisplay}</span>}
+                            </button>
+                        </div>
+                    );
                 }
-
-                contentParts.push(
-                    <div key={`tool-${match.index}-${index}`} className="my-1">
-                        <button
-                            onClick={() => handleToolClick(messageId, toolName)}
-                            className="inline-flex items-center gap-1.5 py-1 px-1 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-md transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
-                        >
-                            <div className='border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600'>
-                                <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                            </div>
-                            <span className="font-mono text-xs text-foreground">{getUserFriendlyToolName(toolName)}</span>
-                            {paramDisplay && <span className="ml-1 text-muted-foreground truncate max-w-[200px]" title={paramDisplay}>{paramDisplay}</span>}
-                        </button>
-                    </div>
-                );
             });
-
+            
             lastIndex = match.index + match[0].length;
         }
-
+        
         // Add any remaining text after the last function_calls block
         if (lastIndex < content.length) {
             const remainingText = content.substring(lastIndex);
@@ -161,7 +179,7 @@ export function renderMarkdownContent(
                 );
             }
         }
-
+        
         return contentParts.length > 0 ? contentParts : <Markdown className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none break-words">{content}</Markdown>;
     }
 
@@ -225,7 +243,7 @@ export function renderMarkdownContent(
                         {paramDisplay && <span className="ml-1 text-muted-foreground truncate max-w-[200px]" title={paramDisplay}>{paramDisplay}</span>}
                     </button>
                 </div>
-            );
+            ); 
         }
         lastIndex = xmlRegex.lastIndex;
     }
@@ -293,7 +311,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     // React Query file preloader
     const { preloadFiles } = useFilePreloader();
 
-    const containerClassName = isPreviewMode
+    const containerClassName = isPreviewMode 
         ? "flex-1 overflow-y-auto scrollbar-thin scrollbar-track-secondary/0 scrollbar-thumb-primary/10 scrollbar-thumb-rounded-full hover:scrollbar-thumb-primary/10 px-6 py-4 pb-72"
         : "flex-1 overflow-y-auto scrollbar-thin scrollbar-track-secondary/0 scrollbar-thumb-primary/10 scrollbar-thumb-rounded-full hover:scrollbar-thumb-primary/10 px-6 py-4 pb-72 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60";
 
@@ -422,13 +440,49 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                     groupedMessages.push(currentGroup);
                                 }
 
-                                // Handle streaming content
+                                // Merge consecutive assistant groups
+                                const mergedGroups: MessageGroup[] = [];
+                                let currentMergedGroup: MessageGroup | null = null;
+
+                                groupedMessages.forEach((group, index) => {
+                                    if (group.type === 'assistant_group') {
+                                        if (currentMergedGroup && currentMergedGroup.type === 'assistant_group') {
+                                            // Merge with the current group
+                                            currentMergedGroup.messages.push(...group.messages);
+                                        } else {
+                                            // Finalize previous group if it exists
+                                            if (currentMergedGroup) {
+                                                mergedGroups.push(currentMergedGroup);
+                                            }
+                                            // Start new merged group
+                                            currentMergedGroup = { ...group };
+                                        }
+                                    } else {
+                                        // Finalize current merged group if it exists
+                                        if (currentMergedGroup) {
+                                            mergedGroups.push(currentMergedGroup);
+                                            currentMergedGroup = null;
+                                        }
+                                        // Add non-assistant group as-is
+                                        mergedGroups.push(group);
+                                    }
+                                });
+
+                                // Finalize any remaining merged group
+                                if (currentMergedGroup) {
+                                    mergedGroups.push(currentMergedGroup);
+                                }
+
+                                // Use merged groups instead of original grouped messages
+                                const finalGroupedMessages = mergedGroups;
+
+                                // Handle streaming content - only add to existing group or create new one if needed
                                 if (streamingTextContent) {
-                                    const lastGroup = groupedMessages.at(-1);
+                                    const lastGroup = finalGroupedMessages.at(-1);
                                     if (!lastGroup || lastGroup.type === 'user') {
                                         // Create new assistant group for streaming content
                                         assistantGroupCounter++;
-                                        groupedMessages.push({
+                                        finalGroupedMessages.push({
                                             type: 'assistant_group',
                                             messages: [{
                                                 content: streamingTextContent,
@@ -444,22 +498,25 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                             key: `assistant-group-${assistantGroupCounter}-streaming`
                                         });
                                     } else if (lastGroup.type === 'assistant_group') {
-                                        // Add to existing assistant group
-                                        lastGroup.messages.push({
-                                            content: streamingTextContent,
-                                            type: 'assistant',
-                                            message_id: 'streamingTextContent',
-                                            metadata: 'streamingTextContent',
-                                            created_at: new Date().toISOString(),
-                                            updated_at: new Date().toISOString(),
-                                            is_llm_message: true,
-                                            thread_id: 'streamingTextContent',
-                                            sequence: Infinity,
-                                        });
+                                        // Only add streaming content if it's not already represented in the last message
+                                        const lastMessage = lastGroup.messages[lastGroup.messages.length - 1];
+                                        if (lastMessage.message_id !== 'streamingTextContent') {
+                                            lastGroup.messages.push({
+                                                content: streamingTextContent,
+                                                type: 'assistant',
+                                                message_id: 'streamingTextContent',
+                                                metadata: 'streamingTextContent',
+                                                created_at: new Date().toISOString(),
+                                                updated_at: new Date().toISOString(),
+                                                is_llm_message: true,
+                                                thread_id: 'streamingTextContent',
+                                                sequence: Infinity,
+                                            });
+                                        }
                                     }
                                 }
 
-                                return groupedMessages.map((group, groupIndex) => {
+                                return finalGroupedMessages.map((group, groupIndex) => {
                                     if (group.type === 'user') {
                                         const message = group.messages[0];
                                         const messageContent = (() => {
@@ -514,16 +571,16 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                         return (
                                             <div key={group.key} ref={groupIndex === groupedMessages.length - 1 ? latestMessageRef : null}>
                                                 <div className="flex flex-col gap-2">
-                                                    {/* Logo positioned above the message content */}
+                                                    {/* Logo positioned above the message content - ONLY ONCE PER GROUP */}
                                                     <div className="flex items-center">
                                                         <div className="rounded-md flex items-center justify-center">
                                                             {agentAvatar}
                                                         </div>
                                                         <p className='ml-2 text-sm text-muted-foreground'>{agentName ? agentName : 'Suna'}</p>
                                                     </div>
-
-                                                    {/* Message content */}
-                                                    <div className="flex  max-w-[90%] rounded-lg text-sm break-words overflow-hidden">
+                                                    
+                                                    {/* Message content - ALL messages in the group */}
+                                                    <div className="flex max-w-[90%] rounded-lg text-sm break-words overflow-hidden">
                                                         <div className="space-y-2 min-w-0 flex-1">
                                                             {(() => {
                                                                 // In debug mode, just show raw messages content
@@ -567,13 +624,13 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
                                                                 const renderedToolResultIds = new Set<string>();
                                                                 const elements: React.ReactNode[] = [];
-                                                                let assistantMessageCount = 0; // Track assistant messages for spacing
+                                                                let assistantMessageCount = 0; // Move this outside the loop
 
                                                                 group.messages.forEach((message, msgIndex) => {
                                                                     if (message.type === 'assistant') {
                                                                         const parsedContent = safeJsonParse<ParsedContent>(message.content, {});
                                                                         const msgKey = message.message_id || `submsg-assistant-${msgIndex}`;
-
+                                                                        
                                                                         if (!parsedContent.content) return;
 
                                                                         const renderedContent = renderMarkdownContent(
@@ -587,20 +644,21 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                                         );
 
                                                                         elements.push(
-                                                                            <div key={msgKey} className={assistantMessageCount > 0 ? "mt-2" : ""}>
+                                                                            <div key={msgKey} className={assistantMessageCount > 0 ? "mt-4" : ""}>
                                                                                 <div className="prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-hidden">
                                                                                     {renderedContent}
                                                                                 </div>
                                                                             </div>
                                                                         );
-                                                                        assistantMessageCount++;
+                                                                        
+                                                                        assistantMessageCount++; // Increment after adding the element
                                                                     }
                                                                 });
 
                                                                 return elements;
                                                             })()}
 
-                                                            {groupIndex === groupedMessages.length - 1 && !readOnly && (streamHookStatus === 'streaming' || streamHookStatus === 'connecting') && (
+                                                            {groupIndex === finalGroupedMessages.length - 1 && !readOnly && (streamHookStatus === 'streaming' || streamHookStatus === 'connecting') && (
                                                                 <div className="mt-2">
                                                                     {(() => {
                                                                         // In debug mode, show raw streaming content
@@ -704,7 +762,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                             )}
 
                                                             {/* For playback mode, show streaming text and tool calls */}
-                                                            {readOnly && groupIndex === groupedMessages.length - 1 && isStreamingText && (
+                                                            {readOnly && groupIndex === finalGroupedMessages.length - 1 && isStreamingText && (
                                                                 <div className="mt-2">
                                                                     {(() => {
                                                                         let detectedTag: string | null = null;
@@ -789,7 +847,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                 </div>
                                                 <p className='ml-2 text-sm text-muted-foreground'>{agentName}</p>
                                             </div>
-
+                                            
                                             {/* Loader content */}
                                             <div className="space-y-2 w-full h-12">
                                                 <AgentLoader />
@@ -809,7 +867,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                             </div>
                                             <p className='ml-2 text-sm text-muted-foreground'>{agentName}</p>
                                         </div>
-
+                                        
                                         {/* Tool call content */}
                                         <div className="space-y-2">
                                             <div className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-medium text-primary bg-primary/10 rounded-md border border-primary/20">
@@ -834,7 +892,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                             </div>
                                             <p className='ml-2 text-sm text-muted-foreground'>{agentName}</p>
                                         </div>
-
+                                        
                                         {/* Streaming indicator content */}
                                         <div className="max-w-[90%] px-4 py-3 text-sm">
                                             <div className="flex items-center gap-1.5 py-1">
@@ -867,4 +925,4 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     );
 };
 
-export default ThreadContent;
+export default ThreadContent; 

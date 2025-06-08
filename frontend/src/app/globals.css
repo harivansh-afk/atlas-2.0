@@ -225,30 +225,20 @@
 }
 
 :root {
-  --features-card-bg: var(
-    --card
-  ); /* plain white for feature cards in light mode */
-  --features-card-folder-bg: var(
-    --card
-  ); /* plain white for folder cards in light mode */
-  --features-bg: oklch(0.98 0 0); /* very light neutral for features section */
-  --footer-link: oklch(0 0 0); /* black for light bg */
-  --footer-heading: oklch(0 0 0); /* black for headings */
-
   --background: oklch(98.46% 0.002 247.84);
-  --foreground: oklch(0 0 0); /* pure black */
-  --card: oklch(0.97 0 0);
-  --card-foreground: oklch(0 0 0); /* pure black */
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0 0 0); /* pure black */
-  --primary: oklch(0 0 0); /* pure black */
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(54.65% 0.246 262.87);
-  --secondary-foreground: oklch(0 0 0); /* pure black */
+  --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0 0 0); /* pure black for muted text too */
+  --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0 0 0); /* pure black */
+  --accent-foreground: oklch(0.145 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
@@ -260,23 +250,17 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0 0 0); /* pure black */
-  --sidebar-primary: oklch(0 0 0); /* pure black */
+  --sidebar: oklch(98.46% 0.002 247.84);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.922 0 0);
-  --sidebar-accent-foreground: oklch(0 0 0); /* pure black */
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
-  --features-card-bg: var(--card); /* use var(--card) for consistency */
-  --features-card-folder-bg: var(--card); /* use var(--card) for consistency */
-  --features-bg: oklch(0.17 0 0); /* very dark neutral for features section */
-  --footer-link: oklch(0.85 0 0); /* light gray for dark bg */
-  --footer-heading: oklch(0.98 0 0); /* white for headings */
-
   --background: oklch(0.185 0.005 285.823);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);
@@ -361,15 +345,6 @@
   }
 }
 
-/* Footer link styling */
-.footer-link {
-  color: var(--footer-link);
-  transition: color 0.2s;
-}
-.footer-link:hover {
-  color: var(--footer-heading);
-}
-
 /* Custom styles for Markdown chat content */
 .prose.chat-markdown {
   /* Ensure reasonable spacing */
@@ -442,7 +417,8 @@
     margin-top: 0.5em;
     margin-bottom: 0.5em;
     padding: 0.75em 1em;
-    background-color: theme('colors.slate.100');
+    /* background 95 */
+    background-color: theme('colors.background/95');
     border-radius: 0.375rem;
     overflow-x: auto;
     font-family: var(--font-mono);
@@ -464,7 +440,7 @@
     padding: 0.2em 0.4em;
     font-size: 0.85em;
     font-family: var(--font-mono);
-    background-color: theme('colors.slate.100');
+    background-color: theme('colors.background/95');
     border-radius: 3px;
     word-break: break-word;
   }
@@ -503,14 +479,14 @@
   .dark & {
     /* Code blocks in dark mode */
     & pre {
-      background-color: theme('colors.zinc.800');
-      border: 1px solid theme('colors.zinc.700');
+      background-color: theme('colors.background/95');
+      /* border: 1px solid theme('colors.zinc.700'); */
     }
 
     & code:not([class*='language-']) {
-      background-color: theme('colors.zinc.800');
+      background-color: theme('colors.background/95');
       color: theme('colors.zinc.200');
-      border: 1px solid theme('colors.zinc.700');
+      /* border: 1px solid theme('colors.zinc.700'); */
     }
 
     /* Tables in dark mode */
@@ -571,53 +547,49 @@
   }
 }
 
-@layer utilities {
-  .animate-background-shine {
-    animation: background-shine 2s linear infinite;
-  }
-
-  @keyframes background-shine {
-    from {
-      background-position: 0;
-    }
-    to {
-      background-position: -200%;
-    }
-  }
+.bg-pattern-grid {
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-/* Custom Prominent Shadows */
-.prominent-shadow {
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.1),
-    0 6px 6px rgba(0, 0, 0, 0.1);
+.dark .bg-pattern-grid {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-.extra-prominent-shadow {
-  box-shadow:
-    0 15px 30px rgba(0, 0, 0, 0.15),
-    0 10px 15px rgba(0, 0, 0, 0.1);
+.bg-checker-pattern {
+  background-image: linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
+    linear-gradient(-45deg, #f3f4f6 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f3f4f6 75%),
+    linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background-color: #ffffff;
 }
 
-/* If you want a specific shadow for buttons that also considers focus/hover states */
-.button-prominent-shadow {
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.12),
-    0 2px 6px rgba(0, 0, 0, 0.08);
-  transition: box-shadow 0.2s ease-in-out;
+.dark .bg-checker-pattern-dark {
+  background-image: linear-gradient(45deg, rgba(39, 39, 42, 0.7) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(39, 39, 42, 0.7) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(39, 39, 42, 0.7) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(39, 39, 42, 0.7) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background-color: rgba(24, 24, 27, 0.7);
 }
 
-.button-prominent-shadow:hover {
-  box-shadow:
-    0 8px 18px rgba(0, 0, 0, 0.15),
-    0 5px 10px rgba(0, 0, 0, 0.1);
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
 }
 
-.button-prominent-shadow:focus-visible {
-  box-shadow:
-    0 0 0 3px rgba(var(--primary-rgb), 0.4),
-    0 8px 18px rgba(0, 0, 0, 0.15),
-    0 5px 10px rgba(0, 0, 0, 0.1);
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 @theme {
@@ -657,7 +629,8 @@
   content: '';
   @apply absolute top-0 left-0 w-full h-full;
   background: linear-gradient(
-    140deg rgba(255, 255, 255, 0) 0%,
+    140deg
+    rgba(255, 255, 255, 0) 0%,
     rgba(255, 255, 255, 0.8) 50%,
     rgba(255, 255, 255, 0) 100%
   );
@@ -668,7 +641,7 @@
 
 @theme inline {
   --animate-shiny-text: shiny-text 5s infinite;
-
+ 
   @keyframes shiny-text {
     0%,
     90%,

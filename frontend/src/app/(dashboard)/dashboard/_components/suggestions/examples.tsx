@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   BarChart3,
@@ -161,25 +161,34 @@ export const Examples = ({
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
+  // Helper function to get a snippet from the query
+  const getQuerySnippet = (query: string, maxLength: number = 80) => {
+    if (query.length <= maxLength) return query;
+    const truncated = query.substring(0, maxLength);
+    const lastSpace = truncated.lastIndexOf(' ');
+    return lastSpace > 0 ? truncated.substring(0, lastSpace) + '...' : truncated + '...';
+  };
+
   return (
-    <div className="w-full max-w-4xl mx-auto px-4">
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-sm text-muted-foreground font-medium">Quick starts</span>
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-6">
+        <span className="text-lg text-foreground font-medium">Quick starts</span>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleRefresh}
-          className="h-7 px-3 text-xs text-muted-foreground hover:text-foreground"
+          className="h-8 px-3 text-sm text-muted-foreground hover:text-foreground"
         >
           <motion.div
             animate={{ rotate: isRefreshing ? 360 : 0 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
           >
-            <RefreshCw size={12} />
+            <RefreshCw size={14} />
           </motion.div>
+          <span className="ml-2">Refresh</span>
         </Button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {displayedPrompts.map((prompt, index) => (
           <motion.div
             key={`${prompt.title}-${index}`}
@@ -192,19 +201,27 @@ export const Examples = ({
             }}
           >
             <Card
-              className="group cursor-pointer h-full shadow-none transition-all bg-sidebar hover:bg-neutral-100 dark:hover:bg-neutral-800/60 p-0 justify-center min-h-[80px]"
+              className="cursor-pointer h-full bg-muted/50 dark:bg-muted/30 border border-border min-h-[140px]"
               onClick={() => onSelectPrompt && onSelectPrompt(prompt.query)}
             >
-              <CardHeader className="p-4 h-full flex flex-col justify-center">
+              <CardContent className="p-6 h-full flex flex-col justify-between">
+                {/* Quote snippet at the top */}
+                <div className="mb-4">
+                  <blockquote className="text-sm text-muted-foreground italic leading-relaxed">
+                    "{getQuerySnippet(prompt.query)}"
+                  </blockquote>
+                </div>
+
+                {/* Title and icon at the bottom */}
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0">
-                    {React.cloneElement(prompt.icon as React.ReactElement, { size: 18 })}
+                    {React.cloneElement(prompt.icon as React.ReactElement, { size: 20 })}
                   </div>
-                  <CardTitle className="font-medium group-hover:text-foreground transition-all text-muted-foreground text-sm leading-relaxed line-clamp-2">
+                  <CardTitle className="font-semibold text-foreground text-base leading-tight">
                     {prompt.title}
                   </CardTitle>
                 </div>
-              </CardHeader>
+              </CardContent>
             </Card>
           </motion.div>
         ))}

@@ -130,43 +130,65 @@ async def run_agent(
         if config.RAPID_API_KEY and enabled_tools.get('data_providers_tool', {}).get('enabled', False):
             thread_manager.add_tool(DataProvidersTool)
 
-    # Register MCP tool wrapper if agent has configured MCPs
+    # Register MCP tool wrapper if agent has configured MCPs or custom MCPs
     mcp_wrapper_instance = None
-    if agent_config and agent_config.get('configured_mcps'):
-        logger.info(f"Registering MCP tool wrapper for {len(agent_config['configured_mcps'])} MCP servers")
-        # Register the tool
-        thread_manager.add_tool(MCPToolWrapper, mcp_configs=agent_config['configured_mcps'])
+    if agent_config:
+        # Merge configured_mcps and custom_mcps
+        all_mcps = []
         
-        # Get the tool instance from the registry
-        # The tool is registered with method names as keys
-        for tool_name, tool_info in thread_manager.tool_registry.tools.items():
-            if isinstance(tool_info['instance'], MCPToolWrapper):
-                mcp_wrapper_instance = tool_info['instance']
-                break
+        # Add standard configured MCPs
+        if agent_config.get('configured_mcps'):
+            all_mcps.extend(agent_config['configured_mcps'])
         
-        # Initialize the MCP tools asynchronously
-        if mcp_wrapper_instance:
-            try:
-                await mcp_wrapper_instance.initialize_and_register_tools()
-                logger.info("MCP tools initialized successfully")
+        # Add custom MCPs
+        if agent_config.get('custom_mcps'):
+            for custom_mcp in agent_config['custom_mcps']:
+                # Transform custom MCP to standard format
+                mcp_config = {
+                    'name': custom_mcp['name'],
+                    'qualifiedName': f"custom_{custom_mcp['type']}_{custom_mcp['name'].replace(' ', '_').lower()}",
+                    'config': custom_mcp['config'],
+                    'enabledTools': custom_mcp.get('enabledTools', []),
+                    'isCustom': True,
+                    'customType': custom_mcp['type']
+                }
+                all_mcps.append(mcp_config)
+        
+        if all_mcps:
+            logger.info(f"Registering MCP tool wrapper for {len(all_mcps)} MCP servers (including {len(agent_config.get('custom_mcps', []))} custom)")
+            # Register the tool with all MCPs
+            thread_manager.add_tool(MCPToolWrapper, mcp_configs=all_mcps)
+            
+            # Get the tool instance from the registry
+            # The tool is registered with method names as keys
+            for tool_name, tool_info in thread_manager.tool_registry.tools.items():
+                if isinstance(tool_info['instance'], MCPToolWrapper):
+                    mcp_wrapper_instance = tool_info['instance']
+                    break
+            
+            # Initialize the MCP tools asynchronously
+            if mcp_wrapper_instance:
+                try:
+                    await mcp_wrapper_instance.initialize_and_register_tools()
+                    logger.info("MCP tools initialized successfully")
+                    
+                    # Re-register the updated schemas with the tool registry
+                    # This ensures the dynamically created tools are available for function calling
+                    updated_schemas = mcp_wrapper_instance.get_schemas()
+                    for method_name, schema_list in updated_schemas.items():
+                        if method_name != 'call_mcp_tool':  # Skip the fallback method
+                            # Register each dynamic tool in the registry
+                            for schema in schema_list:
+                                if schema.schema_type == SchemaType.OPENAPI:
+                                    thread_manager.tool_registry.tools[method_name] = {
+                                        "instance": mcp_wrapper_instance,
+                                        "schema": schema
+                                    }
+                                    logger.debug(f"Registered dynamic MCP tool: {method_name}")
                 
-                # Re-register the updated schemas with the tool registry
-                # This ensures the dynamically created tools are available for function calling
-                updated_schemas = mcp_wrapper_instance.get_schemas()
-                for method_name, schema_list in updated_schemas.items():
-                    if method_name != 'call_mcp_tool':  # Skip the fallback method
-                        # Register each dynamic tool in the registry
-                        for schema in schema_list:
-                            if schema.schema_type == SchemaType.OPENAPI:
-                                thread_manager.tool_registry.tools[method_name] = {
-                                    "instance": mcp_wrapper_instance,
-                                    "schema": schema
-                                }
-                                logger.debug(f"Registered dynamic MCP tool: {method_name}")
-                
-            except Exception as e:
-                logger.error(f"Failed to initialize MCP tools: {e}")
-                # Continue without MCP tools if initialization fails
+                except Exception as e:
+                    logger.error(f"Failed to initialize MCP tools: {e}")
+                    # Continue without MCP tools if initialization fails
 
     # Prepare system prompt
     # First, get the default system prompt
@@ -200,7 +222,7 @@ async def run_agent(
         logger.info("Using default system prompt only")
     
     # Add MCP tool information to system prompt if MCP tools are configured
-    if agent_config and agent_config.get('configured_mcps') and mcp_wrapper_instance and mcp_wrapper_instance._initialized:
+    if agent_config and (agent_config.get('configured_mcps') or agent_config.get('custom_mcps')) and mcp_wrapper_instance and mcp_wrapper_instance._initialized:
         mcp_info = "\n\n--- MCP Tools Available ---\n"
         mcp_info += "You have access to external MCP (Model Context Protocol) server tools.\n"
         mcp_info += "MCP tools can be called directly using their native function names in the standard function calling format:\n"
@@ -268,7 +290,9 @@ async def run_agent(
 
     latest_user_message = await client.table('messages').select('*').eq('thread_id', thread_id).eq('type', 'user').order('created_at', desc=True).limit(1).execute()
     if latest_user_message.data and len(latest_user_message.data) > 0:
-        data = json.loads(latest_user_message.data[0]['content'])
+        data = latest_user_message.data[0]['content']
+        if isinstance(data, str):
+            data = json.loads(data)
         trace.update(input=data['content'])
 
     while continue_execution and iteration_count < max_iterations:
@@ -305,14 +329,16 @@ async def run_agent(
         latest_browser_state_msg = await client.table('messages').select('*').eq('thread_id', thread_id).eq('type', 'browser_state').order('created_at', desc=True).limit(1).execute()
         if latest_browser_state_msg.data and len(latest_browser_state_msg.data) > 0:
             try:
-                browser_content = json.loads(latest_browser_state_msg.data[0]["content"])
+                browser_content = latest_browser_state_msg.data[0]["content"]
+                if isinstance(browser_content, str):
+                    browser_content = json.loads(browser_content)
                 screenshot_base64 = browser_content.get("screenshot_base64")
-                screenshot_url = browser_content.get("screenshot_url")
+                screenshot_url = browser_content.get("image_url")
                 
                 # Create a copy of the browser state without screenshot data
                 browser_state_text = browser_content.copy()
                 browser_state_text.pop('screenshot_base64', None)
-                browser_state_text.pop('screenshot_url', None)
+                browser_state_text.pop('image_url', None)
 
                 if browser_state_text:
                     temp_message_content_list.append({
@@ -326,6 +352,7 @@ async def run_agent(
                         "type": "image_url",
                         "image_url": {
                             "url": screenshot_url,
+                            "format": "image/jpeg"
                         }
                     })
                 elif screenshot_base64:
@@ -347,7 +374,7 @@ async def run_agent(
         latest_image_context_msg = await client.table('messages').select('*').eq('thread_id', thread_id).eq('type', 'image_context').order('created_at', desc=True).limit(1).execute()
         if latest_image_context_msg.data and len(latest_image_context_msg.data) > 0:
             try:
-                image_context_content = json.loads(latest_image_context_msg.data[0]["content"])
+                image_context_content = latest_image_context_msg.data[0]["content"] if isinstance(latest_image_context_msg.data[0]["content"], dict) else json.loads(latest_image_context_msg.data[0]["content"])
                 base64_image = image_context_content.get("base64")
                 mime_type = image_context_content.get("mime_type")
                 file_path = image_context_content.get("file_path", "unknown file")

@@ -15,6 +15,7 @@ import { useAgents } from '@/hooks/react-query/agents/use-agents';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { CreateAgentDialog } from '@/app/(dashboard)/agents/_components/create-agent-dialog';
+import { useFeatureFlags } from '@/lib/feature-flags';
 
 interface AgentSelectorProps {
   onAgentSelect?: (agentId: string | undefined) => void;
@@ -23,11 +24,11 @@ interface AgentSelectorProps {
   variant?: 'default' | 'heading';
 }
 
-export function AgentSelector({
-  onAgentSelect,
-  selectedAgentId,
+export function AgentSelector({ 
+  onAgentSelect, 
+  selectedAgentId, 
   className,
-  variant = 'default'
+  variant = 'default',
 }: AgentSelectorProps) {
   const { data: agentsResponse, isLoading, refetch: loadAgents } = useAgents({
     limit: 100,
@@ -35,17 +36,21 @@ export function AgentSelector({
     sort_order: 'asc'
   });
 
+  
+  const { flags, loading: flagsLoading } = useFeatureFlags(['custom_agents']);
+  const customAgentsEnabled = flags.custom_agents;
+  
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const agents = agentsResponse?.agents || [];
   const defaultAgent = agents.find(agent => agent.is_default);
-  const currentAgent = selectedAgentId
+  const currentAgent = selectedAgentId 
     ? agents.find(agent => agent.agent_id === selectedAgentId)
     : null;
 
-  const displayName = currentAgent?.name || defaultAgent?.name || 'Atlas';
+  const displayName = currentAgent?.name || defaultAgent?.name || 'Suna';
   const agentAvatar = currentAgent?.avatar;
   const isUsingSuna = !currentAgent && !defaultAgent;
 
@@ -69,6 +74,18 @@ export function AgentSelector({
     setIsOpen(false);
   };
 
+  if (!customAgentsEnabled) {
+    if (variant === 'heading') {
+      return (
+        <div className={cn("flex items-center", className)}>
+          <span className="tracking-tight text-4xl font-semibold leading-tight text-primary">
+            Suna
+          </span>
+        </div>
+      );
+    }
+  }
+
   if (isLoading) {
     if (variant === 'heading') {
       return (
@@ -79,7 +96,7 @@ export function AgentSelector({
         </div>
       );
     }
-
+    
     return (
       <div className={cn("flex items-center gap-2", className)}>
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-background">
@@ -112,7 +129,7 @@ export function AgentSelector({
                 </div>
               </Button>
             </DropdownMenuTrigger>
-
+            
             <DropdownMenuContent align="start" className="w-[320px]">
               <div className="px-3 py-2">
                 <p className="text-sm font-medium">Select an agent</p>
@@ -120,7 +137,7 @@ export function AgentSelector({
               </div>
 
               <DropdownMenuSeparator />
-
+              
               <DropdownMenuItem
                 onClick={() => handleClearSelection()}
                 className="flex flex-col items-start gap-1 p-3 cursor-pointer"
@@ -128,7 +145,7 @@ export function AgentSelector({
                 <div className="flex items-center gap-2 w-full">
                   <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div className="flex items-center gap-1 flex-1 min-w-0">
-                    <span className="font-medium truncate">Atlas</span>
+                    <span className="font-medium truncate">Suna</span>
                     <Badge variant="outline" className="text-xs px-1 py-0 flex-shrink-0">
                       Default
                     </Badge>
@@ -175,7 +192,7 @@ export function AgentSelector({
               ) : null}
 
               <DropdownMenuSeparator />
-
+              
               <DropdownMenuItem onClick={handleCreateAgent} className="cursor-pointer">
                 Agent Playground
               </DropdownMenuItem>
@@ -232,7 +249,7 @@ export function AgentSelector({
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
-
+          
           <DropdownMenuContent align="start" className="w-[280px]">
             <DropdownMenuItem
               onClick={() => handleClearSelection()}
@@ -241,7 +258,7 @@ export function AgentSelector({
               <div className="flex items-center gap-2 w-full">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <div className="flex items-center gap-1 flex-1">
-                  <span className="font-medium">Atlas</span>
+                  <span className="font-medium">Suna</span>
                   <Badge variant="outline" className="text-xs px-1 py-0">
                     Default
                   </Badge>
@@ -286,14 +303,14 @@ export function AgentSelector({
                 ))}
               </>
             ) : null}
-
+            
             <DropdownMenuSeparator />
-
+            
             <DropdownMenuItem onClick={handleCreateAgent} className="cursor-pointer">
               <Plus className="h-4 w-4" />
               Create New Agent
             </DropdownMenuItem>
-
+            
             <DropdownMenuItem onClick={handleManageAgents} className="cursor-pointer">
               <Bot className="h-4 w-4" />
               Manage All Agents
@@ -301,7 +318,7 @@ export function AgentSelector({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
+      
       <CreateAgentDialog
         isOpen={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
