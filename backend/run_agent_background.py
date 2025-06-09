@@ -14,6 +14,7 @@ from services.supabase import DBConnection
 from services import redis
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 import os
+import pika
 from services.langfuse import langfuse
 
 # RabbitMQ configuration - support both URL and individual parameters
@@ -31,11 +32,13 @@ else:
     rabbitmq_pass = os.getenv("RABBITMQ_PASS", "guest")
     rabbitmq_vhost = os.getenv("RABBITMQ_VHOST", "/")
 
+    # Create credentials object for pika
+    credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
+
     rabbitmq_broker = RabbitmqBroker(
         host=rabbitmq_host,
         port=rabbitmq_port,
-        username=rabbitmq_user,
-        password=rabbitmq_pass,
+        credentials=credentials,
         virtual_host=rabbitmq_vhost,
         middleware=[dramatiq.middleware.AsyncIO()],
     )
