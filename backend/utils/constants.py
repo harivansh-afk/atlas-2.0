@@ -4,6 +4,7 @@ MODEL_ACCESS_TIERS = {
         "openrouter/qwen/qwen3-235b-a22b",
         "openrouter/google/gemini-2.5-flash-preview-05-20",
         "anthropic/claude-sonnet-4-20250514",
+        "anthropic/claude-3-5-haiku-latest",
     ],
     "tier_2_20": [
         "openrouter/deepseek/deepseek-chat",
@@ -108,6 +109,7 @@ MODEL_NAME_ALIASES = {
     # Short names to full names
     "sonnet-3.7": "anthropic/claude-3-7-sonnet-latest",
     "sonnet-3.5": "anthropic/claude-3-5-sonnet-latest",
+    "sonnet-4": "anthropic/claude-sonnet-4-20250514",
     "haiku-3.5": "anthropic/claude-3-5-haiku-latest",
     "claude-sonnet-4": "anthropic/claude-sonnet-4-20250514",
     # "gpt-4.1": "openai/gpt-4.1-2025-04-14",  # Commented out in constants.py

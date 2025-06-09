@@ -288,9 +288,9 @@ export const useModelSelection = () => {
         },
         {
           id: DEFAULT_PREMIUM_MODEL_ID,
-          label: 'Claude Opus 4',
-          requiresSubscription: true,
-          description: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.description || MODEL_TIERS.premium.baseDescription,
+          label: 'Claude Sonnet 4',
+          requiresSubscription: false,
+          description: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.description || MODEL_TIERS.free.baseDescription,
           priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
         },
       ];
