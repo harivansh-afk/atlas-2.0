@@ -121,7 +121,7 @@ const allPrompts: PromptExample[] = [
 ];
 
 // Function to get random prompts
-const getRandomPrompts = (count: number = 9): PromptExample[] => {
+const getRandomPrompts = (count: number = 6): PromptExample[] => {
   const shuffled = [...allPrompts].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 };
@@ -182,56 +182,54 @@ const ExampleCard = ({
         className="cursor-pointer h-full bg-muted/50 dark:bg-muted/30 border border-border min-h-[100px] transition-shadow duration-300 hover:shadow-lg"
         onClick={() => onSelectPrompt && onSelectPrompt(prompt.query)}
       >
-        <CardContent className="px-3 py-2 h-full flex flex-col justify-between">
+        <CardContent className="px-3 py-3 h-full flex flex-col space-y-2">
           {/* Quote snippet at the top */}
-          <div className="mb-1.5">
+          <div>
             <blockquote className="text-sm text-muted-foreground italic leading-relaxed">
               "{getQuerySnippet(prompt.query)}"
             </blockquote>
           </div>
 
-          <div className="space-y-1.5">
-            {/* Title only */}
-            <CardTitle className="font-semibold text-foreground text-sm leading-tight">
-              {prompt.title}
-            </CardTitle>
+          {/* Title */}
+          <CardTitle className="font-semibold text-foreground text-sm leading-tight">
+            {prompt.title}
+          </CardTitle>
 
-            {/* Integration icons tray - larger size */}
-            {prompt.integrations && prompt.integrations.length > 0 && (
-              <div className="flex items-center">
-                {prompt.integrations.slice(0, 5).map((integration, idx) => {
-                  const IconComponent = integrationIcons[integration] || Search;
-                  return (
-                    <div
-                      key={integration}
-                      className="relative flex items-center justify-center bg-background border border-border rounded-full shadow-sm"
-                      style={{
-                        height: 28,
-                        width: 28,
-                        marginLeft: idx > 0 ? '-8px' : '0',
-                        zIndex: prompt.integrations!.length - idx,
-                      }}
-                    >
-                      <IconComponent className="text-muted-foreground" size={16} />
-                    </div>
-                  );
-                })}
-                {prompt.integrations.length > 5 && (
+          {/* Integration icons tray - larger size */}
+          {prompt.integrations && prompt.integrations.length > 0 && (
+            <div className="flex items-center">
+              {prompt.integrations.slice(0, 5).map((integration, idx) => {
+                const IconComponent = integrationIcons[integration] || Search;
+                return (
                   <div
-                    className="flex items-center justify-center bg-muted border border-border rounded-full text-xs text-muted-foreground font-medium shadow-sm"
+                    key={integration}
+                    className="relative flex items-center justify-center bg-background border border-border rounded-full shadow-sm p-2"
                     style={{
-                      height: 28,
-                      width: 28,
-                      marginLeft: '-8px',
-                      zIndex: 0,
+                      height: 32,
+                      width: 32,
+                      marginLeft: idx > 0 ? '-10px' : '0',
+                      zIndex: prompt.integrations!.length - idx,
                     }}
                   >
-                    +{prompt.integrations.length - 5}
+                    <IconComponent className="text-muted-foreground" size={20} />
                   </div>
-                )}
-              </div>
-            )}
-          </div>
+                );
+              })}
+              {prompt.integrations.length > 5 && (
+                <div
+                  className="flex items-center justify-center bg-muted border border-border rounded-full text-sm text-muted-foreground font-medium shadow-sm"
+                  style={{
+                    height: 32,
+                    width: 32,
+                    marginLeft: '-10px',
+                    zIndex: 0,
+                  }}
+                >
+                  +{prompt.integrations.length - 5}
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
@@ -248,19 +246,21 @@ export const Examples = ({
 
   // Initialize with random prompts on mount
   useEffect(() => {
-    setDisplayedPrompts(getRandomPrompts(9));
+    setDisplayedPrompts(getRandomPrompts(6));
   }, []);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    setDisplayedPrompts(getRandomPrompts(9));
-    setTimeout(() => setIsRefreshing(false), 500);
+    // Use a smooth transition instead of remounting components
+    setTimeout(() => {
+      setDisplayedPrompts(getRandomPrompts(6));
+      setIsRefreshing(false);
+    }, 250);
   };
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-6">
-        <span className="text-lg text-foreground font-medium">Atlas Agent Workflows</span>
+      <div className="flex justify-end items-center mb-4">
         <Button
           variant="ghost"
           size="sm"
@@ -276,16 +276,22 @@ export const Examples = ({
           <span className="ml-2">Refresh</span>
         </Button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        key={displayedPrompts.map(p => p.title).join('-')}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
         {displayedPrompts.map((prompt, index) => (
           <ExampleCard
-            key={`${prompt.title}-${index}-${isRefreshing}`}
+            key={`${prompt.title}-${index}`}
             prompt={prompt}
             index={index}
             onSelectPrompt={onSelectPrompt}
           />
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 };

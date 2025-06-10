@@ -58,7 +58,7 @@ export default function AgentConfigurationPage() {
 
   useEffect(() => {
     if (!initialLayoutAppliedRef.current) {
-      setOpen(false);
+      setOpen(true);
       initialLayoutAppliedRef.current = true;
     }
   }, [setOpen]);
@@ -146,7 +146,7 @@ export default function AgentConfigurationPage() {
         saveAgent(data);
       }
     }, 500);
-    
+
     debounceTimerRef.current = timer;
   }, [saveAgent, hasDataChanged]);
 
@@ -155,7 +155,7 @@ export default function AgentConfigurationPage() {
       ...currentFormDataRef.current,
       [field]: value
     };
-    
+
     setFormData(newFormData);
     debouncedSave(newFormData);
   }, [debouncedSave]);
@@ -166,16 +166,16 @@ export default function AgentConfigurationPage() {
       configured_mcps: updates.configured_mcps,
       custom_mcps: updates.custom_mcps
     };
-    
+
     setFormData(newFormData);
     debouncedSave(newFormData);
   }, [debouncedSave]);
 
   const scrollToAccordion = useCallback(() => {
     if (accordionRef.current) {
-      accordionRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'end' 
+      accordionRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end'
       });
     }
   }, []);
@@ -286,7 +286,7 @@ export default function AgentConfigurationPage() {
             </DrawerContent>
           </Drawer>
         </div>
-        
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
           <div className='w-full flex items-center justify-center flex-shrink-0 px-4 md:px-12 md:mt-10'>
             <div className='w-auto flex items-center gap-2'>
@@ -307,13 +307,13 @@ export default function AgentConfigurationPage() {
                 {getSaveStatusBadge()}
               </div>
               <div className='flex items-start md:items-center flex-col md:flex-row mt-6'>
-                <StylePicker 
-                  agentId={agentId} 
+                <StylePicker
+                  agentId={agentId}
                   currentEmoji={currentStyle.avatar}
                   currentColor={currentStyle.color}
                   onStyleChange={handleStyleChange}
                 >
-                  <div 
+                  <div
                     className="flex-shrink-0 h-12 w-12 md:h-16 md:w-16 flex items-center justify-center rounded-2xl text-xl md:text-2xl cursor-pointer hover:opacity-80 transition-opacity mb-3 md:mb-0"
                     style={{ backgroundColor: currentStyle.color }}
                   >
@@ -349,9 +349,9 @@ export default function AgentConfigurationPage() {
               </div>
 
               <div ref={accordionRef} className="mt-6 border-t">
-                <Accordion 
-                  type="multiple" 
-                  defaultValue={[]} 
+                <Accordion
+                  type="multiple"
+                  defaultValue={[]}
                   className="space-y-2"
                   onValueChange={scrollToAccordion}
                 >
@@ -392,7 +392,7 @@ export default function AgentConfigurationPage() {
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="agent-builder" className="mt-0 flex-1 flex flex-col overflow-hidden">
             {memoizedAgentBuilderChat}
           </TabsContent>
@@ -441,7 +441,7 @@ export default function AgentConfigurationPage() {
   if (error || !agent) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const isAccessDenied = errorMessage.includes('Access denied') || errorMessage.includes('403');
-    
+
     return (
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="text-center space-y-4">

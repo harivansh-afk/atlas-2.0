@@ -399,7 +399,7 @@ export default function ThreadPage({
   // Effects
   useEffect(() => {
     if (!initialLayoutAppliedRef.current) {
-      setLeftSidebarOpen(false);
+      setLeftSidebarOpen(true);
       initialLayoutAppliedRef.current = true;
     }
   }, [setLeftSidebarOpen]);

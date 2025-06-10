@@ -102,6 +102,11 @@ export default function HeroSectionFive() {
                             src="/collective.png"
                             alt="Esports Collective Logo"
                         />
+                        <img
+                            className="h-14 w-auto object-contain opacity-90 transition hover:opacity-100 dark:invert"
+                            src="/leap-labs.png"
+                            alt="Leap Labs Logo"
+                        />
                     </div>
                 </div>
             </div>

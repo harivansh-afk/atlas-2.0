@@ -234,7 +234,7 @@ export function DashboardContent() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="w-full overflow-hidden px-8 pb-8"
+                className="w-full overflow-hidden px-8 pb-4"
               >
                 <Examples onSelectPrompt={setInputValue} />
               </motion.div>
