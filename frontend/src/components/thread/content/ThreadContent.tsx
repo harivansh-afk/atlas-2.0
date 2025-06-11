@@ -93,11 +93,11 @@ export function renderMarkdownContent(
     if (isNewXmlFormat(content)) {
         const contentParts: React.ReactNode[] = [];
         let lastIndex = 0;
-        
+
         // Find all function_calls blocks
         const functionCallsRegex = /<function_calls>([\s\S]*?)<\/function_calls>/gi;
         let match;
-        
+
         while ((match = functionCallsRegex.exec(content)) !== null) {
             // Add text before the function_calls block
             if (match.index > lastIndex) {
@@ -110,22 +110,22 @@ export function renderMarkdownContent(
                     );
                 }
             }
-            
+
             // Parse the tool calls in this block
             const toolCalls = parseXmlToolCalls(match[0]);
-            
+
             toolCalls.forEach((toolCall, index) => {
                 const toolName = toolCall.functionName.replace(/_/g, '-');
-                
+
                 if (toolName === 'ask') {
                     // Handle ask tool specially - extract text and attachments
                     const askText = toolCall.parameters.text || '';
                     const attachments = toolCall.parameters.attachments || [];
-                    
+
                     // Convert single attachment to array for consistent handling
-                    const attachmentArray = Array.isArray(attachments) ? attachments : 
+                    const attachmentArray = Array.isArray(attachments) ? attachments :
                                           (typeof attachments === 'string' ? attachments.split(',').map(a => a.trim()) : []);
-                    
+
                     // Render ask tool content with attachment UI
                     contentParts.push(
                         <div key={`ask-${match.index}-${index}`} className="space-y-3">
@@ -135,7 +135,7 @@ export function renderMarkdownContent(
                     );
                 } else {
                     const IconComponent = getToolIcon(toolName);
-                    
+
                     // Extract primary parameter for display
                     let paramDisplay = '';
                     if (toolCall.parameters.file_path) {
@@ -147,7 +147,7 @@ export function renderMarkdownContent(
                     } else if (toolCall.parameters.url) {
                         paramDisplay = toolCall.parameters.url;
                     }
-                    
+
                     contentParts.push(
                         <div key={`tool-${match.index}-${index}`} className="my-1">
                             <button
@@ -164,10 +164,10 @@ export function renderMarkdownContent(
                     );
                 }
             });
-            
+
             lastIndex = match.index + match[0].length;
         }
-        
+
         // Add any remaining text after the last function_calls block
         if (lastIndex < content.length) {
             const remainingText = content.substring(lastIndex);
@@ -179,7 +179,7 @@ export function renderMarkdownContent(
                 );
             }
         }
-        
+
         return contentParts.length > 0 ? contentParts : <Markdown className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none break-words">{content}</Markdown>;
     }
 
@@ -243,7 +243,7 @@ export function renderMarkdownContent(
                         {paramDisplay && <span className="ml-1 text-muted-foreground truncate max-w-[200px]" title={paramDisplay}>{paramDisplay}</span>}
                     </button>
                 </div>
-            ); 
+            );
         }
         lastIndex = xmlRegex.lastIndex;
     }
@@ -297,7 +297,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     project,
     debugMode = false,
     isPreviewMode = false,
-    agentName = 'Suna',
+    agentName = 'Atlas',
     agentAvatar = <KortixLogo size={16} />,
     emptyStateComponent,
 }) => {
@@ -311,7 +311,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     // React Query file preloader
     const { preloadFiles } = useFilePreloader();
 
-    const containerClassName = isPreviewMode 
+    const containerClassName = isPreviewMode
         ? "flex-1 overflow-y-auto scrollbar-thin scrollbar-track-secondary/0 scrollbar-thumb-primary/10 scrollbar-thumb-rounded-full hover:scrollbar-thumb-primary/10 px-6 py-4 pb-72"
         : "flex-1 overflow-y-auto scrollbar-thin scrollbar-track-secondary/0 scrollbar-thumb-primary/10 scrollbar-thumb-rounded-full hover:scrollbar-thumb-primary/10 px-6 py-4 pb-72 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60";
 
@@ -576,9 +576,9 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                         <div className="rounded-md flex items-center justify-center">
                                                             {agentAvatar}
                                                         </div>
-                                                        <p className='ml-2 text-sm text-muted-foreground'>{agentName ? agentName : 'Suna'}</p>
+                                                        <p className='ml-2 text-sm text-muted-foreground'>{agentName ? agentName : 'Atlas'}</p>
                                                     </div>
-                                                    
+
                                                     {/* Message content - ALL messages in the group */}
                                                     <div className="flex max-w-[90%] rounded-lg text-sm break-words overflow-hidden">
                                                         <div className="space-y-2 min-w-0 flex-1">
@@ -630,7 +630,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                                     if (message.type === 'assistant') {
                                                                         const parsedContent = safeJsonParse<ParsedContent>(message.content, {});
                                                                         const msgKey = message.message_id || `submsg-assistant-${msgIndex}`;
-                                                                        
+
                                                                         if (!parsedContent.content) return;
 
                                                                         const renderedContent = renderMarkdownContent(
@@ -650,7 +650,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                                                 </div>
                                                                             </div>
                                                                         );
-                                                                        
+
                                                                         assistantMessageCount++; // Increment after adding the element
                                                                     }
                                                                 });
@@ -847,7 +847,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                 </div>
                                                 <p className='ml-2 text-sm text-muted-foreground'>{agentName}</p>
                                             </div>
-                                            
+
                                             {/* Loader content */}
                                             <div className="space-y-2 w-full h-12">
                                                 <AgentLoader />
@@ -867,7 +867,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                             </div>
                                             <p className='ml-2 text-sm text-muted-foreground'>{agentName}</p>
                                         </div>
-                                        
+
                                         {/* Tool call content */}
                                         <div className="space-y-2">
                                             <div className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-medium text-primary bg-primary/10 rounded-md border border-primary/20">
@@ -892,7 +892,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                             </div>
                                             <p className='ml-2 text-sm text-muted-foreground'>{agentName}</p>
                                         </div>
-                                        
+
                                         {/* Streaming indicator content */}
                                         <div className="max-w-[90%] px-4 py-3 text-sm">
                                             <div className="flex items-center gap-1.5 py-1">
@@ -925,4 +925,4 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     );
 };
 
-export default ThreadContent; 
+export default ThreadContent;

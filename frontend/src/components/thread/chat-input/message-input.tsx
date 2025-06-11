@@ -110,8 +110,9 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     };
 
     return (
-      <div className="flex flex-col w-full h-auto gap-4 justify-between">
-        <div className="flex gap-2 items-center px-2">
+      <div className="relative flex flex-col w-full h-auto gap-4 justify-between">
+
+        <div className="flex flex-col gap-2 items-center px-2">
           <Textarea
             ref={ref}
             value={value}
@@ -126,6 +127,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             rows={2}
           />
         </div>
+
 
         <div className="flex items-center justify-between mt-1 ml-3 mb-1 pr-2">
           <div className="flex items-center gap-3">

@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import { useModal } from '@/hooks/use-modal-store';
 import { Examples } from './suggestions/examples';
 import { useThreadQuery } from '@/hooks/react-query/threads/use-threads';
+import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -114,7 +115,8 @@ export function DashboardContent() {
       }
 
       files.forEach((file, index) => {
-        formData.append('files', file, file.name);
+        const normalizedName = normalizeFilenameToNFC(file.name);
+        formData.append('files', file, normalizedName);
       });
 
       if (options?.model_name) formData.append('model_name', options.model_name);

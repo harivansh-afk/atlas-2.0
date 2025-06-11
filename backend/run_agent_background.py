@@ -16,6 +16,7 @@ from dramatiq.brokers.rabbitmq import RabbitmqBroker
 import os
 import pika
 from services.langfuse import langfuse
+from utils.retry import retry
 
 # RabbitMQ configuration - support both URL and individual parameters
 rabbitmq_url = os.getenv("RABBITMQ_URL")
@@ -53,19 +54,12 @@ instance_id = "single"
 async def initialize():
     """Initialize the agent API with resources from the main API."""
     global db, instance_id, _initialized
-    if _initialized:
-        try:
-            await redis.client.ping()
-        except Exception as e:
-            logger.warning(f"Redis connection failed, re-initializing: {e}")
-            await redis.initialize_async(force=True)
-        return
 
     # Use provided instance_id or generate a new one
     if not instance_id:
         # Generate instance ID
         instance_id = str(uuid.uuid4())[:8]
-    await redis.initialize_async()
+    await retry(lambda: redis.initialize_async())
     await db.initialize()
 
     _initialized = True
@@ -93,6 +87,33 @@ async def run_agent_background(
     except Exception as e:
         logger.critical(f"Failed to initialize Redis connection: {e}")
         raise e
+
+    # Idempotency check: prevent duplicate runs
+    run_lock_key = f"agent_run_lock:{agent_run_id}"
+
+    # Try to acquire a lock for this agent run
+    lock_acquired = await redis.set(
+        run_lock_key, instance_id, nx=True, ex=redis.REDIS_KEY_TTL
+    )
+
+    if not lock_acquired:
+        # Check if the run is already being handled by another instance
+        existing_instance = await redis.get(run_lock_key)
+        if existing_instance:
+            logger.info(
+                f"Agent run {agent_run_id} is already being processed by instance {existing_instance.decode() if isinstance(existing_instance, bytes) else existing_instance}. Skipping duplicate execution."
+            )
+            return
+        else:
+            # Lock exists but no value, try to acquire again
+            lock_acquired = await redis.set(
+                run_lock_key, instance_id, nx=True, ex=redis.REDIS_KEY_TTL
+            )
+            if not lock_acquired:
+                logger.info(
+                    f"Agent run {agent_run_id} is already being processed by another instance. Skipping duplicate execution."
+                )
+                return
 
     sentry.sentry.set_tag("thread_id", thread_id)
 
@@ -166,7 +187,18 @@ async def run_agent_background(
     try:
         # Setup Pub/Sub listener for control signals
         pubsub = await redis.create_pubsub()
-        await pubsub.subscribe(instance_control_channel, global_control_channel)
+        try:
+            await retry(
+                lambda: pubsub.subscribe(
+                    instance_control_channel, global_control_channel
+                )
+            )
+        except Exception as e:
+            logger.error(
+                f"Redis failed to subscribe to control channels: {e}", exc_info=True
+            )
+            raise e
+
         logger.debug(
             f"Subscribed to control channels: {instance_control_channel}, {global_control_channel}"
         )
@@ -353,6 +385,9 @@ async def run_agent_background(
         # Remove the instance-specific active run key
         await _cleanup_redis_instance_key(agent_run_id)
 
+        # Clean up the run lock
+        await _cleanup_redis_run_lock(agent_run_id)
+
         # Wait for all pending redis operations to complete, with timeout
         try:
             await asyncio.wait_for(
@@ -380,6 +415,19 @@ async def _cleanup_redis_instance_key(agent_run_id: str):
         logger.debug(f"Successfully cleaned up Redis key: {key}")
     except Exception as e:
         logger.warning(f"Failed to clean up Redis key {key}: {str(e)}")
+
+
+async def _cleanup_redis_run_lock(agent_run_id: str):
+    """Clean up the run lock Redis key for an agent run."""
+    run_lock_key = f"agent_run_lock:{agent_run_id}"
+    logger.debug(f"Cleaning up Redis run lock key: {run_lock_key}")
+    try:
+        await redis.delete(run_lock_key)
+        logger.debug(f"Successfully cleaned up Redis run lock key: {run_lock_key}")
+    except Exception as e:
+        logger.warning(
+            f"Failed to clean up Redis run lock key {run_lock_key}: {str(e)}"
+        )
 
 
 # TTL for Redis response lists (24 hours)
