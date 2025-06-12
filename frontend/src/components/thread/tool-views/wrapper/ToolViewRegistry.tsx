@@ -16,7 +16,7 @@ import { CompleteToolView } from '../CompleteToolView';
 import { ExecuteDataProviderCallToolView } from '../data-provider-tool/ExecuteDataProviderCallToolView';
 import { DataProviderEndpointsToolView } from '../data-provider-tool/DataProviderEndpointsToolView';
 import { DeployToolView } from '../DeployToolView';
-
+import { CladoToolView } from '../clado-tool/CladoToolView';
 
 export type ToolViewComponent = React.ComponentType<ToolViewProps>;
 
@@ -68,6 +68,17 @@ const defaultRegistry: ToolViewRegistryType = {
   'complete': CompleteToolView,
 
   'deploy': DeployToolView,
+
+  // Clado tool operations
+  'clado-tool': CladoToolView,
+  'search-linkedin-users': CladoToolView,
+  'search-linkedin-companies': CladoToolView,
+  'enrich-linkedin-profile': CladoToolView,
+  'get-linkedin-contacts': CladoToolView,
+  'scrape-linkedin-profile': CladoToolView,
+  'get-linkedin-post-reactions': CladoToolView,
+  'start-deep-research': CladoToolView,
+  'get-deep-research-status': CladoToolView,
 
   'default': GenericToolView,
 };

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { ToolViewProps } from './types';
 import { formatTimestamp, getToolTitle, extractToolData } from './utils';
+import { getToolIcon } from '../utils';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,24 @@ export function GenericToolView({
   const [progress, setProgress] = useState(0);
 
   const toolTitle = getToolTitle(name);
+  const IconComponent = getToolIcon(name) || Wrench;
+
+  const isCladoTool = [
+    'clado-tool',
+    'search-linkedin-users',
+    'enrich-linkedin-profile',
+    'search-linkedin-companies',
+    'get-linkedin-contacts',
+    'scrape-linkedin-profile',
+    'get-linkedin-post-reactions',
+    'start-deep-research',
+    'get-deep-research-status',
+  ].includes(name ?? '');
+
+  const gradientFrom = isCladoTool ? 'from-purple-500/20' : 'from-orange-500/20';
+  const gradientTo = isCladoTool ? 'to-purple-600/10' : 'to-orange-600/10';
+  const borderColor = isCladoTool ? 'border-purple-500/20' : 'border-orange-500/20';
+  const iconColor = isCladoTool ? 'text-purple-500 dark:text-purple-400' : 'text-orange-500 dark:text-orange-400';
 
   const formatContent = (content: any) => {
     if (!content) return null;
@@ -133,8 +152,8 @@ export function GenericToolView({
       <CardHeader className="h-14 bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b p-2 px-4 space-y-2">
         <div className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="relative p-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/20">
-              <Wrench className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+            <div className={`relative p-2 rounded-lg bg-gradient-to-br ${gradientFrom} ${gradientTo} border ${borderColor}`}>
+              <IconComponent className={`w-5 h-5 ${iconColor}`} />
             </div>
             <div>
               <CardTitle className="text-base font-medium text-zinc-900 dark:text-zinc-100">

@@ -22,6 +22,9 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
+// React Icons for Clado / FindAnyone tools
+import { TbDeviceDesktopSearch } from 'react-icons/tb';
+
 // Flag to control whether tool result messages are rendered
 export const SHOULD_RENDER_TOOL_RESULTS = false;
 
@@ -33,13 +36,13 @@ export function safeJsonParse<T>(
   if (!jsonString) {
     return fallback;
   }
-  
+
   try {
     // First attempt: Parse as normal JSON
     const parsed = JSON.parse(jsonString);
-    
+
     // Check if the result is a string that looks like JSON (double-escaped case)
-    if (typeof parsed === 'string' && 
+    if (typeof parsed === 'string' &&
         (parsed.startsWith('{') || parsed.startsWith('['))) {
       try {
         // Second attempt: Parse the string result as JSON (handles double-escaped)
@@ -49,14 +52,14 @@ export function safeJsonParse<T>(
         return parsed as unknown as T;
       }
     }
-    
+
     return parsed as T;
   } catch (outerError) {
     // If the input is already an object/array (shouldn't happen but just in case)
     if (typeof jsonString === 'object') {
       return jsonString as T;
     }
-    
+
     // Try one more time in case it's a plain string that should be returned as-is
     if (typeof jsonString === 'string') {
       // Check if it's a string representation of a simple value
@@ -64,13 +67,13 @@ export function safeJsonParse<T>(
       if (jsonString === 'false') return false as unknown as T;
       if (jsonString === 'null') return null as unknown as T;
       if (!isNaN(Number(jsonString))) return Number(jsonString) as unknown as T;
-      
+
       // Return as string if it doesn't look like JSON
       if (!jsonString.startsWith('{') && !jsonString.startsWith('[')) {
         return jsonString as unknown as T;
       }
     }
-    
+
     // console.warn('Failed to parse JSON string:', jsonString, outerError); // Optional: log errors
     return fallback;
   }
@@ -155,6 +158,18 @@ export const getToolIcon = (toolName: string): ElementType => {
     case 'call-mcp-tool':
       return PlugIcon;
 
+    // Clado / FindAnyone related tools
+    case 'clado-tool':
+    case 'search-linkedin-users':
+    case 'enrich-linkedin-profile':
+    case 'search-linkedin-companies':
+    case 'get-linkedin-contacts':
+    case 'scrape-linkedin-profile':
+    case 'get-linkedin-post-reactions':
+    case 'start-deep-research':
+    case 'get-deep-research-status':
+      return TbDeviceDesktopSearch;
+
     // Default case
     default:
       if (toolName?.startsWith('mcp_')) {
@@ -162,7 +177,7 @@ export const getToolIcon = (toolName: string): ElementType => {
         if (parts.length >= 3) {
           const serverName = parts[1];
           const toolNamePart = parts.slice(2).join('_');
-          
+
           // Map specific MCP tools to appropriate icons
           if (toolNamePart.includes('search') || toolNamePart.includes('web')) {
             return Search;
@@ -174,7 +189,7 @@ export const getToolIcon = (toolName: string): ElementType => {
         }
         return PlugIcon; // Default icon for MCP tools
       }
-      
+
       // Add logging for debugging unhandled tool types
       console.log(
         `[PAGE] Using default icon for unknown tool type: ${toolName}`,
@@ -290,13 +305,13 @@ const TOOL_DISPLAY_NAMES = new Map([
   ['check-command-output', 'Checking Command Output'],
   ['terminate-command', 'Terminating Command'],
   ['list-commands', 'Listing Commands'],
-  
+
   ['create-file', 'Creating File'],
   ['delete-file', 'Deleting File'],
   ['full-file-rewrite', 'Rewriting File'],
   ['str-replace', 'Editing Text'],
   ['str_replace', 'Editing Text'],
-  
+
   ['browser-click-element', 'Clicking Element'],
   ['browser-close-tab', 'Closing Tab'],
   ['browser-drag-drop', 'Dragging Element'],
@@ -316,7 +331,7 @@ const TOOL_DISPLAY_NAMES = new Map([
   ['execute-data-provider-call', 'Calling data provider'],
   ['execute_data_provider_call', 'Calling data provider'],
   ['get-data-provider-endpoints', 'Getting endpoints'],
-  
+
   ['deploy', 'Deploying'],
   ['ask', 'Ask'],
   ['complete', 'Completing Task'],
@@ -325,7 +340,7 @@ const TOOL_DISPLAY_NAMES = new Map([
   ['scrape-webpage', 'Scraping Website'],
   ['web-search', 'Searching Web'],
   ['see-image', 'Viewing Image'],
-  
+
   ['call-mcp-tool', 'External Tool'],
 
   ['update-agent', 'Updating Agent'],
@@ -343,12 +358,12 @@ const TOOL_DISPLAY_NAMES = new Map([
   ['check_command_output', 'Checking Command Output'],
   ['terminate_command', 'Terminating Command'],
   ['list_commands', 'Listing Commands'],
-  
+
   ['create_file', 'Creating File'],
   ['delete_file', 'Deleting File'],
   ['full_file_rewrite', 'Rewriting File'],
   ['str_replace', 'Editing Text'],
-  
+
   ['browser_click_element', 'Clicking Element'],
   ['browser_close_tab', 'Closing Tab'],
   ['browser_drag_drop', 'Dragging Element'],
@@ -367,7 +382,7 @@ const TOOL_DISPLAY_NAMES = new Map([
 
   ['execute_data_provider_call', 'Calling data provider'],
   ['get_data_provider_endpoints', 'Getting endpoints'],
-  
+
   ['deploy', 'Deploying'],
   ['ask', 'Ask'],
   ['complete', 'Completing Task'],
@@ -376,7 +391,7 @@ const TOOL_DISPLAY_NAMES = new Map([
   ['scrape_webpage', 'Scraping Website'],
   ['web_search', 'Searching Web'],
   ['see_image', 'Viewing Image'],
-  
+
   ['call_mcp_tool', 'External Tool'],
 
   ['update_agent', 'Updating Agent'],
@@ -387,8 +402,11 @@ const TOOL_DISPLAY_NAMES = new Map([
   ['get_popular_mcp_servers', 'Getting Popular MCP Servers'],
   ['test_mcp_server_connection', 'Testing MCP Server Connection'],
 
+  // Clado / FindAnything tool names
+  ['search-linkedin-users', 'FindAnyone'],
+  ['enrich-linkedin-profile', 'FindAnyone'],
+  ['clado-tool', 'FindAnyone'],
 ]);
-
 
 const MCP_SERVER_NAMES = new Map([
   ['exa', 'Exa Search'],
@@ -416,20 +434,20 @@ export function getUserFriendlyToolName(toolName: string): string {
     if (parts.length >= 3) {
       const serverName = parts[1];
       const toolNamePart = parts.slice(2).join('_');
-      
+
       // Get friendly server name
-      const friendlyServerName = MCP_SERVER_NAMES.get(serverName) || 
+      const friendlyServerName = MCP_SERVER_NAMES.get(serverName) ||
         serverName.charAt(0).toUpperCase() + serverName.slice(1);
-      
+
       // Get friendly tool name
-      const friendlyToolName = MCP_TOOL_MAPPINGS.get(toolNamePart) || 
-        toolNamePart.split('_').map(word => 
+      const friendlyToolName = MCP_TOOL_MAPPINGS.get(toolNamePart) ||
+        toolNamePart.split('_').map(word =>
           word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ');
-      
+
       return `${friendlyServerName}: ${friendlyToolName}`;
     }
   }
-  
+
   return TOOL_DISPLAY_NAMES.get(toolName) || toolName;
 }
