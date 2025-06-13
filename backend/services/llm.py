@@ -57,6 +57,8 @@ def setup_api_keys() -> None:
     for provider in providers:
         key = getattr(config, f"{provider}_API_KEY")
         if key:
+            # Set the environment variable for LiteLLM to use
+            os.environ[f"{provider}_API_KEY"] = key
             logger.debug(f"API key set for provider: {provider}")
         else:
             logger.warning(f"No API key found for provider: {provider}")
@@ -167,6 +169,10 @@ def prepare_params(
     reasoning_effort: Optional[str] = "low",
 ) -> Dict[str, Any]:
     """Prepare parameters for the API call."""
+    # OpenAI O3 models only support temperature=1
+    if "o3" in model_name:
+        temperature = 1.0
+
     params = {
         "model": model_name,
         "messages": messages,
@@ -191,7 +197,12 @@ def prepare_params(
             logger.debug(f"Skipping max_tokens for Claude 3.7 model: {model_name}")
             # Do not add any max_tokens parameter for Claude 3.7
         else:
-            param_name = "max_completion_tokens" if "o1" in model_name else "max_tokens"
+            # OpenAI O1 and O3 models use max_completion_tokens instead of max_tokens
+            param_name = (
+                "max_completion_tokens"
+                if ("o1" in model_name or "o3" in model_name)
+                else "max_tokens"
+            )
             params[param_name] = max_tokens
 
     # Add tools if provided

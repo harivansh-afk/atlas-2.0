@@ -563,7 +563,7 @@ export const startAgent = async (
     );
 
     const defaultOptions = {
-      model_name: 'claude-3-7-sonnet-latest',
+      model_name: 'openai/o3',
       enable_thinking: false,
       reasoning_effort: 'low',
       stream: true,
@@ -578,7 +578,7 @@ export const startAgent = async (
       reasoning_effort: finalOptions.reasoning_effort,
       stream: finalOptions.stream,
     };
-    
+
     // Only include agent_id if it's provided
     if (finalOptions.agent_id) {
       body.agent_id = finalOptions.agent_id;
@@ -645,7 +645,7 @@ export const startAgent = async (
     }
 
     console.error('[API] Failed to start agent:', error);
-    
+
     // Handle different error types with appropriate user messages
     if (
       error instanceof TypeError &&
@@ -931,10 +931,10 @@ export const streamAgent = (
             const jsonData = JSON.parse(rawData);
             if (jsonData.status === 'error') {
               console.error(`[STREAM] Error status received for ${agentRunId}:`, jsonData);
-              
+
               // Pass the error message to the callback
               callbacks.onError(jsonData.message || 'Unknown error occurred');
-              
+
               // Don't close the stream for error status messages as they may continue
               return;
             }
@@ -1230,10 +1230,10 @@ export const listSandboxFiles = async (
     } = await supabase.auth.getSession();
 
     const url = new URL(`${API_URL}/sandboxes/${sandboxId}/files`);
-    
+
     // Normalize the path to handle Unicode escape sequences
     const normalizedPath = normalizePathWithUnicode(path);
-    
+
     // Properly encode the path parameter for UTF-8 support
     url.searchParams.append('path', normalizedPath);
 
@@ -1279,10 +1279,10 @@ export const getSandboxFileContent = async (
     } = await supabase.auth.getSession();
 
     const url = new URL(`${API_URL}/sandboxes/${sandboxId}/files/content`);
-    
+
     // Normalize the path to handle Unicode escape sequences
     const normalizedPath = normalizePathWithUnicode(path);
-    
+
     // Properly encode the path parameter for UTF-8 support
     url.searchParams.append('path', normalizedPath);
 
@@ -1440,12 +1440,12 @@ export const initiateAgent = async (
       const errorText = await response
         .text()
         .catch(() => 'No error details available');
-      
+
       console.error(
         `[API] Error initiating agent: ${response.status} ${response.statusText}`,
         errorText,
       );
-    
+
       if (response.status === 402) {
         throw new Error('Payment Required');
       } else if (response.status === 401) {
@@ -1453,7 +1453,7 @@ export const initiateAgent = async (
       } else if (response.status >= 500) {
         throw new Error('Server error: Please try again later');
       }
-    
+
       throw new Error(
         `Error initiating agent: ${response.statusText} (${response.status})`,
       );

@@ -126,7 +126,7 @@ class Configuration:
     AWS_REGION_NAME: Optional[str] = None
 
     # Model configuration
-    MODEL_TO_USE: Optional[str] = "anthropic/claude-3-7-sonnet-latest"
+    MODEL_TO_USE: Optional[str] = "openai/o3"
 
     # LLM API retry configuration
     LLM_MAX_RETRIES: int = 5  # Increased for better resilience
