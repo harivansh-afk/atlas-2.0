@@ -317,7 +317,10 @@ export const useModelSelection = () => {
         const isPremium = model?.requires_subscription || modelData.tier === 'premium' || false;
 
         return {
-          id: shortName,
+          // Use the full model ID to ensure consistency across the app. This
+          // makes sure the toggle component (which uses "openai/o3") and other
+          // logic can successfully find the model in MODEL_OPTIONS.
+          id: model.id,
           label: cleanLabel,
           requiresSubscription: isPremium,
           description: modelData.description ||
