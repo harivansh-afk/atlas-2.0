@@ -323,10 +323,11 @@ export const useModelSelection = () => {
           isPremium = !!model?.requires_subscription;
         }
 
+        // Use short_name as id when it matches a known alias in MODELS
+        const id = shortName.replace(/^openrouter\//, '');
+
         return {
-          // Normalize backend IDs (strip leading "openrouter/") so they align
-          // with the canonical IDs we use elsewhere (e.g. "openai/o3").
-          id: model.id.replace(/^openrouter\//, ''),
+          id,
           label: cleanLabel,
           requiresSubscription: isPremium,
           description: modelData.description ||
@@ -498,9 +499,6 @@ export const useModelSelection = () => {
     refreshCustomModels,
     canAccessModel: (modelId: string) => {
       if (isLocalMode()) return true;
-      const normalizedId = modelId.replace(/^openrouter\//, '');
-  const model = MODEL_OPTIONS.find(m => m.id === normalizedId);
-      return model ? canAccessModel(subscriptionStatus, model.requiresSubscription) : false;
     },
     isSubscriptionRequired: (modelId: string) => {
       return MODEL_OPTIONS.find(m => m.id === modelId)?.requiresSubscription || false;
