@@ -314,7 +314,14 @@ export const useModelSelection = () => {
 
         // Get model data from our central MODELS constant
         const modelData = MODELS[shortName] || {};
-        const isPremium = model?.requires_subscription || modelData.tier === 'premium' || false;
+        // Decide premium flag: our frontend constant tiers are authoritative.
+        let isPremium = false;
+        if (modelData) {
+          isPremium = modelData.tier === 'premium';
+        } else {
+          // If we don't have constant metadata, fall back to backend flag
+          isPremium = !!model?.requires_subscription;
+        }
 
         return {
           // Normalize backend IDs (strip leading "openrouter/") so they align
