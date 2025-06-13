@@ -317,10 +317,9 @@ export const useModelSelection = () => {
         const isPremium = model?.requires_subscription || modelData.tier === 'premium' || false;
 
         return {
-          // Use the full model ID to ensure consistency across the app. This
-          // makes sure the toggle component (which uses "openai/o3") and other
-          // logic can successfully find the model in MODEL_OPTIONS.
-          id: model.id,
+          // Normalize backend IDs (strip leading "openrouter/") so they align
+          // with the canonical IDs we use elsewhere (e.g. "openai/o3").
+          id: model.id.replace(/^openrouter\//, ''),
           label: cleanLabel,
           requiresSubscription: isPremium,
           description: modelData.description ||
@@ -492,7 +491,8 @@ export const useModelSelection = () => {
     refreshCustomModels,
     canAccessModel: (modelId: string) => {
       if (isLocalMode()) return true;
-      const model = MODEL_OPTIONS.find(m => m.id === modelId);
+      const normalizedId = modelId.replace(/^openrouter\//, '');
+  const model = MODEL_OPTIONS.find(m => m.id === normalizedId);
       return model ? canAccessModel(subscriptionStatus, model.requiresSubscription) : false;
     },
     isSubscriptionRequired: (modelId: string) => {
