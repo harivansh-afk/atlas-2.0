@@ -228,6 +228,18 @@ class ThreadManager:
         # Create a working copy of the system prompt to potentially modify
         working_system_prompt = system_prompt.copy()
 
+        # Handle O3 model special message structure
+        is_o3_model = system_prompt.get("is_o3_model", False)
+        developer_message = None
+
+        if is_o3_model:
+            # Extract developer message for O3 models
+            developer_message = system_prompt.get("developer_message")
+            # Remove O3-specific metadata from working system prompt
+            working_system_prompt.pop("is_o3_model", None)
+            working_system_prompt.pop("developer_message", None)
+            logger.info("Detected O3 model - will use developer message structure")
+
         # Add XML examples to system prompt if requested, do this only ONCE before the loop
         if include_xml_examples and processor_config.xml_tool_calling:
             xml_examples = self.tool_registry.get_xml_examples()
@@ -317,7 +329,17 @@ Here are the XML tools available with examples:
 
                 # 3. Prepare messages for LLM call + add temporary message if it exists
                 # Use the working_system_prompt which may contain the XML examples
-                prepared_messages = [working_system_prompt]
+                prepared_messages = []
+
+                # For O3 models, add developer message first, then system message
+                if is_o3_model and developer_message:
+                    prepared_messages.append({
+                        "role": "developer",
+                        "content": developer_message
+                    })
+                    logger.debug("Added developer message for O3 model")
+
+                prepared_messages.append(working_system_prompt)
 
                 # Find the last user message index
                 last_user_index = -1

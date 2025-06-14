@@ -7,6 +7,7 @@ MODEL_ACCESS_TIERS = {
         "anthropic/claude-3-7-sonnet-20250219",
         "anthropic/claude-opus-4-20250514",
         "anthropic/claude-sonnet-4-20250514",
+        "openai/o3-mini",
     ],
     "tier_2_20": [
         "openrouter/deepseek/deepseek-chat",
@@ -118,6 +119,7 @@ MODEL_NAME_ALIASES = {
     "gpt-4o": "openai/gpt-4o",
     "gpt-4.1": "openai/gpt-4.1",
     "gpt-4.1-mini": "gpt-4.1-mini",
+    "o3-mini": "openai/o3-mini",
     # "gpt-4-turbo": "openai/gpt-4-turbo",  # Commented out in constants.py
     # "gpt-4": "openai/gpt-4",  # Commented out in constants.py
     # "gemini-flash-2.5": "openrouter/google/gemini-2.5-flash-preview",  # Commented out in constants.py

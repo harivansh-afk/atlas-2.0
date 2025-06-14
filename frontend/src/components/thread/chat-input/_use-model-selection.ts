@@ -112,6 +112,13 @@ export const MODELS = {
     lowQuality: false,
     description: 'GPT-4o - Optimized for speed, reliability, and cost-effectiveness'
   },
+  'o3-mini': {
+    tier: 'free',
+    priority: 90,
+    recommended: true,
+    lowQuality: false,
+    description: 'OpenAI O3-mini - Advanced reasoning model optimized for complex problem-solving'
+  },
   'gpt-4-turbo': {
     tier: 'premium',
     priority: 85,
