@@ -8,10 +8,27 @@ import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model'
 export const STORAGE_KEY_MODEL = 'Atlas-preferred-model';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
 export const DEFAULT_FREE_MODEL_ID = 'haiku-3.5';
-export const DEFAULT_PREMIUM_MODEL_ID = 'sonnet-4';
+export const DEFAULT_PREMIUM_MODEL_ID = 'openai/o3';
+
+// Utility: convert backend IDs / aliases to the canonical IDs we use in the UI
+export const normalizeModelId = (rawId: string): string => {
+  if (!rawId) return rawId;
+  // Strip openrouter/ prefix if present
+  let id = rawId.replace(/^openrouter\//, '');
+  // Collapse known long names to short aliases we list in MODELS
+  switch (id) {
+    case 'anthropic/claude-3-5-haiku-latest':
+      return 'haiku-3.5';
+    case 'openai/o3':
+    case 'o3':
+      return 'openai/o3';
+    default:
+      return id;
+  }
+};
 
 // Model constants for toggle selector
-export const OPUS4_MODEL_ID = 'sonnet-4';
+export const OPUS4_MODEL_ID = 'openai/o3';
 export const HAIKU_MODEL_ID = 'haiku-3.5'; // Claude Haiku 3.5 for fast responses
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
@@ -34,12 +51,12 @@ export interface CustomModel {
 // SINGLE SOURCE OF TRUTH for all model data
 export const MODELS = {
   // Free tier high-priority models
-  'sonnet-4': {
+  'openai/o3': {
     tier: 'free',
     priority: 100,
     recommended: true,
     lowQuality: false,
-    description: 'Claude Sonnet 4 - Anthropic\'s most powerful and capable AI assistant'
+    description: 'O3 - OpenAI\'s most advanced reasoning model'
   },
   'haiku-3.5': {
     tier: 'free',
@@ -288,16 +305,17 @@ export const useModelSelection = () => {
         },
         {
           id: DEFAULT_PREMIUM_MODEL_ID,
-          label: 'Claude Opus 4',
-          requiresSubscription: true,
-          description: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.description || MODEL_TIERS.premium.baseDescription,
+          label: 'OpenAI O3',
+          requiresSubscription: false,
+          description: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.description || MODEL_TIERS.free.baseDescription,
           priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
         },
       ];
     } else {
       // Process API-provided models
       models = modelsData.models.map(model => {
-        const shortName = model.short_name || model.id;
+        const shortNameRaw = model.short_name || model.id;
+        const shortName = normalizeModelId(shortNameRaw);
         const displayName = model.display_name || shortName;
 
         // Format the display label
@@ -314,10 +332,20 @@ export const useModelSelection = () => {
 
         // Get model data from our central MODELS constant
         const modelData = MODELS[shortName] || {};
-        const isPremium = model?.requires_subscription || modelData.tier === 'premium' || false;
+        // Decide premium flag: our frontend constant tiers are authoritative.
+        let isPremium = false;
+        if (modelData) {
+          isPremium = modelData.tier === 'premium';
+        } else {
+          // If we don't have constant metadata, fall back to backend flag
+          isPremium = !!model?.requires_subscription;
+        }
+
+        // Use short_name as id when it matches a known alias in MODELS
+        const id = normalizeModelId(model.id);
 
         return {
-          id: shortName,
+          id,
           label: cleanLabel,
           requiresSubscription: isPremium,
           description: modelData.description ||
@@ -489,8 +517,9 @@ export const useModelSelection = () => {
     refreshCustomModels,
     canAccessModel: (modelId: string) => {
       if (isLocalMode()) return true;
-      const model = MODEL_OPTIONS.find(m => m.id === modelId);
-      return model ? canAccessModel(subscriptionStatus, model.requiresSubscription) : false;
+      const canonical = normalizeModelId(modelId);
+      const option = MODEL_OPTIONS.find(m => m.id === canonical);
+      return option ? canAccessModel(subscriptionStatus, option.requiresSubscription) : false;
     },
     isSubscriptionRequired: (modelId: string) => {
       return MODEL_OPTIONS.find(m => m.id === modelId)?.requiresSubscription || false;

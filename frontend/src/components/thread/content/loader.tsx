@@ -4,22 +4,28 @@ import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
 import { Component as Orb } from '@/components/ui/orb';
 
 const items = [
-    { id: 1, content: "Initializing neural pathways..." },
-    { id: 2, content: "Analyzing query complexity..." },
-    { id: 3, content: "Assembling cognitive framework..." },
-    { id: 4, content: "Orchestrating thought processes..." },
-    { id: 5, content: "Synthesizing contextual understanding..." },
-    { id: 6, content: "Calibrating response parameters..." },
-    { id: 7, content: "Engaging reasoning algorithms..." },
-    { id: 8, content: "Processing semantic structures..." },
-    { id: 9, content: "Formulating strategic approach..." },
-    { id: 10, content: "Optimizing solution pathways..." },
-    { id: 11, content: "Harmonizing data streams..." },
-    { id: 12, content: "Architecting intelligent response..." },
-    { id: 13, content: "Fine-tuning cognitive models..." },
-    { id: 14, content: "Weaving narrative threads..." },
-    { id: 15, content: "Crystallizing insights..." },
-    { id: 16, content: "Preparing comprehensive analysis..." }
+    { id: 1, content: "Pulling out my compass..." },
+    { id: 2, content: "Unfolding the map..." },
+    { id: 3, content: "Scanning the terrain..." },
+    { id: 4, content: "Plotting the coordinates..." },
+    { id: 5, content: "Setting up basecamp..." },
+    { id: 6, content: "Tightening my boots..." },
+    { id: 7, content: "Climbing to get a better view..." },
+    { id: 8, content: "Packing supplies for the journey..." },
+    { id: 9, content: "Surveying the landscape..." },
+    { id: 10, content: "Checking the satellite signal..." },
+    { id: 11, content: "Following the trail markers..." },
+    { id: 12, content: "Reflecting on the last known location..." },
+    { id: 13, content: "Sharpening my tools..." },
+    { id: 14, content: "Asking the locals for directions..." },
+    { id: 15, content: "Tying up loose ends..." },
+    { id: 16, content: "Looking for signs of the unknown..." },
+    { id: 17, content: "Marking a new waypoint..." },
+    { id: 18, content: "Clearing obstacles off the path..." },
+    { id: 19, content: "Consulting the expedition journal..." },
+    { id: 20, content: "Triangulating your position..." },
+    { id: 21, content: "Shining a light into the unknown..." },
+    { id: 22, content: "Charting the stars for guidance..." }
   ];
 
 export const AgentLoader = () => {

@@ -8,7 +8,7 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { handleFiles } from './file-upload-handler';
 import { MessageInput } from './message-input';
@@ -91,8 +91,11 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const {
       selectedModel,
       setSelectedModel: handleModelChange,
+      subscriptionStatus,
+      allModels: modelOptions,
       canAccessModel,
       getActualModelId,
+      refreshCustomModels,
     } = useModelSelection();
 
     const deleteFileMutation = useFileDelete();
@@ -249,12 +252,12 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
             <CardContent className={`w-full p-1.5 pb-2 ${bgColor} rounded-2xl border`}>
               <AttachmentGroup
-              files={uploadedFiles || []}
-              sandboxId={sandboxId}
-              onRemove={removeUploadedFile}
-              layout="inline"
-              maxHeight="216px"
-              showPreviews={true}
+                files={uploadedFiles || []}
+                sandboxId={sandboxId}
+                onRemove={removeUploadedFile}
+                layout="inline"
+                maxHeight="216px"
+                showPreviews={true}
               />
               <MessageInput
                 ref={textareaRef}
@@ -298,7 +301,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           >
             <div className="text-xs text-muted-foreground flex items-center gap-2">
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span>{agentName ? `${agentName} is working...` : 'Atlas is working...'}</span>
+              <span>{agentName ? `${agentName} is working...` : 'Suna is working...'}</span>
             </div>
           </motion.div>
         )}

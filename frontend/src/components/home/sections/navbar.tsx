@@ -100,10 +100,10 @@ export function Navbar() {
   const handleOverlayClick = () => setIsDrawerOpen(false);
 
   const logoSrc = !mounted
-    ? '/logo.png'
+    ? '/kortix-logo.svg'
     : resolvedTheme === 'dark'
-      ? '/logo.png'
-      : '/logo_black.png';
+      ? '/kortix-logo-white.svg'
+      : '/kortix-logo.svg';
 
   return (
     <header
@@ -133,7 +133,7 @@ export function Navbar() {
                 width={140}
                 height={22}
                 priority
-              />
+              /> 
             </Link>
 
             <NavMenu />
@@ -161,7 +161,7 @@ export function Navbar() {
                     className="bg-secondary h-8 hidden md:flex items-center justify-center text-sm font-normal tracking-wide rounded-full text-primary-foreground dark:text-secondary-foreground w-fit px-4 shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12]"
                     href="/auth"
                   >
-                    Try Atlas
+                    Get started
                   </Link>
                 )}
               </div>
@@ -207,15 +207,14 @@ export function Navbar() {
                 <div className="flex items-center justify-between">
                   <Link href="/" className="flex items-center gap-3">
                     <Image
-                      src="/logo.png"
-                      alt="Atlas Logo"
+                      src={logoSrc}
+                      alt="Kortix Logo"
                       width={120}
                       height={22}
                       priority
-                      className="dark:invert"
                     />
                     <span className="font-medium text-primary text-sm">
-                      / Atlas
+                      / Suna
                     </span>
                   </Link>
                   <button
@@ -274,7 +273,7 @@ export function Navbar() {
                       href="/auth"
                       className="bg-secondary h-8 flex items-center justify-center text-sm font-normal tracking-wide rounded-full text-primary-foreground dark:text-secondary-foreground w-full px-4 shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12] hover:bg-secondary/80 transition-all ease-out active:scale-95"
                     >
-                      Try Atlas
+                      Get Started
                     </Link>
                   )}
                   <div className="flex justify-between">
@@ -287,5 +286,5 @@ export function Navbar() {
         )}
       </AnimatePresence>
     </header>
-  );
+  ); 
 }

@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     siteName: 'Atlas',
     images: [
       {
-        url: '/preview.png',
+        url: `${siteConfig.url}preview.png`,
         width: 1200,
         height: 630,
         alt: 'Atlas - The Operations AI Agent',
@@ -85,11 +85,11 @@ export const metadata: Metadata = {
     title: 'Atlas - The Operations AI Agent',
     description:
       'Atlas is an operations AI agent that helps you accomplish real-world tasks with ease through natural conversation.',
-    creator: '@atlasai',
-    site: '@atlasai',
+    creator: '@atlasagents_ai',
+    site: '@atlasagents_ai',
     images: [
       {
-        url: '/preview.png',
+        url: `${siteConfig.url}preview.png`,
         width: 1200,
         height: 630,
         alt: 'Atlas - The Operations AI Agent',
@@ -123,6 +123,12 @@ export default function RootLayout({
           })(window,document,'script','dataLayer','GTM-PCHSN4M2');`}
         </Script>
         {/* End Google Tag Manager */}
+
+        {/* REB2B Lead Tracking */}
+        <Script id="reb2b-tracking" strategy="afterInteractive">
+          {`!function () {var reb2b = window.reb2b = window.reb2b || [];if (reb2b.invoked) return;reb2b.invoked = true;reb2b.methods = ["identify", "collect"];reb2b.factory = function (method) {return function () {var args = Array.prototype.slice.call(arguments);args.unshift(method);reb2b.push(args);return reb2b;};};for (var i = 0; i < reb2b.methods.length; i++) {var key = reb2b.methods[i];reb2b[key] = reb2b.factory(key);}reb2b.load = function (key) {var script = document.createElement("script");script.type = "text/javascript";script.async = true;script.src = "https://s3-us-west-2.amazonaws.com/b2bjsstore/b/" + key + "/0OV0VHMR9Y6Z.js.gz";var first = document.getElementsByTagName("script")[0];first.parentNode.insertBefore(script, first);};reb2b.SNIPPET_VERSION = "1.0.1";reb2b.load("0OV0VHMR9Y6Z");}();`}
+        </Script>
+        {/* End REB2B Lead Tracking */}
       </head>
 
       <body

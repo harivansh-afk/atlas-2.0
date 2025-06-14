@@ -55,6 +55,11 @@ export function getToolTitle(toolName: string): string {
     'get-data-provider-endpoints': 'Data Endpoints',
     'deploy': 'Deploy',
 
+    // Clado / FindAnything mapping
+    'search-linkedin-users': 'Using FindAnything',
+    'enrich-linkedin-profile': 'Using FindAnything',
+    'clado-tool': 'Using FindAnything',
+
     'generic-tool': 'Tool',
     'default': 'Tool',
   };
@@ -886,10 +891,7 @@ export function extractWebpageContent(
               return {
                 title: outputJson.Title || outputJson.title || '',
                 text:
-                  outputJson.Text ||
-                  outputJson.text ||
-                  outputJson.content ||
-                  '',
+                  outputJson.Text || outputJson.text || outputJson.content || '',
               };
             } catch (e) {
               // If parsing fails, use the raw output

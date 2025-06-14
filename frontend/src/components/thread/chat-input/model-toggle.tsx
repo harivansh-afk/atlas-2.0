@@ -16,19 +16,19 @@ export const ModelToggle: React.FC<ModelToggleProps> = ({
   onModelChange,
   canAccessModel,
 }) => {
-  // Determine if we're in AL1 mode (Claude Sonnet 4) or fast mode (Claude Haiku 3.5)
-  const isAL1Mode = selectedModel === 'sonnet-4';
+  // Determine if we're in AL1 mode (OpenAI O3) or fast mode (Claude Haiku 3.5)
+  const isAL1Mode = selectedModel === 'openai/o3';
 
   const handleToggle = () => {
-    const newModel = isAL1Mode ? HAIKU_MODEL_ID : 'sonnet-4';
+    const newModel = isAL1Mode ? HAIKU_MODEL_ID : 'openai/o3';
 
     if (canAccessModel(newModel)) {
       onModelChange(newModel);
 
       // Show toast notification based on the NEW model we're switching TO
-      if (newModel === 'sonnet-4') {
+      if (newModel === 'openai/o3') {
         toast.success('Advanced language mode enabled', {
-          description: 'Switched to Claude Sonnet 4',
+          description: 'Switched to OpenAI O3',
           duration: 2000,
         });
       } else {
@@ -51,7 +51,7 @@ export const ModelToggle: React.FC<ModelToggleProps> = ({
       <button
         onClick={handleToggle}
         className={cn(
-          "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+          "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm dark:shadow-none",
           isAL1Mode
             ? "bg-blue-600"
             : "bg-muted"

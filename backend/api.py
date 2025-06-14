@@ -121,13 +121,17 @@ async def log_requests_middleware(request: Request, call_next):
 
 
 # Define allowed origins based on environment
-allowed_origins = ["https://www.atlasagents.ai", "http://localhost:3000"]
+allowed_origins = [
+    "https://www.atlasagents.ai",
+    "https://atlasagents.ai",
+    "http://localhost:3000",
+]
 allow_origin_regex = None
 
 # Add staging-specific origins
 if config.ENV_MODE == EnvMode.STAGING:
-    allowed_origins.append("https://staging.atlasagents.ai")
-    allow_origin_regex = r"https://Atlas-.*-prjcts\.vercel\.app"
+    allowed_origins.append("https://staging.suna.so")
+    allow_origin_regex = r"https://suna-.*-prjcts\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,

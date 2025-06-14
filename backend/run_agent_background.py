@@ -14,27 +14,33 @@ from services.supabase import DBConnection
 from services import redis
 from dramatiq.brokers.rabbitmq import RabbitmqBroker
 import os
+import pika
 from services.langfuse import langfuse
+from utils.retry import retry
 
-# RabbitMQ/AMQP configuration - support both cloud AMQP URLs and local development
-amqp_url = (
-    os.getenv("AMQP_URL") or os.getenv("CLOUDAMQP_URL") or os.getenv("RABBITMQ_URL")
-)
-
-if amqp_url:
-    # Use cloud AMQP service with full URL
-    logger.info(f"Using cloud AMQP service")
+# RabbitMQ configuration - support both URL and individual parameters
+rabbitmq_url = os.getenv("RABBITMQ_URL")
+if rabbitmq_url:
+    # Use full URL if provided (CloudAMQP format)
     rabbitmq_broker = RabbitmqBroker(
-        url=amqp_url, middleware=[dramatiq.middleware.AsyncIO()]
+        url=rabbitmq_url, middleware=[dramatiq.middleware.AsyncIO()]
     )
 else:
-    # Fallback to local Docker development setup
+    # Fallback to individual parameters for local development
     rabbitmq_host = os.getenv("RABBITMQ_HOST", "rabbitmq")
     rabbitmq_port = int(os.getenv("RABBITMQ_PORT", 5672))
-    logger.info(f"Using local RabbitMQ: {rabbitmq_host}:{rabbitmq_port}")
+    rabbitmq_user = os.getenv("RABBITMQ_USER", "guest")
+    rabbitmq_pass = os.getenv("RABBITMQ_PASS", "guest")
+    rabbitmq_vhost = os.getenv("RABBITMQ_VHOST", "/")
+
+    # Create credentials object for pika
+    credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
+
     rabbitmq_broker = RabbitmqBroker(
         host=rabbitmq_host,
         port=rabbitmq_port,
+        credentials=credentials,
+        virtual_host=rabbitmq_vhost,
         middleware=[dramatiq.middleware.AsyncIO()],
     )
 
@@ -48,14 +54,12 @@ instance_id = "single"
 async def initialize():
     """Initialize the agent API with resources from the main API."""
     global db, instance_id, _initialized
-    if _initialized:
-        return
 
     # Use provided instance_id or generate a new one
     if not instance_id:
         # Generate instance ID
         instance_id = str(uuid.uuid4())[:8]
-    await redis.initialize_async()
+    await retry(lambda: redis.initialize_async())
     await db.initialize()
 
     _initialized = True
@@ -78,7 +82,38 @@ async def run_agent_background(
     target_agent_id: Optional[str] = None,
 ):
     """Run the agent in the background using Redis for state."""
-    await initialize()
+    try:
+        await initialize()
+    except Exception as e:
+        logger.critical(f"Failed to initialize Redis connection: {e}")
+        raise e
+
+    # Idempotency check: prevent duplicate runs
+    run_lock_key = f"agent_run_lock:{agent_run_id}"
+
+    # Try to acquire a lock for this agent run
+    lock_acquired = await redis.set(
+        run_lock_key, instance_id, nx=True, ex=redis.REDIS_KEY_TTL
+    )
+
+    if not lock_acquired:
+        # Check if the run is already being handled by another instance
+        existing_instance = await redis.get(run_lock_key)
+        if existing_instance:
+            logger.info(
+                f"Agent run {agent_run_id} is already being processed by instance {existing_instance.decode() if isinstance(existing_instance, bytes) else existing_instance}. Skipping duplicate execution."
+            )
+            return
+        else:
+            # Lock exists but no value, try to acquire again
+            lock_acquired = await redis.set(
+                run_lock_key, instance_id, nx=True, ex=redis.REDIS_KEY_TTL
+            )
+            if not lock_acquired:
+                logger.info(
+                    f"Agent run {agent_run_id} is already being processed by another instance. Skipping duplicate execution."
+                )
+                return
 
     sentry.sentry.set_tag("thread_id", thread_id)
 
@@ -152,7 +187,18 @@ async def run_agent_background(
     try:
         # Setup Pub/Sub listener for control signals
         pubsub = await redis.create_pubsub()
-        await pubsub.subscribe(instance_control_channel, global_control_channel)
+        try:
+            await retry(
+                lambda: pubsub.subscribe(
+                    instance_control_channel, global_control_channel
+                )
+            )
+        except Exception as e:
+            logger.error(
+                f"Redis failed to subscribe to control channels: {e}", exc_info=True
+            )
+            raise e
+
         logger.debug(
             f"Subscribed to control channels: {instance_control_channel}, {global_control_channel}"
         )
@@ -192,8 +238,12 @@ async def run_agent_background(
 
             # Store response in Redis list and publish notification
             response_json = json.dumps(response)
-            pending_redis_operations.append(asyncio.create_task(redis.rpush(response_list_key, response_json)))
-            pending_redis_operations.append(asyncio.create_task(redis.publish(response_channel, "new")))
+            pending_redis_operations.append(
+                asyncio.create_task(redis.rpush(response_list_key, response_json))
+            )
+            pending_redis_operations.append(
+                asyncio.create_task(redis.publish(response_channel, "new"))
+            )
             total_responses += 1
 
             # Check for agent-signaled completion or error
@@ -335,11 +385,18 @@ async def run_agent_background(
         # Remove the instance-specific active run key
         await _cleanup_redis_instance_key(agent_run_id)
 
+        # Clean up the run lock
+        await _cleanup_redis_run_lock(agent_run_id)
+
         # Wait for all pending redis operations to complete, with timeout
         try:
-            await asyncio.wait_for(asyncio.gather(*pending_redis_operations), timeout=30.0)
+            await asyncio.wait_for(
+                asyncio.gather(*pending_redis_operations), timeout=30.0
+            )
         except asyncio.TimeoutError:
-            logger.warning(f"Timeout waiting for pending Redis operations for {agent_run_id}")
+            logger.warning(
+                f"Timeout waiting for pending Redis operations for {agent_run_id}"
+            )
 
         logger.info(
             f"Agent run background task fully completed for: {agent_run_id} (Instance: {instance_id}) with final status: {final_status}"
@@ -358,6 +415,19 @@ async def _cleanup_redis_instance_key(agent_run_id: str):
         logger.debug(f"Successfully cleaned up Redis key: {key}")
     except Exception as e:
         logger.warning(f"Failed to clean up Redis key {key}: {str(e)}")
+
+
+async def _cleanup_redis_run_lock(agent_run_id: str):
+    """Clean up the run lock Redis key for an agent run."""
+    run_lock_key = f"agent_run_lock:{agent_run_id}"
+    logger.debug(f"Cleaning up Redis run lock key: {run_lock_key}")
+    try:
+        await redis.delete(run_lock_key)
+        logger.debug(f"Successfully cleaned up Redis run lock key: {run_lock_key}")
+    except Exception as e:
+        logger.warning(
+            f"Failed to clean up Redis run lock key {run_lock_key}: {str(e)}"
+        )
 
 
 # TTL for Redis response lists (24 hours)

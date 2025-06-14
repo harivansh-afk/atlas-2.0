@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, Suspense, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Menu } from 'lucide-react';
+import { Menu, ChevronDown, Lightbulb } from 'lucide-react';
 import {
   ChatInput,
   ChatInputHandles,
@@ -25,11 +26,12 @@ import { useAccounts } from '@/hooks/use-accounts';
 import { config } from '@/lib/config';
 import { useInitiateAgentWithInvalidation } from '@/hooks/react-query/dashboard/use-initiate-agent';
 import { ModalProviders } from '@/providers/modal-providers';
-import { AgentSelector } from '@/components/dashboard/agent-selector';
+
 import { cn } from '@/lib/utils';
 import { useModal } from '@/hooks/use-modal-store';
 import { Examples } from './suggestions/examples';
 import { useThreadQuery } from '@/hooks/react-query/threads/use-threads';
+import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -39,6 +41,7 @@ export function DashboardContent() {
   const [autoSubmit, setAutoSubmit] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const { billingError, handleBillingError, clearBillingError } =
     useBillingError();
   const router = useRouter();
@@ -50,6 +53,8 @@ export function DashboardContent() {
   const chatInputRef = useRef<ChatInputHandles>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const { onOpen } = useModal();
+
+  // Removed scroll-triggered animations to prevent dulling effect
 
   const threadQuery = useThreadQuery(initiatedThreadId || '');
 
@@ -110,7 +115,8 @@ export function DashboardContent() {
       }
 
       files.forEach((file, index) => {
-        formData.append('files', file, file.name);
+        const normalizedName = normalizeFilenameToNFC(file.name);
+        formData.append('files', file, normalizedName);
       });
 
       if (options?.model_name) formData.append('model_name', options.model_name);
@@ -168,7 +174,7 @@ export function DashboardContent() {
   return (
     <>
       <ModalProviders />
-      <div className="flex flex-col h-screen w-full">
+      <div className="flex flex-col min-h-screen w-full">
         {isMobile && (
           <div className="absolute top-4 left-4 z-10">
             <Tooltip>
@@ -188,40 +194,75 @@ export function DashboardContent() {
           </div>
         )}
 
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[650px] max-w-[90%]">
-          <div className="flex flex-col items-center text-center w-full">
-            <div className="flex items-center gap-1">
+        {/* Main Content Container */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+          {/* Chat Input Section */}
+          <div className="w-[650px] max-w-[90%] mb-8">
+            <div className="flex flex-col items-center text-center w-full mb-0">
               <h1 className="tracking-tight text-4xl text-muted-foreground leading-tight">
-                Hey, I am
+                Hey
               </h1>
-              <AgentSelector 
+              <p className="tracking-tight text-3xl font-normal text-muted-foreground/80 mt-2">
+                What would you like to do today?
+              </p>
+            </div>
+
+            <div className={cn(
+              "w-full",
+              "max-w-full",
+              "sm:max-w-3xl"
+            )}>
+              <ChatInput
+                ref={chatInputRef}
+                onSubmit={handleSubmit}
+                loading={isSubmitting}
+                placeholder="Describe what you need help with..."
+                value={inputValue}
+                onChange={setInputValue}
+                hideAttachments={false}
                 selectedAgentId={selectedAgentId}
                 onAgentSelect={setSelectedAgentId}
-                variant="heading"
               />
             </div>
-            <p className="tracking-tight text-3xl font-normal text-muted-foreground/80 mt-2">
-              What would you like to do today?
-            </p>
+
+
           </div>
-          
-          <div className={cn(
-            "w-full mb-2",
-            "max-w-full",
-            "sm:max-w-3xl"
-          )}>
-            <ChatInput
-              ref={chatInputRef}
-              onSubmit={handleSubmit}
-              loading={isSubmitting}
-              placeholder="Describe what you need help with..."
-              value={inputValue}
-              onChange={setInputValue}
-              hideAttachments={false}
-            />
-          </div>
-          
-          <Examples onSelectPrompt={setInputValue} />
+
+          {/* Suggestions Section - Full Width, Below Chat Input */}
+          <AnimatePresence>
+            {showSuggestions && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="w-full overflow-hidden px-8 pb-4"
+              >
+                <Examples onSelectPrompt={setInputValue} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Floating Suggestions Button - Bottom Right */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSuggestions(!showSuggestions)}
+            className="flex items-center gap-1 px-2 py-1 h-7 text-xs text-muted-foreground bg-muted hover:text-accent-foreground hover:bg-muted/80 rounded-lg shadow-lg"
+          >
+            <Lightbulb className="h-3 w-3" />
+            <span className="text-xs select-none">
+              {showSuggestions ? 'Hide' : 'Ideas'}
+            </span>
+            <motion.div
+              animate={{ rotate: showSuggestions ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="h-3 w-3" />
+            </motion.div>
+          </Button>
         </div>
 
         <BillingErrorAlert

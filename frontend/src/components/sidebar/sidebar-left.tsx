@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Menu, Leaf, CircleDot, Store, Bot } from 'lucide-react';
+import { Bot, Menu, Store } from 'lucide-react';
 
 import { NavAgents } from '@/components/sidebar/nav-agents';
 import { NavUserWithTeams } from '@/components/sidebar/nav-user-with-teams';
@@ -103,10 +103,7 @@ export function SidebarLeft({
       {...props}
     >
       <SidebarHeader className="px-2 py-2">
-        <div className={cn(
-          "flex h-[40px] items-center px-1 relative",
-          state === 'collapsed' ? "justify-center" : ""
-        )}>
+        <div className="flex h-[40px] items-center px-1 relative">
           <Link href="/dashboard">
             <KortixLogo />
           </Link>
@@ -115,29 +112,29 @@ export function SidebarLeft({
               {/* <span className="font-semibold"> SUNA</span> */}
             </div>
           )}
-          {state !== 'collapsed' && (
-            <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2">
+            {state !== 'collapsed' && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SidebarTrigger className="h-8 w-8" />
                 </TooltipTrigger>
                 <TooltipContent>Toggle sidebar (CMD+B)</TooltipContent>
               </Tooltip>
-              {isMobile && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setOpenMobile(true)}
-                      className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent"
-                    >
-                      <Menu className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Open menu</TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-          )}
+            )}
+            {isMobile && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setOpenMobile(true)}
+                    className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent"
+                  >
+                    <Menu className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Open menu</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent className="[&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
