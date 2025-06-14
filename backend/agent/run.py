@@ -30,6 +30,7 @@ from services.langfuse import langfuse
 from langfuse.client import StatefulTraceClient
 from services.langfuse import langfuse
 from agent.gemini_prompt import get_gemini_system_prompt
+from agent.o3_prompt import get_system_prompt as get_o3_system_prompt
 from agent.tools.mcp_tool_wrapper import MCPToolWrapper
 from agentpress.tool import SchemaType
 
@@ -269,11 +270,16 @@ async def run_agent(
 
     # Prepare system prompt
     # First, get the default system prompt
-    if "gemini-2.5-flash" in model_name.lower():
+    if "o3" in model_name.lower():
+        default_system_content = get_o3_system_prompt()
+        logger.info("Using O3-optimized system prompt for reasoning model")
+    elif "gemini-2.5-flash" in model_name.lower():
         default_system_content = get_gemini_system_prompt()
+        logger.info("Using Gemini-optimized system prompt")
     else:
         # Use the original prompt - the LLM can only use tools that are registered
         default_system_content = get_system_prompt()
+        logger.info("Using standard system prompt")
 
     # Add sample response for non-anthropic models
     if "anthropic" not in model_name.lower():
