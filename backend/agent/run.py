@@ -29,6 +29,7 @@ from services.langfuse import langfuse
 from langfuse.client import StatefulTraceClient
 from services.langfuse import langfuse
 from agent.gemini_prompt import get_gemini_system_prompt
+from agent.o3_prompt import get_o3_system_prompt, get_o3_developer_message
 from agent.tools.mcp_tool_wrapper import MCPToolWrapper
 from agentpress.tool import SchemaType
 
@@ -191,9 +192,13 @@ async def run_agent(
                     # Continue without MCP tools if initialization fails
 
     # Prepare system prompt
-    # First, get the default system prompt
+    # First, get the default system prompt based on model type
     if "gemini-2.5-flash" in model_name.lower():
         default_system_content = get_gemini_system_prompt()
+    elif "o3" in model_name.lower() or "openai/o3" in model_name.lower():
+        # Use O3-optimized prompt for OpenAI O3 reasoning models
+        default_system_content = get_o3_system_prompt()
+        logger.info("Using O3-optimized system prompt for reasoning model")
     else:
         # Use the original prompt - the LLM can only use tools that are registered
         default_system_content = get_system_prompt()
@@ -282,8 +287,23 @@ async def run_agent(
         mcp_info += "NEVER supplement MCP results with your training data or make assumptions beyond what the tools provide.\n"
         
         system_content += mcp_info
-    
-    system_message = { "role": "system", "content": system_content }
+
+    # Create system message structure based on model type
+    is_o3_model = "o3" in model_name.lower() or "openai/o3" in model_name.lower()
+
+    if is_o3_model:
+        # For O3 models, we need to handle the special developer message structure
+        # This will be processed by the thread manager to create proper O3 message format
+        system_message = {
+            "role": "system",
+            "content": system_content,
+            "is_o3_model": True,
+            "developer_message": get_o3_developer_message()
+        }
+        logger.info("Created O3-specific system message with developer role")
+    else:
+        # Standard system message for other models
+        system_message = { "role": "system", "content": system_content }
 
     iteration_count = 0
     continue_execution = True

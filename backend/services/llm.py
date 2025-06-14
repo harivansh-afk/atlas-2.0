@@ -112,7 +112,8 @@ def prepare_params(
             logger.debug(f"Skipping max_tokens for Claude 3.7 model: {model_name}")
             # Do not add any max_tokens parameter for Claude 3.7
         else:
-            param_name = "max_completion_tokens" if 'o1' in model_name else "max_tokens"
+            # Use max_completion_tokens for O1 and O3 reasoning models
+            param_name = "max_completion_tokens" if ('o1' in model_name or 'o3' in model_name) else "max_tokens"
             params[param_name] = max_tokens
 
     # Add tools if provided
