@@ -22,6 +22,8 @@ import { useAddUserMessageMutation } from '@/hooks/react-query/threads/use-messa
 import { useStartAgentMutation, useStopAgentMutation } from '@/hooks/react-query/threads/use-agent-run';
 import { useSubscription } from '@/hooks/react-query/subscriptions/use-subscriptions';
 import { SubscriptionStatus } from '@/components/thread/chat-input/_use-model-selection';
+import { useQueryClient } from '@tanstack/react-query';
+import { subscriptionKeys } from '@/hooks/react-query/subscriptions/keys';
 
 import { UnifiedMessage, ApiMessageType, ToolCallInput, Project } from '../_types';
 import { useThreadData, useToolCalls, useBilling, useKeyboardShortcuts } from '../_hooks';
@@ -124,6 +126,7 @@ export default function ThreadPage({
   const startAgentMutation = useStartAgentMutation();
   const stopAgentMutation = useStopAgentMutation();
   const { data: agent } = useAgent(threadQuery.data?.agent_id);
+  const queryClient = useQueryClient();
 
   const { data: subscriptionData } = useSubscription();
   const subscriptionStatus: SubscriptionStatus = subscriptionData?.status === 'active'
@@ -308,6 +311,9 @@ export default function ThreadPage({
 
         messagesQuery.refetch();
         agentRunsQuery.refetch();
+        // Invalidate subscription and billing data to update usage indicators
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+        queryClient.invalidateQueries({ queryKey: ['billing', 'status'] });
 
       } catch (err) {
         console.error('Error sending message or starting agent:', err);
@@ -321,7 +327,7 @@ export default function ThreadPage({
         setIsSending(false);
       }
     },
-    [threadId, project?.account_id, addUserMessageMutation, startAgentMutation, messagesQuery, agentRunsQuery, setMessages, setBillingData, setShowBillingAlert, setAgentRunId],
+    [threadId, project?.account_id, addUserMessageMutation, startAgentMutation, messagesQuery, agentRunsQuery, setMessages, setBillingData, setShowBillingAlert, setAgentRunId, queryClient],
   );
 
   const handleStopAgent = useCallback(async () => {
@@ -334,11 +340,14 @@ export default function ThreadPage({
       try {
         await stopAgentMutation.mutateAsync(agentRunId);
         agentRunsQuery.refetch();
+        // Invalidate subscription and billing data to update usage indicators
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+        queryClient.invalidateQueries({ queryKey: ['billing', 'status'] });
       } catch (error) {
         console.error('Error stopping agent:', error);
       }
     }
-  }, [stopStreaming, agentRunId, stopAgentMutation, agentRunsQuery, setAgentStatus]);
+  }, [stopStreaming, agentRunId, stopAgentMutation, agentRunsQuery, setAgentStatus, queryClient]);
 
   const handleOpenFileViewer = useCallback((filePath?: string, filePathList?: string[]) => {
     if (filePath) {

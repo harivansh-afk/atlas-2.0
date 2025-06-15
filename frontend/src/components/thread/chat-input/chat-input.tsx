@@ -8,12 +8,14 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { handleFiles } from './file-upload-handler';
 import { MessageInput } from './message-input';
 import { AttachmentGroup } from '../attachment-group';
 import { useModelSelection } from './_use-model-selection';
+import { useRunValidation } from '@/hooks/use-run-validation';
+import { toast } from 'sonner';
 
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
@@ -92,11 +94,11 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       selectedModel,
       setSelectedModel: handleModelChange,
       subscriptionStatus,
-      allModels: modelOptions,
       canAccessModel,
       getActualModelId,
-      refreshCustomModels,
     } = useModelSelection();
+
+    const { canSubmit, reason } = useRunValidation();
 
     const deleteFileMutation = useFileDelete();
     const queryClient = useQueryClient();
@@ -126,6 +128,15 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
 
       if (isAgentRunning && onStopAgent) {
         onStopAgent();
+        return;
+      }
+
+      // Check if user has runs remaining before submitting
+      if (!canSubmit) {
+        toast.error('No runs remaining', {
+          description: reason || 'You have used all your available runs. Please upgrade to continue.',
+          duration: 4000,
+        });
         return;
       }
 
@@ -285,6 +296,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                 selectedModel={selectedModel}
                 onModelChange={handleModelChange}
                 canAccessModel={canAccessModel}
+                subscriptionStatus={subscriptionStatus}
 
                 selectedAgentId={selectedAgentId}
                 onAgentSelect={onAgentSelect}

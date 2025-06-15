@@ -7,7 +7,8 @@ import {
   getAvailableModels,
   CreateCheckoutSessionRequest
 } from '@/lib/api';
-import { modelKeys } from './keys';
+import { modelKeys, subscriptionKeys } from './keys';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const useAvailableModels = createQueryHook(
   modelKeys.available,
@@ -27,17 +28,25 @@ export const useBillingStatus = createQueryHook(
   }
 );
 
-export const useCreateCheckoutSession = createMutationHook(
-  (request: CreateCheckoutSessionRequest) => createCheckoutSession(request),
-  {
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
+export const useCreateCheckoutSession = () => {
+  const queryClient = useQueryClient();
+
+  return createMutationHook(
+    (request: CreateCheckoutSessionRequest) => createCheckoutSession(request),
+    {
+      onSuccess: (data) => {
+        // Invalidate subscription cache to ensure fresh data when user returns
+        queryClient.invalidateQueries({ queryKey: subscriptionKeys.details() });
+        queryClient.invalidateQueries({ queryKey: ['billing', 'status'] });
+
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      },
+      errorContext: {
+        operation: 'create checkout session',
+        resource: 'billing'
       }
-    },
-    errorContext: {
-      operation: 'create checkout session',
-      resource: 'billing'
     }
-  }
-); 
+  )();
+};

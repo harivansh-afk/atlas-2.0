@@ -20,7 +20,7 @@ export default function HeroSectionFive() {
                         />
                     </div>
                     <h1 className="mx-auto mt-2 max-w-2xl text-balance text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl text-neutral-900 dark:text-white">Automate Your Internal Ops <Highlight className="text-neutral-900 dark:text-white">At Scale</Highlight></h1>
-                    <p className="text-muted-foreground mx-auto mb-6 mt-5 text-balance text-lg md:text-xl max-w-xl">Custom AI Agents for all your tasks - at 10x speed.</p>
+                    <p className="text-muted-foreground mx-auto mb-6 mt-5 text-balance text-lg md:text-xl max-w-xl">Custom 10x AI Agents for all your tasks</p>
 
                     <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:*:w-auto">
                         <Button

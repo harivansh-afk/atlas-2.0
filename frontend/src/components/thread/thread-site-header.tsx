@@ -1,8 +1,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button"
-import { FolderOpen, Link, PanelRightOpen, Check, X, Menu, Share2 } from "lucide-react"
-import { usePathname } from "next/navigation"
+import { FolderOpen, PanelRightOpen, Check, X, Menu, Share2, MessageCircle, CreditCard } from "lucide-react"
 import { toast } from "sonner"
 import {
   Tooltip,
@@ -19,8 +18,9 @@ import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
 import { ShareModal } from "@/components/sidebar/share-modal"
 import { useQueryClient } from "@tanstack/react-query";
-import { projectKeys } from "@/hooks/react-query/sidebar/keys";
 import { threadKeys } from "@/hooks/react-query/threads/keys";
+import { useUsageIndicator } from "@/hooks/use-usage-indicator";
+import { BillingModal } from "@/components/billing/billing-modal";
 
 interface ThreadSiteHeaderProps {
   threadId: string;
@@ -43,19 +43,24 @@ export function SiteHeader({
   isMobileView,
   debugMode,
 }: ThreadSiteHeaderProps) {
-  const pathname = usePathname()
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(projectName)
   const inputRef = useRef<HTMLInputElement>(null)
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false);
   const queryClient = useQueryClient();
 
   const isMobile = useIsMobile() || isMobileView
   const { setOpenMobile } = useSidebar()
   const updateProjectMutation = useUpdateProject()
+  const usageData = useUsageIndicator();
 
   const openShareModal = () => {
     setShowShareModal(true)
+  }
+
+  const handleUpgradeClick = () => {
+    setShowBillingModal(true)
   }
 
   const startEditing = () => {
@@ -186,6 +191,33 @@ export function SiteHeader({
             </div>
           )}
 
+          {/* Usage Indicator */}
+          {!usageData.isLoading && (
+            <div
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 h-7 text-xs text-muted-foreground bg-muted rounded-lg shadow-sm mr-2",
+                usageData.shouldShowUpgrade && "cursor-pointer hover:bg-muted/80 transition-colors"
+              )}
+              onClick={usageData.shouldShowUpgrade ? handleUpgradeClick : undefined}
+            >
+              {usageData.hasMessagesLeft ? (
+                <>
+                  <MessageCircle className="h-3 w-3" />
+                  <span className="text-xs select-none font-medium">
+                    {usageData.messagesLeft} runs remaining
+                  </span>
+                </>
+              ) : (
+                <>
+                  <CreditCard className="h-3 w-3" />
+                  <span className="text-xs select-none font-medium">
+                    {usageData.isFreeUser ? 'Upgrade for more messages' : 'Monthly limit reached'}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
           {isMobile ? (
             // Mobile view - only show the side panel toggle
             <Button
@@ -257,6 +289,11 @@ export function SiteHeader({
         threadId={threadId}
         projectId={projectId}
       />
+      <BillingModal
+        open={showBillingModal}
+        onOpenChange={setShowBillingModal}
+        returnUrl={typeof window !== 'undefined' ? window.location.href : '/'}
+      />
     </>
   )
-} 
+}

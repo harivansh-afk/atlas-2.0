@@ -7,9 +7,10 @@ import { dashboardKeys } from "./keys";
 import { useQueryClient } from "@tanstack/react-query";
 import { useModal } from "@/hooks/use-modal-store";
 import { projectKeys, threadKeys } from "../sidebar/keys";
+import { subscriptionKeys } from "../subscriptions/keys";
 
 export const useInitiateAgentMutation = createMutationHook<
-  InitiateAgentResponse, 
+  InitiateAgentResponse,
   FormData
 >(
   initiateAgent,
@@ -35,6 +36,9 @@ export const useInitiateAgentWithInvalidation = () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
       queryClient.invalidateQueries({ queryKey: threadKeys.all });
       queryClient.invalidateQueries({ queryKey: dashboardKeys.agents });
+      // Invalidate subscription data to update usage count
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['billing', 'status'] });
     },
     onError: (error) => {
       console.log('Mutation error:', error);

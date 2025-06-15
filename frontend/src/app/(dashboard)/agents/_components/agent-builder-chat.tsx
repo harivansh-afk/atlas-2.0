@@ -18,6 +18,7 @@ import { Check, Clock } from 'lucide-react';
 import { BillingError } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { agentKeys } from '@/hooks/react-query/agents/keys';
+import { subscriptionKeys } from '@/hooks/react-query/subscriptions/keys';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
 
 interface AgentBuilderChatProps {
@@ -164,6 +165,9 @@ export const AgentBuilderChat = React.memo(function AgentBuilderChat({
           queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
           queryClient.invalidateQueries({ queryKey: agentKeys.detail(agentId) });
           queryClient.invalidateQueries({ queryKey: agentKeys.builderChatHistory(agentId) });
+          // Invalidate subscription and billing data to update usage indicators
+          queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+          queryClient.invalidateQueries({ queryKey: ['billing', 'status'] });
           setTimeout(() => setSaveStatus('idle'), 2000);
         }
         break;
@@ -423,4 +427,4 @@ export const AgentBuilderChat = React.memo(function AgentBuilderChat({
     prevProps.handleFieldChange === nextProps.handleFieldChange &&
     prevProps.handleStyleChange === nextProps.handleStyleChange
   );
-}); 
+});

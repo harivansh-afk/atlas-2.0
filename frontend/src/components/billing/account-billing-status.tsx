@@ -130,11 +130,11 @@ export default function AccountBillingStatus({ accountId, returnUrl }: Props) {
             <div className="rounded-lg border bg-background p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-foreground/90">
-                  Agent Usage This Month
+                  Messages Used This Month
                 </span>
                 <span className="text-sm font-medium text-card-title">
-                  {subscriptionData.current_usage?.toFixed(2) || '0'} /{' '}
-                  {subscriptionData.minutes_limit || '0'} minutes
+                  {subscriptionData.current_usage || '0'} /{' '}
+                  {subscriptionData.messages_limit || '0'} messages
                 </span>
               </div>
             </div>
@@ -167,11 +167,11 @@ export default function AccountBillingStatus({ accountId, returnUrl }: Props) {
 
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-foreground/90">
-                  Agent Usage This Month
+                  Messages Used This Month
                 </span>
                 <span className="text-sm font-medium text-card-title">
-                  {subscriptionData?.current_usage?.toFixed(2) || '0'} /{' '}
-                  {subscriptionData?.minutes_limit || '0'} minutes
+                  {subscriptionData?.current_usage || '0'} /{' '}
+                  {subscriptionData?.messages_limit || '0'} messages
                 </span>
               </div>
             </div>

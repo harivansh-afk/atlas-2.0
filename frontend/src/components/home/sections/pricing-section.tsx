@@ -203,6 +203,12 @@ function PricingTier({
   };
 
   const handleSubscribe = async (planStripePriceId: string) => {
+    // Handle custom plan - open Cal.com link
+    if (tier.name === 'Custom' || planStripePriceId === 'custom_plan') {
+      window.open('https://cal.com/atlasagents/15min?overlayCalendar=true', '_blank');
+      return;
+    }
+
     if (!isAuthenticated) {
       window.location.href = '/auth';
       return;
@@ -365,7 +371,7 @@ function PricingTier({
       : currentSubscription?.scheduled_price_id === tierPriceId);
   const isPlanLoading = isLoading[tierPriceId];
 
-  let buttonText = isAuthenticated ? 'Select Plan' : 'Try Atlas';
+  let buttonText = tier.name === 'Custom' ? tier.buttonText : (isAuthenticated ? 'Select Plan' : 'Try Atlas');
   let buttonDisabled = isPlanLoading;
   let buttonVariant: ButtonVariant = null;
   let ringClass = '';
@@ -496,6 +502,13 @@ function PricingTier({
         : 'bg-secondary hover:bg-secondary/90 text-white';
   }
 
+  // Override for custom plan - always enabled and uses tier button styling
+  if (tier.name === 'Custom') {
+    buttonDisabled = false;
+    buttonVariant = tier.buttonColor as ButtonVariant;
+    buttonClassName = 'bg-accent hover:bg-accent/90 text-white';
+  }
+
   return (
     <div
       className={cn(
@@ -524,11 +537,11 @@ function PricingTier({
           ) : (
             <PriceDisplay price={tier.price} />
           )}
-          <span className="ml-2">{tier.price !== '$0' ? '/month' : ''}</span>
+          <span className="ml-2">{tier.price !== '$0' && tier.name !== 'Custom' ? '/month' : ''}</span>
         </div>
         <p className="text-sm mt-2">{tier.description}</p>
 
-        {tier.name === 'Custom' && tier.upgradePlans ? (
+        {tier.name === 'Custom' && tier.upgradePlans && tier.upgradePlans.length > 0 ? (
           <div className="w-full space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
               Customize your monthly usage
@@ -557,7 +570,7 @@ function PricingTier({
               {localSelectedPlan}/month
             </div>
           </div>
-        ) : (
+        ) : tier.name === 'Custom' ? null : (
           <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-primary/10 border-primary/20 text-primary w-fit">
             {getDisplayedHours(tier)}/month
           </div>
@@ -693,7 +706,7 @@ export function PricingSection({
             </h2>
             <p className="text-muted-foreground text-center text-balance font-medium">
               Start with our free plan or upgrade to a premium plan for more
-              usage hours
+              messages and access to all AI models
             </p>
           </SectionHeader>
           <div className="relative w-full h-full">

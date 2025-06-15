@@ -15,6 +15,8 @@ import { useAddUserMessageMutation } from '@/hooks/react-query/threads/use-messa
 import { useStartAgentMutation, useStopAgentMutation } from '@/hooks/react-query/threads/use-agent-run';
 import { BillingError } from '@/lib/api';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
+import { useQueryClient } from '@tanstack/react-query';
+import { subscriptionKeys } from '@/hooks/react-query/subscriptions/keys';
 
 interface Agent {
   agent_id: string;
@@ -61,6 +63,7 @@ export const AgentPreview = ({ agent }: AgentPreviewProps) => {
   const addUserMessageMutation = useAddUserMessageMutation();
   const startAgentMutation = useStartAgentMutation();
   const stopAgentMutation = useStopAgentMutation();
+  const queryClient = useQueryClient();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -94,6 +97,11 @@ export const AgentPreview = ({ agent }: AgentPreviewProps) => {
       case 'failed':
         setAgentStatus('idle');
         setAgentRunId(null);
+        // Invalidate subscription and billing data to update usage indicators
+        if (hookStatus === 'completed' || hookStatus === 'stopped') {
+          queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+          queryClient.invalidateQueries({ queryKey: ['billing', 'status'] });
+        }
         break;
       case 'connecting':
         setAgentStatus('connecting');
@@ -102,7 +110,7 @@ export const AgentPreview = ({ agent }: AgentPreviewProps) => {
         setAgentStatus('running');
         break;
     }
-  }, []);
+  }, [queryClient]);
 
   const handleStreamError = useCallback((errorMessage: string) => {
     console.error(`[PREVIEW] Stream error: ${errorMessage}`);

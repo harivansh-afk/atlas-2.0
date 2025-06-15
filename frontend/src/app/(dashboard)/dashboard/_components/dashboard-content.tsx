@@ -4,7 +4,7 @@ import React, { useState, Suspense, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Menu, ChevronDown, Lightbulb } from 'lucide-react';
+import { Menu, ChevronDown, Lightbulb, MessageCircle, CreditCard } from 'lucide-react';
 import {
   ChatInput,
   ChatInputHandles,
@@ -23,9 +23,11 @@ import {
 import { useBillingError } from '@/hooks/useBillingError';
 import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
 import { useAccounts } from '@/hooks/use-accounts';
+import { useUsageIndicator } from '@/hooks/use-usage-indicator';
 import { config } from '@/lib/config';
 import { useInitiateAgentWithInvalidation } from '@/hooks/react-query/dashboard/use-initiate-agent';
 import { ModalProviders } from '@/providers/modal-providers';
+import { BillingModal } from '@/components/billing/billing-modal';
 
 import { cn } from '@/lib/utils';
 import { useModal } from '@/hooks/use-modal-store';
@@ -42,6 +44,7 @@ export function DashboardContent() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [showBillingModal, setShowBillingModal] = useState(false);
   const { billingError, handleBillingError, clearBillingError } =
     useBillingError();
   const router = useRouter();
@@ -50,6 +53,7 @@ export function DashboardContent() {
   const { setOpenMobile } = useSidebar();
   const { data: accounts } = useAccounts();
   const personalAccount = accounts?.find((account) => account.personal_account);
+  const usageData = useUsageIndicator();
   const chatInputRef = useRef<ChatInputHandles>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const { onOpen } = useModal();
@@ -83,6 +87,10 @@ export function DashboardContent() {
 
   const secondaryGradient =
     'bg-gradient-to-r from-blue-500 to-blue-500 bg-clip-text text-transparent';
+
+  const handleUpgradeClick = () => {
+    setShowBillingModal(true);
+  };
 
   const handleSubmit = async (
     message: string,
@@ -244,8 +252,33 @@ export function DashboardContent() {
           </AnimatePresence>
         </div>
 
-        {/* Floating Suggestions Button - Bottom Right */}
-        <div className="fixed bottom-6 right-6 z-50">
+        {/* Floating Buttons - Bottom Right */}
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
+          {/* Usage Indicator */}
+          {!usageData.isLoading && (
+            <div
+              className="flex items-center gap-1.5 px-2 py-1 h-7 text-xs text-muted-foreground bg-muted hover:text-accent-foreground hover:bg-muted/80 rounded-lg shadow-lg cursor-pointer transition-colors"
+              onClick={handleUpgradeClick}
+            >
+              {usageData.hasMessagesLeft ? (
+                <>
+                  <MessageCircle className="h-3 w-3" />
+                  <span className="text-xs select-none font-medium">
+                    {usageData.messagesLeft} runs remaining
+                  </span>
+                </>
+              ) : (
+                <>
+                  <CreditCard className="h-3 w-3" />
+                  <span className="text-xs select-none font-medium">
+                    {usageData.isFreeUser ? 'Upgrade for more messages' : 'Monthly limit reached'}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Suggestions Toggle Button */}
           <Button
             variant="ghost"
             size="sm"
@@ -274,6 +307,11 @@ export function DashboardContent() {
           isOpen={!!billingError}
         />
       </div>
+      <BillingModal
+        open={showBillingModal}
+        onOpenChange={setShowBillingModal}
+        returnUrl={typeof window !== 'undefined' ? window.location.href : '/dashboard'}
+      />
     </>
   );
 }

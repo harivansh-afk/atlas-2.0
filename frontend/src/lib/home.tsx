@@ -111,69 +111,45 @@ export const siteConfig = {
       buttonText: 'Try Free',
       buttonColor: 'bg-secondary text-white',
       isPopular: false,
-      hours: '1000 hours',
-      features: ['Public Projects', 'Basic Model (Limited capabilities)'],
+      hours: '10 messages',
+      features: ['10 messages/month', 'Basic models only', 'Community support'],
       stripePriceId: config.SUBSCRIPTION_TIERS.FREE.priceId,
       upgradePlans: [],
     },
     {
       name: 'Pro',
-      price: '$20',
+      price: '$75',
       description: 'Everything in Free, plus:',
-      buttonText: 'Try Free',
+      buttonText: 'Get Started',
       buttonColor: 'bg-primary text-white dark:text-black',
       isPopular: true,
-      hours: '2 hours',
+      hours: '150 messages',
       features: [
-        '2 hours',
-        'Private projects',
-        'Access to intelligent Model (Full Atlas)',
+        '150 messages/month',
+        'Premium LLM Access',
+        'Priority support',
+        'Advanced features',
       ],
-      stripePriceId: config.SUBSCRIPTION_TIERS.TIER_2_20.priceId,
+      stripePriceId: config.SUBSCRIPTION_TIERS.PRO_75.priceId,
       upgradePlans: [],
     },
     {
       name: 'Custom',
-      price: '$50',
-      description: 'Everything in Pro, plus:',
-      buttonText: 'Try Free',
-      buttonColor: 'bg-secondary text-white',
+      price: 'Custom',
+      description: 'For custom plan',
+      buttonText: 'Setup Call',
+      buttonColor: 'bg-accent text-white',
       isPopular: false,
-      hours: '6 hours',
-      features: ['Suited to your needs'],
-      upgradePlans: [
-        {
-          hours: '6 hours',
-          price: '$50',
-          stripePriceId: config.SUBSCRIPTION_TIERS.TIER_6_50.priceId,
-        },
-        {
-          hours: '12 hours',
-          price: '$100',
-          stripePriceId: config.SUBSCRIPTION_TIERS.TIER_12_100.priceId,
-        },
-        {
-          hours: '25 hours',
-          price: '$200',
-          stripePriceId: config.SUBSCRIPTION_TIERS.TIER_25_200.priceId,
-        },
-        {
-          hours: '50 hours',
-          price: '$400',
-          stripePriceId: config.SUBSCRIPTION_TIERS.TIER_50_400.priceId,
-        },
-        {
-          hours: '125 hours',
-          price: '$800',
-          stripePriceId: config.SUBSCRIPTION_TIERS.TIER_125_800.priceId,
-        },
-        {
-          hours: '200 hours',
-          price: '$1000',
-          stripePriceId: config.SUBSCRIPTION_TIERS.TIER_200_1000.priceId,
-        },
+      hours: 'Unlimited messages',
+      features: [
+        'Unlimited messages',
+        'Custom integrations',
+        'Dedicated support',
+        'Enterprise features',
+        'Custom deployment',
       ],
-      stripePriceId: config.SUBSCRIPTION_TIERS.TIER_6_50.priceId,
+      stripePriceId: 'custom_plan',
+      upgradePlans: undefined,
     },
   ],
   companyShowcase: {
@@ -186,7 +162,7 @@ export const siteConfig = {
             width="110"
             height="31"
             viewBox="0 0 110 31"
-            fill="none" 
+            fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="dark:fill-white fill-black"
           >

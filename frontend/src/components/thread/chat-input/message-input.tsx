@@ -8,6 +8,7 @@ import { FileUploadHandler } from './file-upload-handler';
 import { VoiceRecorder } from './voice-recorder';
 import { ModelToggle } from './model-toggle';
 import { CursorStyleAgentSelector } from './cursor-style-agent-selector';
+import { useRunValidation } from '@/hooks/use-run-validation';
 
 
 
@@ -36,6 +37,7 @@ interface MessageInputProps {
   selectedModel: string;
   onModelChange: (model: string) => void;
   canAccessModel: (modelId: string) => boolean;
+  subscriptionStatus?: 'active' | 'no_subscription';
 
   selectedAgentId?: string;
   onAgentSelect?: (agentId: string | undefined) => void;
@@ -68,12 +70,15 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       selectedModel,
       onModelChange,
       canAccessModel,
+      subscriptionStatus,
 
       selectedAgentId,
       onAgentSelect,
     },
     ref,
   ) => {
+    const { canSubmit } = useRunValidation();
+
     useEffect(() => {
       const textarea = ref as React.RefObject<HTMLTextAreaElement>;
       if (!textarea.current) return;
@@ -102,7 +107,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         if (
           (value.trim() || uploadedFiles.length > 0) &&
           !loading &&
-          (!disabled || isAgentRunning)
+          (!disabled || isAgentRunning) &&
+          canSubmit
         ) {
           onSubmit(e as unknown as React.FormEvent);
         }
@@ -160,6 +166,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               selectedModel={selectedModel}
               onModelChange={onModelChange}
               canAccessModel={canAccessModel}
+              subscriptionStatus={subscriptionStatus}
             />
           </div>
 
@@ -173,14 +180,16 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                 isAgentRunning ? 'bg-red-500 hover:bg-red-600' : '',
                 (!value.trim() && uploadedFiles.length === 0 && !isAgentRunning) ||
                   loading ||
-                  (disabled && !isAgentRunning)
+                  (disabled && !isAgentRunning) ||
+                  !canSubmit
                   ? 'opacity-50'
                   : '',
               )}
               disabled={
                 (!value.trim() && uploadedFiles.length === 0 && !isAgentRunning) ||
                 loading ||
-                (disabled && !isAgentRunning)
+                (disabled && !isAgentRunning) ||
+                !canSubmit
               }
             >
               {loading ? (

@@ -3,32 +3,44 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { HAIKU_MODEL_ID } from './_use-model-selection';
+import { HAIKU_MODEL_ID, SONNET4_MODEL_ID } from './_use-model-selection';
 
 interface ModelToggleProps {
   selectedModel: string;
   onModelChange: (modelId: string) => void;
   canAccessModel: (modelId: string) => boolean;
+  subscriptionStatus?: 'active' | 'no_subscription';
 }
 
 export const ModelToggle: React.FC<ModelToggleProps> = ({
   selectedModel,
   onModelChange,
   canAccessModel,
+  subscriptionStatus = 'no_subscription',
 }) => {
-  // Determine if we're in AL1 mode (OpenAI O3) or fast mode (Claude Haiku 3.5)
-  const isAL1Mode = selectedModel === 'openai/o3';
+  // Determine if we're in AL1 mode (Sonnet 4) or fast mode (Claude Haiku 3.5)
+  const isAL1Mode = selectedModel === SONNET4_MODEL_ID;
 
   const handleToggle = () => {
-    const newModel = isAL1Mode ? HAIKU_MODEL_ID : 'openai/o3';
+    const newModel = isAL1Mode ? HAIKU_MODEL_ID : SONNET4_MODEL_ID;
+    const isFreeTier = subscriptionStatus !== 'active';
+
+    // Prevent free tier users from switching to AL1 mode (Sonnet 4)
+    if (!isAL1Mode && newModel === SONNET4_MODEL_ID && isFreeTier) {
+      toast.error('Premium feature required', {
+        description: 'AL1 mode requires a paid subscription. Please upgrade to access advanced models.',
+        duration: 4000,
+      });
+      return;
+    }
 
     if (canAccessModel(newModel)) {
       onModelChange(newModel);
 
       // Show toast notification based on the NEW model we're switching TO
-      if (newModel === 'openai/o3') {
+      if (newModel === SONNET4_MODEL_ID) {
         toast.success('Advanced language mode enabled', {
-          description: 'Switched to OpenAI O3',
+          description: 'Switched to Claude Sonnet 4',
           duration: 2000,
         });
       } else {

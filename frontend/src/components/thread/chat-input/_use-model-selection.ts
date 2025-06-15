@@ -8,17 +8,19 @@ import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model'
 export const STORAGE_KEY_MODEL = 'Atlas-preferred-model';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
 export const DEFAULT_FREE_MODEL_ID = 'haiku-3.5';
-export const DEFAULT_PREMIUM_MODEL_ID = 'openai/o3';
+export const DEFAULT_PREMIUM_MODEL_ID = 'sonnet-4';
 
 // Utility: convert backend IDs / aliases to the canonical IDs we use in the UI
 export const normalizeModelId = (rawId: string): string => {
   if (!rawId) return rawId;
   // Strip openrouter/ prefix if present
-  let id = rawId.replace(/^openrouter\//, '');
+  const id = rawId.replace(/^openrouter\//, '');
   // Collapse known long names to short aliases we list in MODELS
   switch (id) {
     case 'anthropic/claude-3-5-haiku-latest':
       return 'haiku-3.5';
+    case 'anthropic/claude-sonnet-4-20250514':
+      return 'sonnet-4';
     case 'openai/o3':
     case 'o3':
       return 'openai/o3';
@@ -28,7 +30,7 @@ export const normalizeModelId = (rawId: string): string => {
 };
 
 // Model constants for toggle selector
-export const OPUS4_MODEL_ID = 'openai/o3';
+export const SONNET4_MODEL_ID = 'sonnet-4'; // Actual Sonnet 4 (AL1 mode) - premium tier
 export const HAIKU_MODEL_ID = 'haiku-3.5'; // Claude Haiku 3.5 for fast responses
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
@@ -51,13 +53,6 @@ export interface CustomModel {
 // SINGLE SOURCE OF TRUTH for all model data
 export const MODELS = {
   // Free tier high-priority models
-  'openai/o3': {
-    tier: 'free',
-    priority: 100,
-    recommended: true,
-    lowQuality: false,
-    description: 'O3 - OpenAI\'s most advanced reasoning model'
-  },
   'haiku-3.5': {
     tier: 'free',
     priority: 95,
@@ -71,6 +66,22 @@ export const MODELS = {
     recommended: true,
     lowQuality: false,
     description: 'Claude 3.7 - Anthropic\'s most powerful AI assistant'
+  },
+
+  // Premium tier models
+  'sonnet-4': {
+    tier: 'premium',
+    priority: 100,
+    recommended: true,
+    lowQuality: false,
+    description: 'Claude Sonnet 4 - Anthropic\'s most advanced AI assistant (AL1 mode)'
+  },
+  'openai/o3': {
+    tier: 'premium',
+    priority: 99,
+    recommended: true,
+    lowQuality: false,
+    description: 'O3 - OpenAI\'s most advanced reasoning model'
   },
   'claude-sonnet-3.7-reasoning': {
     tier: 'premium',
@@ -305,9 +316,9 @@ export const useModelSelection = () => {
         },
         {
           id: DEFAULT_PREMIUM_MODEL_ID,
-          label: 'OpenAI O3',
-          requiresSubscription: false,
-          description: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.description || MODEL_TIERS.free.baseDescription,
+          label: 'Claude Sonnet 4',
+          requiresSubscription: true,
+          description: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.description || MODEL_TIERS.premium.baseDescription,
           priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
         },
       ];
@@ -518,7 +529,41 @@ export const useModelSelection = () => {
     canAccessModel: (modelId: string) => {
       if (isLocalMode()) return true;
       const canonical = normalizeModelId(modelId);
-      const option = MODEL_OPTIONS.find(m => m.id === canonical);
+
+      // First try to find by exact ID match
+      let option = MODEL_OPTIONS.find(m => m.id === canonical);
+
+      // If not found, try to find by short_name (for backend API models)
+      if (!option && modelsData?.models) {
+        const backendModel = modelsData.models.find(m =>
+          m.short_name === canonical || m.display_name === canonical
+        );
+        if (backendModel) {
+          // Create a temporary option based on backend model data
+          option = {
+            id: backendModel.id,
+            label: backendModel.display_name,
+            requiresSubscription: backendModel.requires_subscription,
+            description: '',
+            priority: 0
+          };
+        }
+      }
+
+      // If still not found, check our local MODELS definition
+      if (!option) {
+        const localModel = MODELS[canonical];
+        if (localModel) {
+          option = {
+            id: canonical,
+            label: canonical,
+            requiresSubscription: localModel.tier === 'premium',
+            description: localModel.description,
+            priority: localModel.priority
+          };
+        }
+      }
+
       return option ? canAccessModel(subscriptionStatus, option.requiresSubscription) : false;
     },
     isSubscriptionRequired: (modelId: string) => {

@@ -13,7 +13,11 @@ from utils.config import config, EnvMode
 from services.supabase import DBConnection
 from utils.auth_utils import get_current_user_id_from_jwt
 from pydantic import BaseModel
-from utils.constants import MODEL_ACCESS_TIERS, MODEL_NAME_ALIASES
+from utils.constants import (
+    MODEL_ACCESS_TIERS,
+    MODEL_NAME_ALIASES,
+    SUBSCRIPTION_MESSAGE_LIMITS,
+)
 
 # Initialize Stripe
 stripe.api_key = config.STRIPE_SECRET_KEY
@@ -23,20 +27,8 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 
 
 SUBSCRIPTION_TIERS = {
-    config.STRIPE_FREE_TIER_ID: {"name": "free", "minutes": 6000000},
-    config.STRIPE_TIER_2_20_ID: {"name": "tier_2_20", "minutes": 120},  # 2 hours
-    config.STRIPE_TIER_6_50_ID: {"name": "tier_6_50", "minutes": 360},  # 6 hours
-    config.STRIPE_TIER_12_100_ID: {"name": "tier_12_100", "minutes": 720},  # 12 hours
-    config.STRIPE_TIER_25_200_ID: {"name": "tier_25_200", "minutes": 1500},  # 25 hours
-    config.STRIPE_TIER_50_400_ID: {"name": "tier_50_400", "minutes": 3000},  # 50 hours
-    config.STRIPE_TIER_125_800_ID: {
-        "name": "tier_125_800",
-        "minutes": 7500,
-    },  # 125 hours
-    config.STRIPE_TIER_200_1000_ID: {
-        "name": "tier_200_1000",
-        "minutes": 12000,
-    },  # 200 hours
+    config.STRIPE_FREE_TIER_ID: {"name": "free", "messages": 10},
+    config.STRIPE_PRO_75_ID: {"name": "pro_75", "messages": 150},
 }
 
 
@@ -58,8 +50,8 @@ class SubscriptionStatus(BaseModel):
     current_period_end: Optional[datetime] = None
     cancel_at_period_end: bool = False
     trial_end: Optional[datetime] = None
-    minutes_limit: Optional[int] = None
-    current_usage: Optional[float] = None
+    messages_limit: Optional[int] = None
+    current_usage: Optional[int] = None  # Number of messages used
     # Fields for scheduled changes
     has_schedule: bool = False
     scheduled_plan_name: Optional[str] = None
@@ -85,15 +77,34 @@ async def get_stripe_customer_id(client, user_id: str) -> Optional[str]:
 
 async def create_stripe_customer(client, user_id: str, email: str) -> str:
     """Create a new Stripe customer for a user."""
-    # Create customer in Stripe
-    customer = stripe.Customer.create(email=email, metadata={"user_id": user_id})
+    try:
+        logger.info(
+            f"DEBUG: Creating Stripe customer for user {user_id} with email {email}"
+        )
+        # Create customer in Stripe
+        customer = stripe.Customer.create(email=email, metadata={"user_id": user_id})
+        logger.info(f"DEBUG: Created Stripe customer {customer.id}")
 
-    # Store customer ID in Supabase
-    await client.schema("basejump").from_("billing_customers").insert(
-        {"id": customer.id, "account_id": user_id, "email": email, "provider": "stripe"}
-    ).execute()
+        # Store customer ID in Supabase
+        result = (
+            await client.schema("basejump")
+            .from_("billing_customers")
+            .insert(
+                {
+                    "id": customer.id,
+                    "account_id": user_id,
+                    "email": email,
+                    "provider": "stripe",
+                }
+            )
+            .execute()
+        )
+        logger.info(f"DEBUG: Stored customer {customer.id} in database")
 
-    return customer.id
+        return customer.id
+    except Exception as e:
+        logger.error(f"DEBUG: Error creating Stripe customer: {str(e)}")
+        raise e
 
 
 async def get_user_subscription(user_id: str) -> Optional[Dict]:
@@ -127,13 +138,7 @@ async def get_user_subscription(user_id: str) -> Optional[Dict]:
                 item = sub["items"]["data"][0]
                 if item.get("price") and item["price"].get("id") in [
                     config.STRIPE_FREE_TIER_ID,
-                    config.STRIPE_TIER_2_20_ID,
-                    config.STRIPE_TIER_6_50_ID,
-                    config.STRIPE_TIER_12_100_ID,
-                    config.STRIPE_TIER_25_200_ID,
-                    config.STRIPE_TIER_50_400_ID,
-                    config.STRIPE_TIER_125_800_ID,
-                    config.STRIPE_TIER_200_1000_ID,
+                    config.STRIPE_PRO_75_ID,
                 ]:
                     our_subscriptions.append(sub)
 
@@ -171,8 +176,8 @@ async def get_user_subscription(user_id: str) -> Optional[Dict]:
         return None
 
 
-async def calculate_monthly_usage(client, user_id: str) -> float:
-    """Calculate total agent run minutes for the current month for a user."""
+async def calculate_monthly_usage(client, user_id: str) -> int:
+    """Calculate total messages/runs for the current month for a user."""
     # Get start of current month in UTC
     now = datetime.now(timezone.utc)
     start_of_month = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
@@ -186,41 +191,24 @@ async def calculate_monthly_usage(client, user_id: str) -> float:
     )
 
     if not threads_result.data:
-        return 0.0
+        return 0
 
     thread_ids = [t["thread_id"] for t in threads_result.data]
 
     # Then get all agent runs for these threads in current month
     runs_result = (
         await client.table("agent_runs")
-        .select("started_at, completed_at")
+        .select("started_at")
         .in_("thread_id", thread_ids)
         .gte("started_at", start_of_month.isoformat())
         .execute()
     )
 
     if not runs_result.data:
-        return 0.0
+        return 0
 
-    # Calculate total minutes
-    total_seconds = 0
-    now_ts = now.timestamp()
-
-    for run in runs_result.data:
-        start_time = datetime.fromisoformat(
-            run["started_at"].replace("Z", "+00:00")
-        ).timestamp()
-        if run["completed_at"]:
-            end_time = datetime.fromisoformat(
-                run["completed_at"].replace("Z", "+00:00")
-            ).timestamp()
-        else:
-            # For running jobs, use current time
-            end_time = now_ts
-
-        total_seconds += end_time - start_time
-
-    return total_seconds / 60  # Convert to minutes
+    # Simply count the number of runs/messages
+    return len(runs_result.data)
 
 
 async def get_allowed_models_for_user(client, user_id: str):
@@ -298,7 +286,7 @@ async def check_billing_status(
             {
                 "price_id": "local_dev",
                 "plan_name": "Local Development",
-                "minutes_limit": "no limit",
+                "messages_limit": "no limit",
             },
         )
 
@@ -335,15 +323,23 @@ async def check_billing_status(
     # Calculate current month's usage
     current_usage = await calculate_monthly_usage(client, user_id)
 
+    # Create enhanced subscription info with usage data
+    enhanced_subscription = {
+        "price_id": price_id,
+        "plan_name": tier_info["name"],
+        "messages_limit": tier_info["messages"],
+        "current_usage": current_usage,
+    }
+
     # Check if within limits
-    if current_usage >= tier_info["minutes"]:
+    if current_usage >= tier_info["messages"]:
         return (
             False,
-            f"Monthly limit of {tier_info['minutes']} minutes reached. Please upgrade your plan or wait until next month.",
-            subscription,
+            f"Monthly limit of {tier_info['messages']} messages reached. Please upgrade your plan or wait until next month.",
+            enhanced_subscription,
         )
 
-    return True, "OK", subscription
+    return True, "OK", enhanced_subscription
 
 
 # API endpoints
@@ -366,23 +362,68 @@ async def create_checkout_session(
 
         # Get or create Stripe customer
         customer_id = await get_stripe_customer_id(client, current_user_id)
+        logger.info(f"DEBUG: Retrieved customer_id from database: {customer_id}")
+
         if not customer_id:
+            logger.info(
+                f"DEBUG: No customer found for user {current_user_id}, creating new customer"
+            )
             customer_id = await create_stripe_customer(client, current_user_id, email)
+            logger.info(f"DEBUG: Created new customer: {customer_id}")
+        else:
+            # Validate that the customer exists in Stripe
+            try:
+                customer = stripe.Customer.retrieve(customer_id)
+                logger.info(
+                    f"DEBUG: Validated existing customer {customer_id} in Stripe"
+                )
+            except stripe.error.InvalidRequestError as e:
+                if "No such customer" in str(e):
+                    logger.warning(
+                        f"Customer {customer_id} not found in Stripe, creating new customer"
+                    )
+                    # Remove the invalid customer from database
+                    await client.schema("basejump").from_(
+                        "billing_customers"
+                    ).delete().eq("id", customer_id).execute()
+                    # Create a new customer
+                    customer_id = await create_stripe_customer(
+                        client, current_user_id, email
+                    )
+                    logger.info(f"DEBUG: Created replacement customer: {customer_id}")
+                else:
+                    logger.error(
+                        f"DEBUG: Error validating customer {customer_id}: {str(e)}"
+                    )
+                    raise e
 
         # Get the target price and product ID
         try:
+            logger.info(f"DEBUG: Attempting to retrieve price: {request.price_id}")
             price = stripe.Price.retrieve(request.price_id, expand=["product"])
             product_id = price["product"]["id"]
-        except stripe.error.InvalidRequestError:
+            logger.info(
+                f"DEBUG: Successfully retrieved price {request.price_id} for product {product_id}"
+            )
+        except stripe.error.InvalidRequestError as e:
+            logger.error(f"DEBUG: Invalid price ID {request.price_id}: {str(e)}")
             raise HTTPException(
-                status_code=400, detail=f"Invalid price ID: {request.price_id}"
+                status_code=400,
+                detail=f"Invalid price ID: {request.price_id}. Error: {str(e)}",
             )
 
         # Verify the price belongs to our product
+        logger.info(f"DEBUG: Price product_id from Stripe: {product_id}")
+        logger.info(
+            f"DEBUG: Expected product_id from config: {config.STRIPE_PRODUCT_ID}"
+        )
         if product_id != config.STRIPE_PRODUCT_ID:
+            logger.error(
+                f"DEBUG: Product ID mismatch. Expected: {config.STRIPE_PRODUCT_ID}, Got: {product_id}"
+            )
             raise HTTPException(
                 status_code=400,
-                detail="Price ID does not belong to the correct product.",
+                detail=f"Price ID does not belong to the correct product. Expected: {config.STRIPE_PRODUCT_ID}, Got: {product_id}",
             )
 
         # Check for existing subscription for our product
@@ -707,16 +748,46 @@ async def create_checkout_session(
                 )
         else:
             # --- Create New Subscription via Checkout Session ---
-            session = stripe.checkout.Session.create(
-                customer=customer_id,
-                payment_method_types=["card"],
-                line_items=[{"price": request.price_id, "quantity": 1}],
-                mode="subscription",
-                success_url=request.success_url,
-                cancel_url=request.cancel_url,
-                metadata={"user_id": current_user_id, "product_id": product_id},
-                allow_promotion_codes=True,
-            )
+            try:
+                session = stripe.checkout.Session.create(
+                    customer=customer_id,
+                    payment_method_types=["card"],
+                    line_items=[{"price": request.price_id, "quantity": 1}],
+                    mode="subscription",
+                    success_url=request.success_url,
+                    cancel_url=request.cancel_url,
+                    metadata={"user_id": current_user_id, "product_id": product_id},
+                    allow_promotion_codes=True,
+                )
+            except stripe.error.InvalidRequestError as e:
+                if "No such customer" in str(e):
+                    logger.warning(
+                        f"Customer {customer_id} not found during checkout session creation, creating new customer"
+                    )
+                    # Remove the invalid customer from database
+                    await client.schema("basejump").from_(
+                        "billing_customers"
+                    ).delete().eq("id", customer_id).execute()
+                    # Create a new customer
+                    customer_id = await create_stripe_customer(
+                        client, current_user_id, email
+                    )
+                    logger.info(
+                        f"Created new customer {customer_id} for checkout session"
+                    )
+                    # Retry checkout session creation with new customer
+                    session = stripe.checkout.Session.create(
+                        customer=customer_id,
+                        payment_method_types=["card"],
+                        line_items=[{"price": request.price_id, "quantity": 1}],
+                        mode="subscription",
+                        success_url=request.success_url,
+                        cancel_url=request.cancel_url,
+                        metadata={"user_id": current_user_id, "product_id": product_id},
+                        allow_promotion_codes=True,
+                    )
+                else:
+                    raise e
 
             # Update customer status to potentially active (will be confirmed by webhook)
             # This ensures customer is marked as active once payment is completed
@@ -756,6 +827,35 @@ async def create_portal_session(
         customer_id = await get_stripe_customer_id(client, current_user_id)
         if not customer_id:
             raise HTTPException(status_code=404, detail="No billing customer found")
+
+        # Validate that the customer exists in Stripe
+        try:
+            stripe.Customer.retrieve(customer_id)
+            logger.info(f"Validated existing customer {customer_id} for portal session")
+        except stripe.error.InvalidRequestError as e:
+            if "No such customer" in str(e):
+                logger.warning(
+                    f"Customer {customer_id} not found in Stripe for portal session, creating new customer"
+                )
+                # Get user email for creating new customer
+                user_result = await client.auth.admin.get_user_by_id(current_user_id)
+                if not user_result:
+                    raise HTTPException(status_code=404, detail="User not found")
+                email = user_result.user.email
+
+                # Remove the invalid customer from database
+                await client.schema("basejump").from_("billing_customers").delete().eq(
+                    "id", customer_id
+                ).execute()
+                # Create a new customer
+                customer_id = await create_stripe_customer(
+                    client, current_user_id, email
+                )
+                logger.info(f"Created new customer {customer_id} for portal session")
+            else:
+                raise HTTPException(
+                    status_code=500, detail=f"Error validating customer: {str(e)}"
+                )
 
         # Ensure the portal configuration has subscription_update enabled
         try:
@@ -810,9 +910,7 @@ async def create_portal_session(
                     )
                     active_config = stripe.billing_portal.Configuration.create(
                         business_profile={
-                            "headline": "Subscription Management",
-                            "privacy_policy_url": config.FRONTEND_URL + "/privacy",
-                            "terms_of_service_url": config.FRONTEND_URL + "/terms",
+                            "headline": "Atlas AI Subscription Management",
                         },
                         features={
                             "subscription_update": {
@@ -870,13 +968,20 @@ async def get_subscription(
             # Default to free tier status if no active subscription for our product
             free_tier_id = config.STRIPE_FREE_TIER_ID
             free_tier_info = SUBSCRIPTION_TIERS.get(free_tier_id)
+
+            # Calculate current usage for free tier users
+            db = DBConnection()
+            client = await db.client
+            current_usage = await calculate_monthly_usage(client, current_user_id)
+
             return SubscriptionStatus(
                 status="no_subscription",
                 plan_name=(
                     free_tier_info.get("name", "free") if free_tier_info else "free"
                 ),
                 price_id=free_tier_id,
-                minutes_limit=free_tier_info.get("minutes") if free_tier_info else 0,
+                messages_limit=free_tier_info.get("messages") if free_tier_info else 0,
+                current_usage=current_usage,  # ✅ Added missing current_usage field
             )
 
         # Extract current plan details
@@ -888,7 +993,7 @@ async def get_subscription(
             logger.warning(
                 f"User {current_user_id} subscribed to unknown price {current_price_id}. Defaulting info."
             )
-            current_tier_info = {"name": "unknown", "minutes": 0}
+            current_tier_info = {"name": "unknown", "messages": 0}
 
         # Calculate current usage
         db = DBConnection()
@@ -908,8 +1013,8 @@ async def get_subscription(
                 if subscription.get("trial_end")
                 else None
             ),
-            minutes_limit=current_tier_info["minutes"],
-            current_usage=round(current_usage, 2),
+            messages_limit=current_tier_info["messages"],
+            current_usage=current_usage,
             has_schedule=False,  # Default
         )
 

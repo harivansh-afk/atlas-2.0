@@ -1513,7 +1513,7 @@ export interface SubscriptionStatus {
   current_period_end?: string; // ISO Date string
   cancel_at_period_end: boolean;
   trial_end?: string; // ISO Date string
-  minutes_limit?: number;
+  messages_limit?: number;
   current_usage?: number;
   // Fields for scheduled changes
   has_schedule: boolean;
@@ -1529,7 +1529,8 @@ export interface BillingStatusResponse {
   subscription: {
     price_id: string;
     plan_name: string;
-    minutes_limit?: number;
+    messages_limit?: number;
+    current_usage?: number;
   };
 }
 
