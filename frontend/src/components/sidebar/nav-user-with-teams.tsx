@@ -17,6 +17,7 @@ import {
   AudioWaveform,
   Sun,
   Moon,
+  GraduationCap,
 } from 'lucide-react';
 import { useAccounts } from '@/hooks/use-accounts';
 import NewTeamForm from '@/components/basejump/new-team-form';
@@ -280,6 +281,12 @@ export function NavUserWithTeams({
 
               {/* User Settings Section */}
               <DropdownMenuGroup>
+                <DropdownMenuItem asChild>
+                  <Link href="/onboarding">
+                    <GraduationCap className="h-4 w-4" />
+                    Onboarding
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/settings/billing">
                     <CreditCard className="h-4 w-4" />

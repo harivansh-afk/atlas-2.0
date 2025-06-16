@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Loader2, Settings2, Sparkles, Check, Clock, Eye, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -21,13 +21,16 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentBuilderChat } from '../../_components/agent-builder-chat';
 import { useFeatureAlertHelpers } from '@/hooks/use-feature-alerts';
+import { CustomMCPDialog } from '../../_components/mcp/custom-mcp-dialog';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function AgentConfigurationPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const agentId = params.agentId as string;
+  const isFromOnboarding = searchParams.get('onboarding') === 'true';
 
   const { data: agent, isLoading, error } = useAgent(agentId);
   const updateAgentMutation = useUpdateAgent();
@@ -54,6 +57,7 @@ export default function AgentConfigurationPage() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('agent-builder');
+  const [showCustomMCPDialog, setShowCustomMCPDialog] = useState(false);
   const accordionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,6 +85,20 @@ export default function AgentConfigurationPage() {
       originalDataRef.current = { ...initialData };
     }
   }, [agent]);
+
+  // Show custom MCP dialog when coming from onboarding
+  useEffect(() => {
+    if (isFromOnboarding && agent && !isLoading) {
+      // Set active tab to manual configuration
+      setActiveTab('manual');
+      // Show custom MCP dialog after a short delay to ensure UI is ready
+      const timer = setTimeout(() => {
+        setShowCustomMCPDialog(true);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isFromOnboarding, agent, isLoading]);
 
 
   useEffect(() => {
@@ -188,6 +206,26 @@ export default function AgentConfigurationPage() {
     };
     setFormData(newFormData);
     debouncedSave(newFormData);
+  }, [debouncedSave]);
+
+  const handleCustomMCPSave = useCallback((customConfig: any) => {
+    const newCustomMcp = {
+      name: customConfig.name,
+      type: customConfig.type as 'http' | 'sse',
+      config: customConfig.config,
+      enabledTools: customConfig.enabledTools
+    };
+
+    const newFormData = {
+      ...currentFormDataRef.current,
+      custom_mcps: [...currentFormDataRef.current.custom_mcps, newCustomMcp]
+    };
+
+    setFormData(newFormData);
+    debouncedSave(newFormData);
+    setShowCustomMCPDialog(false);
+
+    toast.success(`Successfully connected ${customConfig.name} with ${customConfig.enabledTools.length} tools`);
   }, [debouncedSave]);
 
   const currentStyle = useMemo(() => {
@@ -477,6 +515,13 @@ export default function AgentConfigurationPage() {
           {ConfigurationContent}
         </div>
       </div>
+
+      {/* Custom MCP Dialog for onboarding */}
+      <CustomMCPDialog
+        open={showCustomMCPDialog}
+        onOpenChange={setShowCustomMCPDialog}
+        onSave={handleCustomMCPSave}
+      />
     </div>
   );
 }
