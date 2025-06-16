@@ -158,6 +158,10 @@ app.include_router(transcription_api.router, prefix="/api")
 
 app.include_router(email_api.router, prefix="/api")
 
+from services import admin_api
+
+app.include_router(admin_api.router, prefix="/api")
+
 
 @app.get("/api/health")
 async def health_check():

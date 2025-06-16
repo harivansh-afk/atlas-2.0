@@ -3,6 +3,8 @@
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
+import { isAdminUser } from '@/lib/admin';
 
 export default function PersonalAccountSettingsPage({
   children,
@@ -10,11 +12,18 @@ export default function PersonalAccountSettingsPage({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+
   const items = [
     // { name: "Profile", href: "/settings" },
     // { name: "Teams", href: "/settings/teams" },
     { name: 'Billing', href: '/settings/billing' },
   ];
+
+  // Add admin section for admin users
+  if (isAdminUser(user)) {
+    items.push({ name: 'Admin', href: '/settings/admin' });
+  }
   return (
     <div className="space-y-6 w-full">
       <Separator className="border-subtle dark:border-white/10" />

@@ -18,6 +18,7 @@ from utils.constants import (
     MODEL_NAME_ALIASES,
     SUBSCRIPTION_MESSAGE_LIMITS,
 )
+from utils.admin_utils import is_admin_user
 
 # Initialize Stripe
 stripe.api_key = config.STRIPE_SECRET_KEY
@@ -29,6 +30,7 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 SUBSCRIPTION_TIERS = {
     config.STRIPE_FREE_TIER_ID: {"name": "free", "messages": 10},
     config.STRIPE_PRO_75_ID: {"name": "pro_75", "messages": 150},
+    "admin": {"name": "admin", "messages": 100000},  # Admin tier with unlimited access
 }
 
 
@@ -218,6 +220,10 @@ async def get_allowed_models_for_user(client, user_id: str):
     Returns:
         List of model names allowed for the user's subscription tier.
     """
+    # Check if user is an admin first
+    if await is_admin_user(user_id):
+        logger.info(f"Admin user {user_id} detected - granting access to all models")
+        return MODEL_ACCESS_TIERS.get("admin", [])
 
     subscription = await get_user_subscription(user_id)
     tier_name = "free"
@@ -278,6 +284,20 @@ async def check_billing_status(
     Returns:
         Tuple[bool, str, Optional[Dict]]: (can_run, message, subscription_info)
     """
+    # Check if user is an admin first
+    if await is_admin_user(user_id):
+        logger.info(f"Admin user {user_id} detected - bypassing billing checks")
+        return (
+            True,
+            "Admin user - unlimited access",
+            {
+                "price_id": "admin",
+                "plan_name": "Admin",
+                "messages_limit": 100000,
+                "current_usage": 0,  # Admin usage doesn't count
+            },
+        )
+
     if config.ENV_MODE == EnvMode.LOCAL:
         logger.info("Running in local development mode - billing checks are disabled")
         return (
@@ -960,6 +980,21 @@ async def get_subscription(
 ):
     """Get the current subscription status for the current user, including scheduled changes."""
     try:
+        # Check if user is an admin first
+        if await is_admin_user(current_user_id):
+            logger.info(
+                f"Admin user {current_user_id} detected - returning admin subscription status"
+            )
+            return SubscriptionStatus(
+                status="active",
+                plan_name="Admin",
+                price_id="admin",
+                messages_limit=100000,
+                current_usage=0,  # Admin usage doesn't count
+                cancel_at_period_end=False,
+                has_schedule=False,
+            )
+
         # Get subscription from Stripe (this helper already handles filtering/cleanup)
         subscription = await get_user_subscription(current_user_id)
         # print("Subscription data for status:", subscription)
@@ -1224,6 +1259,28 @@ async def get_available_models(
             return {
                 "models": model_info,
                 "subscription_tier": "Local Development",
+                "total_models": len(model_info),
+            }
+
+        # Check if user is an admin
+        if await is_admin_user(current_user_id):
+            logger.info(f"Admin user {current_user_id} detected - returning all models")
+            # Return all models for admin users
+            model_info = []
+            for short_name, full_name in MODEL_NAME_ALIASES.items():
+                model_info.append(
+                    {
+                        "id": full_name,
+                        "display_name": short_name,
+                        "short_name": short_name,
+                        "requires_subscription": False,  # Admin has access to everything
+                        "is_available": True,  # Admin has access to everything
+                    }
+                )
+
+            return {
+                "models": model_info,
+                "subscription_tier": "admin",
                 "total_models": len(model_info),
             }
 

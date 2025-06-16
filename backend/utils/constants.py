@@ -1,4 +1,4 @@
-# Simple 2-tier model access system
+# 3-tier model access system including admin tier
 MODEL_ACCESS_TIERS = {
     "free": [
         # Free tier gets access to basic models only
@@ -16,12 +16,24 @@ MODEL_ACCESS_TIERS = {
         "anthropic/claude-3-7-sonnet-latest",
         "anthropic/claude-sonnet-4-20250514",  # Actual Sonnet 4 moved to premium tier
     ],
+    "admin": [
+        # Admin tier gets access to all models (same as pro but with unlimited usage)
+        "openrouter/deepseek/deepseek-chat",
+        "openrouter/qwen/qwen3-235b-a22b",
+        "openrouter/google/gemini-2.5-flash-preview-05-20",
+        "anthropic/claude-3-5-haiku-latest",
+        "anthropic/claude-3-7-sonnet-latest",
+        "anthropic/claude-sonnet-4-20250514",
+        "openai/o3",  # Admin tier also gets access to O3
+        "openai/gpt-4.1",  # Admin tier gets access to all premium models
+    ],
 }
 
 # Message/run limits per subscription tier
 SUBSCRIPTION_MESSAGE_LIMITS = {
     "free": 10,  # 10 messages/runs per month
     "pro_75": 150,  # 150 messages/runs per month
+    "admin": 100000,  # 100,000 messages/runs per month (effectively unlimited)
 }
 MODEL_NAME_ALIASES = {
     # Short names to full names
