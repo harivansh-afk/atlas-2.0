@@ -504,6 +504,7 @@ function PricingTier({
 
   // Override for custom plan - always enabled and uses tier button styling
   if (tier.name === 'Custom') {
+    buttonText = tier.buttonText; // Restore the original button text
     buttonDisabled = false;
     buttonVariant = tier.buttonColor as ButtonVariant;
     buttonClassName = 'bg-accent hover:bg-accent/90 text-white';
