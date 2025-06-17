@@ -12,7 +12,7 @@ export default function OnboardingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [isApiHealthy, setIsApiHealthy] = useState<boolean | null>(null);
 
@@ -20,8 +20,8 @@ export default function OnboardingLayout({
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const healthy = await checkApiHealth();
-        setIsApiHealthy(healthy);
+        const healthResponse = await checkApiHealth();
+        setIsApiHealthy(healthResponse.status === 'ok');
       } catch (error) {
         console.error('Failed to check API health:', error);
         setIsApiHealthy(false);
@@ -33,13 +33,13 @@ export default function OnboardingLayout({
 
   // Redirect to auth if not authenticated
   useEffect(() => {
-    if (!loading && !user) {
+    if (!isLoading && !user) {
       router.push('/auth');
     }
-  }, [user, loading, router]);
+  }, [user, isLoading, router]);
 
   // Show loading state
-  if (loading || isApiHealthy === null) {
+  if (isLoading || isApiHealthy === null) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
