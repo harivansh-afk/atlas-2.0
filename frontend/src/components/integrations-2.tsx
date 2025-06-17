@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
+import { HeroGifWithFallback } from '@/components/ui/hero-gif-with-fallback'
 
 // React Icons imports - using specific icon collections as per user's provided mapping
 import {
@@ -186,11 +187,10 @@ export default function IntegrationsSection() {
                 }
                 rowIcons.push(
                     <div key="mobile-hero-gif" className="relative size-12 sm:size-14 md:size-16 transform hover:scale-105 transition-transform duration-300">
-                        <Image
-                            src="/hero_gif.gif"
+                        <HeroGifWithFallback
                             alt="Atlas Hero"
                             fill
-                            className="object-contain rounded-lg sm:rounded-xl"
+                            className="rounded-lg sm:rounded-xl"
                             unoptimized
                         />
                     </div>
@@ -238,11 +238,10 @@ export default function IntegrationsSection() {
                 }
                 rowIcons.push(
                     <div key="desktop-hero-gif" className="relative size-12 sm:size-14 md:size-16 transform hover:scale-105 transition-transform duration-300">
-                        <Image
-                            src="/hero_gif.gif"
+                        <HeroGifWithFallback
                             alt="Atlas Hero"
                             fill
-                            className="object-contain rounded-lg sm:rounded-xl"
+                            className="rounded-lg sm:rounded-xl"
                             unoptimized
                         />
                     </div>

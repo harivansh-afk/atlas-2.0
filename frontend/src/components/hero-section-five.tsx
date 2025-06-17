@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { Highlight } from '@/components/ui/hero-highlight'
+import { HeroGifWithFallback } from '@/components/ui/hero-gif-with-fallback'
 
 export default function HeroSectionFive() {
     return (
@@ -11,8 +12,7 @@ export default function HeroSectionFive() {
             <div className="relative z-10 mx-auto w-full max-w-3xl px-6 lg:px-0">
                 <div className="relative text-center">
                     <div className="mb-2 inline-flex items-center justify-center">
-                        <Image
-                            src="/hero_gif.gif"
+                        <HeroGifWithFallback
                             alt="Hero Animation"
                             width={80}
                             height={80}
