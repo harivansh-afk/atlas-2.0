@@ -35,3 +35,37 @@ export const createClient = async () => {
     },
   });
 };
+
+/**
+ * Check if a user is new (has no agents) - server-side utility
+ */
+export const isNewUser = async (): Promise<boolean> => {
+  try {
+    const supabase = await createClient();
+
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return false; // If no user, they're not new, they're not authenticated
+    }
+
+    // Check if user has any agents
+    const { data: agents, error: agentsError } = await supabase
+      .from('agents')
+      .select('agent_id')
+      .eq('account_id', user.id)
+      .limit(1);
+
+    if (agentsError) {
+      console.error('Error checking user agents:', agentsError);
+      return false; // On error, assume not new to avoid redirect loops
+    }
+
+    // User is new if they have no agents
+    return !agents || agents.length === 0;
+  } catch (error) {
+    console.error('Error in isNewUser check:', error);
+    return false; // On error, assume not new to avoid redirect loops
+  }
+};

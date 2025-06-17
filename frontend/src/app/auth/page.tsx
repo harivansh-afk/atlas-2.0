@@ -355,9 +355,21 @@ function LoginContent() {
               )}
 
               {/* Google Sign In */}
-              {/* <div className="w-full">
+              <div className="w-full">
                 <GoogleSignIn returnUrl={returnUrl || undefined} />
-              </div> */}
+              </div>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-background/60 dark:bg-[#F9FAFB]/[0.02] text-muted-foreground">
+                    or continue with email
+                  </span>
+                </div>
+              </div>
 
               {/* Form */}
               <form className="space-y-4">

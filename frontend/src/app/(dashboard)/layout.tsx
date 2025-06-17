@@ -14,6 +14,7 @@ import { MaintenancePage } from '@/components/maintenance/maintenance-page';
 import { DeleteOperationProvider } from '@/contexts/DeleteOperationContext';
 import { StatusOverlay } from '@/components/ui/status-overlay';
 import { VSentry } from '@/components/sentry';
+import { OnboardingRedirect } from '@/components/onboarding-redirect';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -85,11 +86,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <SidebarProvider>
         <SidebarLeft />
         <SidebarInset>
-          <div className="bg-background">{children}</div>
+          <div className="bg-background">
+            <OnboardingRedirect>
+              {children}
+            </OnboardingRedirect>
+          </div>
         </SidebarInset>
 
-        {/* <PricingAlert 
-          open={showPricingAlert} 
+        {/* <PricingAlert
+          open={showPricingAlert}
           onOpenChange={setShowPricingAlert}
           closeable={false}
           accountId={personalAccount?.account_id}
