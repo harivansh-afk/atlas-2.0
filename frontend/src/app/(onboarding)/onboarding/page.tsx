@@ -99,9 +99,6 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               {/* Welcome Header */}
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-                  WELCOME TO <span className="text-primary">ATLAS</span>
-                </h1>
                 <p className="text-xl md:text-2xl text-muted-foreground font-medium">
                   Atlas is your go-to operations agent
                 </p>

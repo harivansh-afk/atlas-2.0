@@ -49,6 +49,7 @@ export const CustomMCPDialog: React.FC<CustomMCPDialogProps> = ({
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [processedConfig, setProcessedConfig] = useState<any>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [hasVideoBeenPlayed, setHasVideoBeenPlayed] = useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const validateAndDiscoverTools = async () => {
@@ -180,6 +181,8 @@ export const CustomMCPDialog: React.FC<CustomMCPDialogProps> = ({
     setProcessedConfig(null);
     setValidationError(null);
     setStep('setup');
+    setIsVideoPlaying(false);
+    setHasVideoBeenPlayed(false);
   };
 
   const exampleConfigs = {
@@ -191,10 +194,15 @@ export const CustomMCPDialog: React.FC<CustomMCPDialogProps> = ({
     if (videoRef.current) {
       if (isVideoPlaying) {
         videoRef.current.pause();
+        setIsVideoPlaying(false);
       } else {
-        videoRef.current.play();
+        setIsVideoPlaying(true);
+        setHasVideoBeenPlayed(true);
+        // Small delay to ensure state updates before playing
+        setTimeout(() => {
+          videoRef.current?.play();
+        }, 50);
       }
-      setIsVideoPlaying(!isVideoPlaying);
     }
   };
 
@@ -211,7 +219,7 @@ export const CustomMCPDialog: React.FC<CustomMCPDialogProps> = ({
       onOpenChange(open);
       if (!open) handleReset();
     }}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-7xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -257,8 +265,8 @@ export const CustomMCPDialog: React.FC<CustomMCPDialogProps> = ({
         <div className="flex-1 overflow-hidden flex flex-col">
           <div className="grid grid-cols-2 gap-6 flex-1 overflow-hidden">
             {/* Left Column - Form Content */}
-            <div className="flex flex-col">
-              <div className="flex-1 overflow-y-auto">
+            <div className="flex flex-col h-full">
+              <div className="flex-1 min-h-0 overflow-y-auto">
                 {step === 'setup' ? (
                   <div className="space-y-6 p-1 flex-1">
                     <div className="space-y-4">
@@ -396,7 +404,7 @@ export const CustomMCPDialog: React.FC<CustomMCPDialogProps> = ({
                       </div>
 
                       <div className="flex-1 min-h-0">
-                        <ScrollArea className="h-[400px] border border-border rounded-lg">
+                        <ScrollArea className="h-full max-h-[300px] border border-border rounded-lg">
                           <div className="space-y-3 p-4">
                             {discoveredTools.map((tool) => (
                               <div
@@ -446,7 +454,7 @@ export const CustomMCPDialog: React.FC<CustomMCPDialogProps> = ({
               </div>
 
               {/* Footer buttons - Left column only */}
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t flex-shrink-0">
                 {step === 'tools' ? (
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={handleBack}>
@@ -488,27 +496,42 @@ export const CustomMCPDialog: React.FC<CustomMCPDialogProps> = ({
               </div>
             </div>
 
-            {/* Right Column - Video Only */}
-            <div className="bg-muted/30 rounded-lg overflow-hidden relative">
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                controls
-                preload="metadata"
-                poster="/how_to_poster.jpg"
-                onPlay={handleVideoPlayEvent}
-                onPause={handleVideoPauseEvent}
-              >
-                <source src="/how_to.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-              {!isVideoPlaying && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 cursor-pointer" onClick={handleVideoPlay}>
-                  <div className="p-6 bg-white bg-opacity-90 rounded-full shadow-lg hover:bg-opacity-100 transition-all duration-200 hover:scale-110">
-                    <Play className="h-12 w-12 text-gray-800 fill-current" />
+                                                {/* Right Column - Video Only */}
+            <div className="bg-black rounded-lg overflow-hidden relative h-full min-h-[400px]">
+              {/* Fixed aspect ratio container */}
+              <div className="relative w-full h-full">
+                                {/* Thumbnail image - only shows initially before video has been played */}
+                {!hasVideoBeenPlayed && (
+                  <div
+                    className="absolute inset-0 bg-contain bg-center bg-no-repeat flex items-center justify-center"
+                    style={{ backgroundImage: 'url(/tutorial.png)' }}
+                  />
+                )}
+
+                {/* Video element - hidden initially, always visible after first play */}
+                <video
+                  ref={videoRef}
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${hasVideoBeenPlayed ? 'opacity-100' : 'opacity-0'}`}
+                  controls={hasVideoBeenPlayed}
+                  preload="metadata"
+                  playsInline
+                  onPlay={handleVideoPlayEvent}
+                  onPause={handleVideoPauseEvent}
+                  onEnded={() => setIsVideoPlaying(false)}
+                >
+                  <source src="/how_to.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+
+                {/* Play button overlay - only shows initially before video has been played */}
+                {!hasVideoBeenPlayed && (
+                  <div className="absolute inset-0 flex items-center justify-center cursor-pointer z-20" onClick={handleVideoPlay}>
+                    <div className="p-6 bg-white bg-opacity-90 rounded-full shadow-lg hover:bg-opacity-100 transition-all duration-200 hover:scale-110">
+                      <Play className="h-12 w-12 text-gray-800 fill-current" />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
