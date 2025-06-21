@@ -77,7 +77,7 @@ export const apiClient = {
 
       let data: T;
       const contentType = response.headers.get('content-type');
-      
+
       if (contentType?.includes('application/json')) {
         data = await response.json();
       } else if (contentType?.includes('text/')) {
@@ -93,7 +93,7 @@ export const apiClient = {
 
     } catch (error: any) {
       const apiError: ApiError = error instanceof Error ? error : new Error(String(error));
-      
+
       if (error.name === 'AbortError') {
         apiError.message = 'Request timeout';
         apiError.code = 'TIMEOUT';
@@ -172,7 +172,7 @@ export const apiClient = {
     options: Omit<RequestInit & ApiClientOptions, 'method' | 'body'> = {}
   ): Promise<ApiResponse<T>> => {
     const { headers, ...restOptions } = options;
-    
+
     const uploadHeaders = { ...headers as Record<string, string> };
     delete uploadHeaders['Content-Type'];
 
@@ -240,4 +240,4 @@ export const backendApi = {
 
   upload: <T = any>(endpoint: string, formData: FormData, options?: Omit<RequestInit & ApiClientOptions, 'method' | 'body'>) =>
     apiClient.upload<T>(`${API_URL}${endpoint}`, formData, options),
-}; 
+};

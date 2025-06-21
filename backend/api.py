@@ -162,6 +162,15 @@ from services import admin_api
 
 app.include_router(admin_api.router, prefix="/api")
 
+# Include Composio MCP integration router (production-ready version)
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "api"))
+from composio_mcp import router as composio_mcp_router
+
+app.include_router(composio_mcp_router, prefix="/api")
+
 
 @app.get("/api/health")
 async def health_check():

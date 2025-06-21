@@ -206,18 +206,17 @@ async def run_agent(
 
     # Register MCP tool wrapper if agent has configured MCPs or custom MCPs
     mcp_wrapper_instance = None
-    if agent_config:
-        # Merge configured_mcps and custom_mcps
-        all_mcps = []
+    all_mcps = []
 
+    if agent_config:
         # Add standard configured MCPs
         if agent_config.get("configured_mcps"):
             all_mcps.extend(agent_config["configured_mcps"])
 
-        # Add custom MCPs
+        # Add custom MCPs (HTTP, SSE, JSON - Composio MCPs are just HTTP custom MCPs)
         if agent_config.get("custom_mcps"):
             for custom_mcp in agent_config["custom_mcps"]:
-                # Transform custom MCP to standard format
+                # Transform custom MCP to standard format (same for all types including Composio)
                 mcp_config = {
                     "name": custom_mcp["name"],
                     "qualifiedName": f"custom_{custom_mcp['type']}_{custom_mcp['name'].replace(' ', '_').lower()}",
@@ -227,46 +226,95 @@ async def run_agent(
                     "customType": custom_mcp["type"],
                 }
                 all_mcps.append(mcp_config)
+    else:
+        # No specific agent config, check if we should load default agent MCPs
+        # This happens when using the default agent or no agent is specified
+        logger.info(
+            "No specific agent config provided, checking for default agent MCPs"
+        )
 
-        if all_mcps:
-            logger.info(
-                f"Registering MCP tool wrapper for {len(all_mcps)} MCP servers (including {len(agent_config.get('custom_mcps', []))} custom)"
+        # Get default agent for this account to load centralized MCP configurations
+        try:
+            default_agent_result = (
+                await client.table("agents")
+                .select("custom_mcps")
+                .eq("account_id", account_id)
+                .eq("is_default", True)
+                .execute()
             )
-            # Register the tool with all MCPs
-            thread_manager.add_tool(MCPToolWrapper, mcp_configs=all_mcps)
+            if default_agent_result.data:
+                default_custom_mcps = default_agent_result.data[0].get(
+                    "custom_mcps", []
+                )
+                logger.info(
+                    f"Found {len(default_custom_mcps)} custom MCPs in default agent"
+                )
 
-            # Get the tool instance from the registry
-            # The tool is registered with method names as keys
-            for tool_name, tool_info in thread_manager.tool_registry.tools.items():
-                if isinstance(tool_info["instance"], MCPToolWrapper):
-                    mcp_wrapper_instance = tool_info["instance"]
-                    break
+                # Add all custom MCPs from default agent (HTTP, SSE, JSON - including Composio)
+                for custom_mcp in default_custom_mcps:
+                    # Transform custom MCP to standard format (same as per-agent logic)
+                    mcp_config = {
+                        "name": custom_mcp["name"],
+                        "qualifiedName": f"custom_{custom_mcp['type']}_{custom_mcp['name'].replace(' ', '_').lower()}",
+                        "config": custom_mcp["config"],
+                        "enabledTools": custom_mcp.get("enabledTools", []),
+                        "isCustom": True,
+                        "customType": custom_mcp["type"],
+                    }
+                    all_mcps.append(mcp_config)
+                    logger.info(
+                        f"Added {custom_mcp['type']} MCP from default agent: {custom_mcp['name']}"
+                    )
+        except Exception as e:
+            logger.warning(f"Error loading default agent MCPs: {e}")
 
-            # Initialize the MCP tools asynchronously
-            if mcp_wrapper_instance:
-                try:
-                    await mcp_wrapper_instance.initialize_and_register_tools()
-                    logger.info("MCP tools initialized successfully")
+    if all_mcps:
+        # Count custom MCPs properly
+        custom_mcp_count = 0
+        if agent_config and agent_config.get("custom_mcps"):
+            custom_mcp_count = len(agent_config.get("custom_mcps", []))
+        elif not agent_config:
+            # Count custom MCPs from default agent (all types: HTTP, SSE, JSON)
+            custom_mcp_count = len([mcp for mcp in all_mcps if mcp.get("isCustom")])
 
-                    # Re-register the updated schemas with the tool registry
-                    # This ensures the dynamically created tools are available for function calling
-                    updated_schemas = mcp_wrapper_instance.get_schemas()
-                    for method_name, schema_list in updated_schemas.items():
-                        if method_name != "call_mcp_tool":  # Skip the fallback method
-                            # Register each dynamic tool in the registry
-                            for schema in schema_list:
-                                if schema.schema_type == SchemaType.OPENAPI:
-                                    thread_manager.tool_registry.tools[method_name] = {
-                                        "instance": mcp_wrapper_instance,
-                                        "schema": schema,
-                                    }
-                                    logger.debug(
-                                        f"Registered dynamic MCP tool: {method_name}"
-                                    )
+        logger.info(
+            f"Registering MCP tool wrapper for {len(all_mcps)} MCP servers (including {custom_mcp_count} custom)"
+        )
+        # Register the tool with all MCPs
+        thread_manager.add_tool(MCPToolWrapper, mcp_configs=all_mcps)
 
-                except Exception as e:
-                    logger.error(f"Failed to initialize MCP tools: {e}")
-                    # Continue without MCP tools if initialization fails
+        # Get the tool instance from the registry
+        # The tool is registered with method names as keys
+        for tool_name, tool_info in thread_manager.tool_registry.tools.items():
+            if isinstance(tool_info["instance"], MCPToolWrapper):
+                mcp_wrapper_instance = tool_info["instance"]
+                break
+
+        # Initialize the MCP tools asynchronously
+        if mcp_wrapper_instance:
+            try:
+                await mcp_wrapper_instance.initialize_and_register_tools()
+                logger.info("MCP tools initialized successfully")
+
+                # Re-register the updated schemas with the tool registry
+                # This ensures the dynamically created tools are available for function calling
+                updated_schemas = mcp_wrapper_instance.get_schemas()
+                for method_name, schema_list in updated_schemas.items():
+                    if method_name != "call_mcp_tool":  # Skip the fallback method
+                        # Register each dynamic tool in the registry
+                        for schema in schema_list:
+                            if schema.schema_type == SchemaType.OPENAPI:
+                                thread_manager.tool_registry.tools[method_name] = {
+                                    "instance": mcp_wrapper_instance,
+                                    "schema": schema,
+                                }
+                                logger.debug(
+                                    f"Registered dynamic MCP tool: {method_name}"
+                                )
+
+            except Exception as e:
+                logger.error(f"Failed to initialize MCP tools: {e}")
+                # Continue without MCP tools if initialization fails
 
     # Prepare system prompt
     # First, get the default system prompt
