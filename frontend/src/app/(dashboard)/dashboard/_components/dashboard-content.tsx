@@ -45,7 +45,7 @@ export function DashboardContent() {
   const [autoSubmit, setAutoSubmit] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
-  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false);
   const { billingError, handleBillingError, clearBillingError } =
     useBillingError();
@@ -239,7 +239,7 @@ export function DashboardContent() {
           </div>
 
           {/* MCP Server Carousel - Between Chat Input and Suggestions */}
-          <div className="w-full max-w-5xl px-8 pb-6">
+          <div className="w-full overflow-hidden px-8 pb-6">
             <MCPServerCarousel />
           </div>
 
