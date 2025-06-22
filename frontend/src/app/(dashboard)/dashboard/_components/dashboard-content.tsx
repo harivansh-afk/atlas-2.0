@@ -239,7 +239,7 @@ export function DashboardContent() {
           </div>
 
           {/* MCP Server Carousel - Between Chat Input and Suggestions */}
-            <div className="w-full max-w-5xl px-8 pb-6">
+          <div className="w-full max-w-5xl mx-auto overflow-hidden px-8 pb-6">
             <MCPServerCarousel />
           </div>
 
@@ -251,7 +251,7 @@ export function DashboardContent() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="w-full overflow-hidden px-8 pb-4"
+                className="w-full max-w-5xl mx-auto overflow-hidden px-8 pb-4"
               >
                 <Examples onSelectPrompt={setInputValue} />
               </motion.div>

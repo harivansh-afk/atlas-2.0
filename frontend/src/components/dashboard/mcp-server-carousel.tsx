@@ -246,7 +246,7 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
     <>
       <div className={className}>
         {/* Header with search button - matching suggestions style */}
-        <div className="flex justify-end items-center mb-2">
+        <div className="flex justify-end items-center mb-4">
           <Button
             variant="ghost"
             size="sm"
