@@ -3,24 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { WorkTypeStep } from './_components/work-type-step';
-import { useCreateAgent, useAgents } from '@/hooks/react-query/agents/use-agents';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ProgressIndicator } from './_components/progress-indicator';
 import Image from 'next/image';
+import { useCreateAgent } from '@/hooks/react-query/agents/use-agents';
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const router = useRouter();
   const createAgentMutation = useCreateAgent();
-
-  // Fetch user's existing agents to check if they already have any
-  const { data: agentsResponse, isLoading: isLoadingAgents } = useAgents({
-    page: 1,
-    limit: 1,
-    sort_by: 'created_at',
-    sort_order: 'desc'
-  });
 
   const handleNextStep = () => {
     if (currentStep < 2) {
@@ -30,45 +22,65 @@ export default function OnboardingPage() {
 
   const handleComplete = async (workType: string) => {
     try {
-      // Wait for agents data to load if it's still loading
-      if (isLoadingAgents) {
-        toast.info('Loading your agents...');
-        return;
-      }
-
-      // Check if user already has agents
-      const existingAgents = agentsResponse?.agents || [];
-
-      if (existingAgents.length > 0) {
-        // User already has agents, redirect to their most recent agent's builder page
-        const mostRecentAgent = existingAgents[0]; // Already sorted by created_at desc
-        toast.success('Welcome back! Let\'s continue setting up your agent.');
-        router.push(`/agents/new/${mostRecentAgent.agent_id}?onboarding=true`);
-        return;
-      }
-
-      // User has no agents, create a new one
-      const newAgent = await createAgentMutation.mutateAsync({
-        name: `My ${workType} Agent`,
-        description: `An AI agent specialized for ${workType.toLowerCase()} tasks`,
-        system_prompt: `You are an AI agent specialized in ${workType.toLowerCase()}. Help users with tasks related to ${workType.toLowerCase()}.`,
+      // Create default agent using the same configuration as Composio integration
+      const defaultAgentData = {
+        name: 'Atlas',
+        description: 'Your default Atlas agent with centralized tool configurations',
+        system_prompt: 'You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.',
         configured_mcps: [],
         custom_mcps: [],
-        agentpress_tools: {},
-        is_default: false,
-      });
+        agentpress_tools: {
+          "sb_shell_tool": {
+            "enabled": true,
+            "description": "Execute terminal commands, run scripts, manage system processes",
+          },
+          "sb_file_tool": {
+            "enabled": true,
+            "description": "Read, write, and manage files and directories",
+          },
+          "sb_browser_tool": {
+            "enabled": true,
+            "description": "Browse websites, extract content, interact with web pages",
+          },
+          "sb_search_tool": {
+            "enabled": true,
+            "description": "Search the web for information and answers",
+          },
+          "sb_code_tool": {
+            "enabled": true,
+            "description": "Execute code in various programming languages",
+          },
+          "sb_vision_tool": {
+            "enabled": true,
+            "description": "Analyze and describe images, extract text from images",
+          },
+          "sb_email_tool": {
+            "enabled": true,
+            "description": "Send and manage emails",
+          },
+          "data_providers_tool": {
+            "enabled": true,
+            "description": "Access external APIs and data sources",
+          },
+          "clado_tool": {
+            "enabled": true,
+            "description": "Clado integration for enhanced functionality",
+          },
+        },
+        is_default: true,
+        avatar: '🤖',
+        avatar_color: '#6366f1',
+      };
 
-      toast.success('Your first agent has been created!');
+      await createAgentMutation.mutateAsync(defaultAgentData);
 
-      // Navigate to the agent builder with the new agent
-      // Add a query parameter to trigger the custom service popup
-      router.push(`/agents/new/${newAgent.agent_id}?onboarding=true`);
+      // Redirect to dashboard after completing onboarding
+      router.push('/dashboard');
     } catch (error) {
-      console.error('Failed to create agent:', error);
-      toast.error('Failed to create your first agent. Please try again.');
-
-      // Fallback: navigate to agents page
-      router.push('/agents');
+      console.error('Error completing onboarding:', error);
+      toast.error('Something went wrong. Please try again.');
+      // Fallback: still navigate to dashboard
+      router.push('/dashboard');
     }
   };
 
@@ -99,15 +111,12 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               {/* Welcome Header */}
               <div className="space-y-4">
-                <p className="text-xl md:text-2xl text-muted-foreground font-medium">
-                  Atlas is your go-to operations agent
-                </p>
               </div>
 
               {/* Call to Action */}
               <div className="space-y-6">
                 <p className="text-xl md:text-2xl font-medium">
-                  ready to <span className="text-primary font-semibold">20x</span> your operations efficiency?
+                  ready to <span className="text-primary font-semibold">20x</span> your efficiency?
                 </p>
 
                 <Button

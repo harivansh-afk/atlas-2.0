@@ -38,9 +38,6 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
           </h1>
 
           <div className="space-y-3">
-            <p className="text-2xl md:text-3xl text-muted-foreground font-medium leading-relaxed">
-            Atlas is your go-to operations agent
-          </p>
             <div className="w-24 h-1 bg-gradient-to-r from-primary to-primary/50 rounded-full mx-auto" />
           </div>
         </div>

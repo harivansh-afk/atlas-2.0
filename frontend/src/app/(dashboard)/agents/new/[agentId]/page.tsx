@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Settings2, Sparkles, Check, Clock, Menu, MessageCircle, Globe, GlobeLock } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { Loader2, Settings2, Sparkles, Check, Clock, Menu, MessageCircle, Globe, GlobeLock, Zap, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog } from '@/components/ui/dialog';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgent, useUpdateAgent, useDefaultAgentMCPs } from '@/hooks/react-query/agents/use-agents';
@@ -21,17 +22,17 @@ import { StylePicker } from '../../_components/style-picker';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentBuilderChat } from '../../_components/agent-builder-chat';
+import { BrowseDialog } from '../../_components/mcp/browse-dialog';
+import { ConfigDialog } from '../../_components/mcp/config-dialog';
 
-import { CustomMCPDialog } from '../../_components/mcp/custom-mcp-dialog';
+
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function AgentConfigurationPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const agentId = params.agentId as string;
-  const isFromOnboarding = searchParams.get('onboarding') === 'true';
 
   const { data: agent, isLoading, error } = useAgent(agentId);
   const updateAgentMutation = useUpdateAgent();
@@ -60,8 +61,13 @@ export default function AgentConfigurationPage() {
   const currentFormDataRef = useRef(formData);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [showCustomMCPDialog, setShowCustomMCPDialog] = useState(false);
+
   const accordionRef = useRef<HTMLDivElement>(null);
+
+  // MCP Dialog states
+  const [showBrowseDialog, setShowBrowseDialog] = useState(false);
+  const [configuringServer, setConfiguringServer] = useState<any>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!initialLayoutAppliedRef.current) {
@@ -89,17 +95,7 @@ export default function AgentConfigurationPage() {
     }
   }, [agent]);
 
-  // Show custom MCP dialog when coming from onboarding
-  useEffect(() => {
-    if (isFromOnboarding && agent && !isLoading) {
-      // Show custom MCP dialog after a short delay to ensure UI is ready
-      const timer = setTimeout(() => {
-        setShowCustomMCPDialog(true);
-      }, 1000);
 
-      return () => clearTimeout(timer);
-    }
-  }, [isFromOnboarding, agent, isLoading]);
 
 
   useEffect(() => {
@@ -258,25 +254,37 @@ export default function AgentConfigurationPage() {
     debouncedSave(newFormData);
   }, [debouncedSave]);
 
-  const handleCustomMCPSave = useCallback((customConfig: any) => {
-    const newCustomMcp = {
-      name: customConfig.name,
-      type: customConfig.type as 'http' | 'sse',
-      config: customConfig.config,
-      enabledTools: customConfig.enabledTools
+  // MCP Dialog handlers
+  const handleAddMCP = (server: any) => {
+    setConfiguringServer({
+      qualifiedName: server.qualifiedName,
+      displayName: server.displayName || server.name,
+      name: server.name,
+    });
+    setShowBrowseDialog(false);
+  };
+
+  const handleSaveConfiguration = (config: any) => {
+    const regularMCPConfig = {
+      ...config,
+      isCustom: false,
+      customType: undefined
     };
 
-    const newFormData = {
-      ...currentFormDataRef.current,
-      custom_mcps: [...currentFormDataRef.current.custom_mcps, newCustomMcp]
-    };
+    if (editingIndex !== null) {
+      const newMCPs = [...formData.configured_mcps];
+      newMCPs[editingIndex] = regularMCPConfig;
+      handleFieldChange('configured_mcps', newMCPs);
+    } else {
+      handleFieldChange('configured_mcps', [...formData.configured_mcps, regularMCPConfig]);
+    }
+    setConfiguringServer(null);
+    setEditingIndex(null);
+  };
 
-    setFormData(newFormData);
-    debouncedSave(newFormData);
-    setShowCustomMCPDialog(false);
 
-    toast.success(`Successfully connected ${customConfig.name} with ${customConfig.enabledTools.length} tools`);
-  }, [debouncedSave]);
+
+
 
   // Marketplace handlers
   const handlePublish = useCallback(async () => {
@@ -441,13 +449,34 @@ export default function AgentConfigurationPage() {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-4 overflow-x-hidden">
-                      <AgentToolsConfiguration
-                        tools={formData.agentpress_tools}
-                        onToolsChange={(tools) => handleFieldChange('agentpress_tools', tools)}
-                        mcps={formData.configured_mcps}
-                        customMcps={formData.custom_mcps}
-                        onMCPToggle={handleMCPToggle}
-                      />
+                      <div className="space-y-4">
+                        <AgentToolsConfiguration
+                          tools={formData.agentpress_tools}
+                          onToolsChange={(tools) => handleFieldChange('agentpress_tools', tools)}
+                          mcps={formData.configured_mcps}
+                          customMcps={formData.custom_mcps}
+                          onMCPToggle={handleMCPToggle}
+                        />
+
+                        {/* MCP Connection Section */}
+                        <div className="pt-4 border-t">
+                          <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border">
+                            <div className="flex items-center gap-2 flex-1">
+                              <Zap className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">Connect Smithery MCP Servers</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setShowBrowseDialog(true)}
+                              className="gap-2"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Browse
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
@@ -633,12 +662,23 @@ export default function AgentConfigurationPage() {
         </div>
       </div>
 
-      {/* Custom MCP Dialog for onboarding */}
-      <CustomMCPDialog
-        open={showCustomMCPDialog}
-        onOpenChange={setShowCustomMCPDialog}
-        onSave={handleCustomMCPSave}
+      {/* MCP Dialogs */}
+      <BrowseDialog
+        open={showBrowseDialog}
+        onOpenChange={setShowBrowseDialog}
+        onServerSelect={handleAddMCP}
       />
+
+      {configuringServer && (
+        <Dialog open={!!configuringServer} onOpenChange={() => setConfiguringServer(null)}>
+          <ConfigDialog
+            server={configuringServer}
+            existingConfig={editingIndex !== null ? formData.configured_mcps[editingIndex] : undefined}
+            onSave={handleSaveConfiguration}
+            onCancel={() => setConfiguringServer(null)}
+          />
+        </Dialog>
+      )}
     </div>
   );
 }

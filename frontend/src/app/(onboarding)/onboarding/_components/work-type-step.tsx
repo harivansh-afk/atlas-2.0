@@ -1,65 +1,17 @@
 'use client';
 
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ProgressIndicator } from './progress-indicator';
+import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
 
 interface WorkTypeStepProps {
   onNext: (workType: string) => void;
 }
 
-// Use cases organized by category
-const workCategories = {
-  ops: {
-    title: 'Operations',
-    icon: '⚡',
-    useCases: [
-      'Cross-Platform Project Sync',
-      'Meeting Intelligence & Follow-up',
-      'Vendor Research & Procurement',
-      'Financial Reporting & Analysis',
-      'Bug Triage & Development Workflow',
-      'Documentation & Knowledge Management'
-    ]
-  },
-  gtm: {
-    title: 'Go-to-Market',
-    icon: '🚀',
-    useCases: [
-      'End-to-End Lead Generation Pipeline',
-      'HubSpot Sales Sequence Automation',
-      'Customer Success Automation',
-      'Content Marketing & SEO Automation',
-      'Competitive Intelligence & Analysis'
-    ]
-  },
-  comms: {
-    title: 'Communications',
-    icon: '💬',
-    useCases: [
-      'Social Media Intelligence & Response',
-      'Customer Feedback Analysis',
-      'Meeting Notes & Action Items',
-      'Team Notification Automation',
-      'Support Ticket Management'
-    ]
-  },
-  administrative: {
-    title: 'Administrative',
-    icon: '📋',
-    useCases: [
-      'Design-to-Development Handoff',
-      'Automated Reporting & Dashboards',
-      'Compliance & Documentation',
-      'Resource Planning & Allocation',
-      'Process Optimization'
-    ]
-  }
-};
-
 export function WorkTypeStep({ onNext }: WorkTypeStepProps) {
-  const handleCategoryClick = (categoryKey: string) => {
-    const categoryTitle = workCategories[categoryKey as keyof typeof workCategories].title;
-    onNext(categoryTitle);
+  const handleGetStarted = () => {
+    onNext('Getting Started');
   };
 
   return (
@@ -70,38 +22,73 @@ export function WorkTypeStep({ onNext }: WorkTypeStepProps) {
       </div>
 
       {/* Main Content */}
-      <div className="w-full max-w-3xl mx-auto space-y-8">
+      <div className="w-full max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-3xl md:text-4xl font-bold">
-            What kind of work do you wanna <span className="text-primary">automate</span>?
+            You're all set! Here's what you can do next:
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Choose a category to get started
-          </p>
         </div>
 
-        {/* Category Selection - Vertical Stack */}
-        <div className="max-w-2xl mx-auto space-y-4">
-          {Object.entries(workCategories).map(([key, category]) => (
-            <Card
-              key={key}
-              className="p-6 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 border-border hover:border-primary/50"
-              onClick={() => handleCategoryClick(key)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                  <span className="text-2xl">{category.icon}</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold">{category.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {category.useCases.length} use cases
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
+        {/* First Screenshot - onboarding2.png */}
+        <div className="max-w-3xl mx-auto space-y-4">
+          <div className="relative rounded-lg border-2 border-border overflow-hidden shadow-2xl bg-muted/20">
+            <Image
+              src="/onboarding2.png"
+              alt="Connect your favorite apps"
+              width={1200}
+              height={800}
+              className="w-full h-auto transition-opacity duration-300"
+              priority
+              quality={90}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 768px"
+            />
+          </div>
+          <div className="text-center">
+            <p className="text-lg text-muted-foreground">
+              Connect up your favourite apps with a single click!
+            </p>
+          </div>
+        </div>
+
+        {/* Second Screenshot - onboarding1.png */}
+        <div className="max-w-3xl mx-auto space-y-4">
+          <div className="relative rounded-lg border-2 border-border overflow-hidden shadow-2xl bg-muted/20">
+            <Image
+              src="/onboarding1.png"
+              alt="Begin automating your workflows"
+              width={1200}
+              height={800}
+              className="w-full h-auto transition-opacity duration-300"
+              priority
+              quality={90}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 768px"
+            />
+          </div>
+          <div className="text-center">
+            <p className="text-lg text-muted-foreground">
+              Begin automating your workflows at scale!
+            </p>
+          </div>
+        </div>
+
+        {/* Get Started Button */}
+        <div className="text-center">
+          <Button
+            onClick={handleGetStarted}
+            size="lg"
+            className="group relative px-12 py-4 text-xl font-semibold rounded-2xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 border border-primary/20"
+          >
+            <span className="flex items-center gap-3">
+              Get Started
+              <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            </span>
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </Button>
         </div>
       </div>
 

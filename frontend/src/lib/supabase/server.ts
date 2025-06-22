@@ -37,7 +37,7 @@ export const createClient = async () => {
 };
 
 /**
- * Check if a user is new (has no agents) - server-side utility
+ * Check if a user is new (has no default agent) - server-side utility
  */
 export const isNewUser = async (): Promise<boolean> => {
   try {
@@ -50,20 +50,35 @@ export const isNewUser = async (): Promise<boolean> => {
       return false; // If no user, they're not new, they're not authenticated
     }
 
-    // Check if user has any agents
-    const { data: agents, error: agentsError } = await supabase
-      .from('agents')
-      .select('agent_id')
-      .eq('account_id', user.id)
-      .limit(1);
+    // Get user's account ID from basejump schema
+    const { data: accountData, error: accountError } = await supabase
+      .schema('basejump')
+      .from('accounts')
+      .select('id')
+      .eq('primary_owner_user_id', user.id)
+      .eq('personal_account', true)
+      .single();
 
-    if (agentsError) {
-      console.error('Error checking user agents:', agentsError);
+    if (accountError || !accountData) {
+      console.error('Error fetching account:', accountError);
       return false; // On error, assume not new to avoid redirect loops
     }
 
-    // User is new if they have no agents
-    return !agents || agents.length === 0;
+    // Check if user has a default agent
+    const { data: defaultAgent, error: agentError } = await supabase
+      .from('agents')
+      .select('agent_id')
+      .eq('account_id', accountData.id)
+      .eq('is_default', true)
+      .single();
+
+    if (agentError && agentError.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('Error checking for default agent:', agentError);
+      return false; // On error, assume not new to avoid redirect loops
+    }
+
+    // User is new if they have no default agent
+    return !defaultAgent;
   } catch (error) {
     console.error('Error in isNewUser check:', error);
     return false; // On error, assume not new to avoid redirect loops

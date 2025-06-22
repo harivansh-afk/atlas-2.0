@@ -78,7 +78,7 @@ export const validateSession = async (request: NextRequest) => {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const protectedRoutes = ['/dashboard', '/invitation', '/onboarding'];
+    const protectedRoutes = ['/dashboard', '/invitation'];
 
     if (
       !user &&

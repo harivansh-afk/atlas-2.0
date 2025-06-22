@@ -4,16 +4,10 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  BadgeCheck,
-  Bell,
-  ChevronDown,
   ChevronsUpDown,
   Command,
   CreditCard,
   LogOut,
-  Plus,
-  Settings,
-  User,
   AudioWaveform,
   Sun,
   Moon,
@@ -265,7 +259,7 @@ export function NavUserWithTeams({
 
               {/* <DropdownMenuSeparator />
               <DialogTrigger asChild>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="gap-2 p-2"
                   onClick={() => {
                     setShowNewTeamDialog(true)
