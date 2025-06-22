@@ -37,12 +37,12 @@ export const UpdateAgentDialog = ({ agentId, isOpen, onOpenChange, onAgentUpdate
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [formData, setFormData] = useState<AgentUpdateRequest>({});
 
-  const { 
-    data: agent, 
-    isLoading, 
-    error 
+  const {
+    data: agent,
+    isLoading,
+    error
   } = useAgent(agentId || '');
-  
+
   const updateAgentMutation = useUpdateAgent();
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export const UpdateAgentDialog = ({ agentId, isOpen, onOpenChange, onAgentUpdate
       config: mcp.config,
       enabledTools: mcp.enabledTools || []
     }));
-    
+
     handleInputChange('configured_mcps', standardMcps);
     handleInputChange('custom_mcps', customMcps);
   };
@@ -117,11 +117,11 @@ export const UpdateAgentDialog = ({ agentId, isOpen, onOpenChange, onAgentUpdate
   const getAllAgentPressTools = () => {
     const existing = formData.agentpress_tools || {};
     const merged = { ...DEFAULT_AGENTPRESS_TOOLS };
-    
+
     Object.keys(existing).forEach(key => {
       merged[key] = { ...merged[key], ...existing[key] };
     });
-    
+
     return merged;
   };
 
@@ -132,14 +132,14 @@ export const UpdateAgentDialog = ({ agentId, isOpen, onOpenChange, onAgentUpdate
 
   const getFilteredTools = (): Array<[string, any]> => {
     let tools = Object.entries(getAllAgentPressTools());
-    
+
     if (searchQuery) {
-      tools = tools.filter(([toolName, toolInfo]) => 
+      tools = tools.filter(([toolName, toolInfo]) =>
         getToolDisplayName(toolName).toLowerCase().includes(searchQuery.toLowerCase()) ||
         toolInfo.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    
+
     return tools;
   };
 
@@ -185,7 +185,7 @@ export const UpdateAgentDialog = ({ agentId, isOpen, onOpenChange, onAgentUpdate
               Loading agent configuration...
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="flex-1 p-6">
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
@@ -268,14 +268,14 @@ export const UpdateAgentDialog = ({ agentId, isOpen, onOpenChange, onAgentUpdate
             <div className="border-l w-[60%] bg-muted/30 flex flex-col min-h-0">
               <Tabs defaultValue="tools" className="flex flex-col h-full">
                 <TabsList className="w-full justify-start rounded-none border-b h-10">
-                  <TabsTrigger 
-                    value="tools" 
+                  <TabsTrigger
+                    value="tools"
                   >
                     <Settings2 className="h-4 w-4" />
-                    AgentPress Tools
+                    Tools
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="mcp" 
+                  <TabsTrigger
+                    value="mcp"
                   >
                     <Sparkles className="h-4 w-4" />
                     MCP Servers
@@ -321,8 +321,8 @@ export const UpdateAgentDialog = ({ agentId, isOpen, onOpenChange, onAgentUpdate
                   <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent p-6 min-h-0">
                     <div className="space-y-3">
                       {getFilteredTools().map(([toolName, toolInfo]) => (
-                        <div 
-                          key={toolName} 
+                        <div
+                          key={toolName}
                           className="flex items-center gap-3 p-3 bg-card rounded-lg border hover:border-border/80 transition-colors"
                         >
                           <div className={`w-10 h-10 rounded-lg ${toolInfo.color} flex items-center justify-center flex-shrink-0`}>
@@ -378,7 +378,7 @@ export const UpdateAgentDialog = ({ agentId, isOpen, onOpenChange, onAgentUpdate
 
         <div className="px-6 border-t py-4 flex-shrink-0">
           <div className="flex justify-end gap-3">
-            <Button 
+            <Button
               variant="outline"
               onClick={handleCancel}
               disabled={updateAgentMutation.isPending}
@@ -386,7 +386,7 @@ export const UpdateAgentDialog = ({ agentId, isOpen, onOpenChange, onAgentUpdate
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSubmit}
               disabled={updateAgentMutation.isPending || !formData.name?.trim() || !formData.system_prompt?.trim()}
             >

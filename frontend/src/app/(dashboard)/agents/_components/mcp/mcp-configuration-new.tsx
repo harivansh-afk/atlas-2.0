@@ -7,6 +7,8 @@ import { ConfiguredMcpList } from './configured-mcp-list';
 import { BrowseDialog } from './browse-dialog';
 import { ConfigDialog } from './config-dialog';
 import { CustomMCPDialog } from './custom-mcp-dialog';
+import { SharedMCPList } from './shared-mcp-list';
+import { useDefaultAgentMCPs } from '@/hooks/react-query/agents/use-agents';
 
 export const MCPConfigurationNew: React.FC<MCPConfigurationProps> = ({
   configuredMCPs,
@@ -16,6 +18,22 @@ export const MCPConfigurationNew: React.FC<MCPConfigurationProps> = ({
   const [showCustomDialog, setShowCustomDialog] = useState(false);
   const [configuringServer, setConfiguringServer] = useState<any>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  // Get default agent MCPs to identify shared ones
+  const { data: defaultMCPs } = useDefaultAgentMCPs();
+
+  // Get list of shared MCP names for visual indicators
+  const sharedMCPNames = React.useMemo(() => {
+    if (!defaultMCPs) return [];
+
+    const names = [];
+    // Add configured MCP names
+    defaultMCPs.configured_mcps.forEach(mcp => names.push(mcp.name));
+    // Add custom MCP names
+    defaultMCPs.custom_mcps.forEach(mcp => names.push(mcp.name));
+
+    return names;
+  }, [defaultMCPs]);
 
   const handleAddMCP = (server: any) => {
     setConfiguringServer(server);
@@ -51,7 +69,7 @@ export const MCPConfigurationNew: React.FC<MCPConfigurationProps> = ({
       isCustom: false,
       customType: undefined
     };
-    
+
     if (editingIndex !== null) {
       const newMCPs = [...configuredMCPs];
       newMCPs[editingIndex] = regularMCPConfig;
@@ -76,6 +94,19 @@ export const MCPConfigurationNew: React.FC<MCPConfigurationProps> = ({
     console.log('Transformed MCP config:', mcpConfig);
     onConfigurationChange([...configuredMCPs, mcpConfig]);
     console.log('Updated MCPs list:', [...configuredMCPs, mcpConfig]);
+  };
+
+  const handleAddSharedMCP = (sharedMCP: any) => {
+    console.log('Adding shared MCP:', sharedMCP);
+    const mcpConfig: MCPConfigurationType = {
+      name: sharedMCP.name,
+      qualifiedName: sharedMCP.qualifiedName,
+      config: sharedMCP.config,
+      enabledTools: sharedMCP.enabledTools || [],
+      isCustom: sharedMCP.isCustom || false,
+      customType: sharedMCP.customType
+    };
+    onConfigurationChange([...configuredMCPs, mcpConfig]);
   };
 
   return (
@@ -123,7 +154,14 @@ export const MCPConfigurationNew: React.FC<MCPConfigurationProps> = ({
           </div>
         </div>
       </div>
-      
+
+      {/* Shared MCP Servers from Default Agent */}
+      <SharedMCPList
+        currentMCPs={configuredMCPs}
+        onAddMCP={handleAddSharedMCP}
+        className="mb-6"
+      />
+
       {configuredMCPs.length === 0 && (
         <div className="text-center py-12 px-6 bg-muted/30 rounded-xl border-2 border-dashed border-border">
           <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
@@ -149,6 +187,7 @@ export const MCPConfigurationNew: React.FC<MCPConfigurationProps> = ({
               configuredMCPs={configuredMCPs}
               onEdit={handleEditMCP}
               onRemove={handleRemoveMCP}
+              sharedMCPNames={sharedMCPNames}
             />
           </div>
         </div>

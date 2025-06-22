@@ -37,7 +37,7 @@ const initialFormData: AgentCreateRequest = {
   custom_mcps: [],
   agentpress_tools: Object.fromEntries(
     Object.entries(DEFAULT_AGENTPRESS_TOOLS).map(([key, value]) => [
-      key, 
+      key,
       { enabled: value.enabled, description: value.description }
     ])
   ),
@@ -87,7 +87,7 @@ export const CreateAgentDialog = ({ isOpen, onOpenChange, onAgentCreated }: Crea
       config: mcp.config,
       enabledTools: mcp.enabledTools || []
     }));
-    
+
     handleInputChange('configured_mcps', standardMcps);
     handleInputChange('custom_mcps', customMcps);
   };
@@ -98,14 +98,14 @@ export const CreateAgentDialog = ({ isOpen, onOpenChange, onAgentCreated }: Crea
 
   const getFilteredTools = (): Array<[string, any]> => {
     let tools = Object.entries(DEFAULT_AGENTPRESS_TOOLS);
-    
+
     if (searchQuery) {
-      tools = tools.filter(([toolName, toolInfo]) => 
+      tools = tools.filter(([toolName, toolInfo]) =>
         getToolDisplayName(toolName).toLowerCase().includes(searchQuery.toLowerCase()) ||
         toolInfo.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    
+
     return tools;
   };
 
@@ -197,14 +197,14 @@ export const CreateAgentDialog = ({ isOpen, onOpenChange, onAgentCreated }: Crea
             <div className="border-l w-[60%] bg-muted/30 flex flex-col min-h-0">
               <Tabs defaultValue="tools" className="flex flex-col h-full">
                 <TabsList className="w-full justify-start rounded-none border-b h-10">
-                  <TabsTrigger 
-                    value="tools" 
+                  <TabsTrigger
+                    value="tools"
                   >
                     <Settings2 className="h-4 w-4" />
-                    AgentPress Tools
+                    Tools
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="mcp" 
+                  <TabsTrigger
+                    value="mcp"
                   >
                     <Sparkles className="h-4 w-4" />
                     MCP Servers
@@ -250,8 +250,8 @@ export const CreateAgentDialog = ({ isOpen, onOpenChange, onAgentCreated }: Crea
                   <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent p-6 min-h-0">
                     <div className="space-y-3">
                       {getFilteredTools().map(([toolName, toolInfo]) => (
-                        <div 
-                          key={toolName} 
+                        <div
+                          key={toolName}
                           className="flex items-center gap-3 p-3 bg-card rounded-lg border hover:border-border/80 transition-colors"
                         >
                           <div className={`w-10 h-10 rounded-lg ${toolInfo.color} flex items-center justify-center flex-shrink-0`}>
@@ -300,7 +300,7 @@ export const CreateAgentDialog = ({ isOpen, onOpenChange, onAgentCreated }: Crea
 
         <div className="px-6 border-t py-4 flex-shrink-0">
           <div className="flex justify-end gap-3">
-            <Button 
+            <Button
               variant="outline"
               onClick={handleCancel}
               disabled={createAgentMutation.isPending}
@@ -308,7 +308,7 @@ export const CreateAgentDialog = ({ isOpen, onOpenChange, onAgentCreated }: Crea
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSubmit}
               disabled={createAgentMutation.isPending || !formData.name.trim()}
             >

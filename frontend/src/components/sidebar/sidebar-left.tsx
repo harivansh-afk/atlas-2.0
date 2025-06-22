@@ -147,7 +147,7 @@ export function SidebarLeft({
                 })}>
                   <Bot className="h-4 w-4 mr-2" />
                   <span className="flex items-center justify-between w-full">
-                    Agent Playground
+                    Agents
                     <Badge variant="new">
                       New
                     </Badge>

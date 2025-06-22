@@ -111,7 +111,7 @@ export const SearchAndFilters = ({
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
               checked={filters.hasMcpTools}
-              onCheckedChange={(checked) => 
+              onCheckedChange={(checked) =>
                 setFilters(prev => ({ ...prev, hasMcpTools: checked }))
               }
             >
@@ -120,12 +120,12 @@ export const SearchAndFilters = ({
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={filters.hasAgentpressTools}
-              onCheckedChange={(checked) => 
+              onCheckedChange={(checked) =>
                 setFilters(prev => ({ ...prev, hasAgentpressTools: checked }))
               }
             >
               <Settings className="h-4 w-4" />
-              Has AgentPress tools
+              Has Tools
             </DropdownMenuCheckboxItem>
             {activeFiltersCount > 0 && (
               <>

@@ -2,7 +2,7 @@ import { createMutationHook, createQueryHook } from '@/hooks/use-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { agentKeys } from './keys';
-import { Agent, AgentUpdateRequest, AgentsParams, createAgent, deleteAgent, getAgent, getAgents, getThreadAgent, updateAgent, AgentBuilderChatRequest, AgentBuilderStreamData, startAgentBuilderChat, getAgentBuilderChatHistory } from './utils';
+import { Agent, AgentUpdateRequest, AgentsParams, createAgent, deleteAgent, getAgent, getAgents, getThreadAgent, updateAgent, AgentBuilderChatRequest, AgentBuilderStreamData, startAgentBuilderChat, getAgentBuilderChatHistory, getDefaultAgentMCPs } from './utils';
 import { useRef, useCallback } from 'react';
 
 export const useAgents = (params: AgentsParams = {}) => {
@@ -30,14 +30,14 @@ export const useAgent = (agentId: string) => {
 
 export const useCreateAgent = () => {
   const queryClient = useQueryClient();
-  
+
   return createMutationHook(
     createAgent,
     {
       onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
         queryClient.setQueryData(agentKeys.detail(data.agent_id), data);
-        
+
         toast.success('Agent created successfully');
       },
     }
@@ -46,9 +46,9 @@ export const useCreateAgent = () => {
 
 export const useUpdateAgent = () => {
   const queryClient = useQueryClient();
-  
+
   return createMutationHook(
-    ({ agentId, ...data }: { agentId: string } & AgentUpdateRequest) => 
+    ({ agentId, ...data }: { agentId: string } & AgentUpdateRequest) =>
       updateAgent(agentId, data),
     {
       onSuccess: (data, variables) => {
@@ -61,7 +61,7 @@ export const useUpdateAgent = () => {
 
 export const useDeleteAgent = () => {
   const queryClient = useQueryClient();
-  
+
   return createMutationHook(
     deleteAgent,
     {
@@ -76,7 +76,7 @@ export const useDeleteAgent = () => {
 
 export const useOptimisticAgentUpdate = () => {
   const queryClient = useQueryClient();
-  
+
   return {
     optimisticallyUpdateAgent: (agentId: string, updates: Partial<Agent>) => {
       queryClient.setQueryData(
@@ -87,7 +87,7 @@ export const useOptimisticAgentUpdate = () => {
         }
       );
     },
-    
+
     revertOptimisticUpdate: (agentId: string) => {
       queryClient.invalidateQueries({ queryKey: agentKeys.detail(agentId) });
     },
@@ -164,3 +164,15 @@ export const useAgentBuilderChatHistory = (agentId: string) =>
       retry: 1,
     }
   )();
+
+// Hook to fetch default agent's MCP servers for sharing
+export const useDefaultAgentMCPs = () => {
+  return createQueryHook(
+    agentKeys.defaultMCPs(),
+    () => getDefaultAgentMCPs(),
+    {
+      staleTime: 2 * 60 * 1000, // 2 minutes
+      gcTime: 5 * 60 * 1000, // 5 minutes
+    }
+  )();
+};

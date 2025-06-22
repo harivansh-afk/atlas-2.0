@@ -100,7 +100,7 @@ export default function MarketplacePage() {
         <div className="space-y-4">
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Agent Gardens
+              Marketplace
             </h1>
             <p className="text-md text-muted-foreground max-w-2xl">
               Discover and add powerful AI agents created by the community to your personal library

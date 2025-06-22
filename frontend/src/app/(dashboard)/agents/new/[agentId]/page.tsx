@@ -2,25 +2,26 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Loader2, Settings2, Sparkles, Check, Clock, Eye, Menu } from 'lucide-react';
+import { Loader2, Settings2, Sparkles, Check, Clock, Menu, MessageCircle, Globe, GlobeLock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerClose } from '@/components/ui/drawer';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAgent, useUpdateAgent } from '@/hooks/react-query/agents/use-agents';
-import { AgentMCPConfiguration } from '../../_components/agent-mcp-configuration';
+import { useAgent, useUpdateAgent, useDefaultAgentMCPs } from '@/hooks/react-query/agents/use-agents';
+import { usePublishAgent, useUnpublishAgent } from '@/hooks/react-query/marketplace/use-marketplace';
+
 import { toast } from 'sonner';
 import { AgentToolsConfiguration } from '../../_components/agent-tools-configuration';
-import { AgentPreview } from '../../_components/agent-preview';
+
 import { getAgentAvatar } from '../../_utils/get-agent-style';
 import { EditableText } from '@/components/ui/editable';
 import { StylePicker } from '../../_components/style-picker';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentBuilderChat } from '../../_components/agent-builder-chat';
-import { useFeatureAlertHelpers } from '@/hooks/use-feature-alerts';
+
 import { CustomMCPDialog } from '../../_components/mcp/custom-mcp-dialog';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -34,7 +35,11 @@ export default function AgentConfigurationPage() {
 
   const { data: agent, isLoading, error } = useAgent(agentId);
   const updateAgentMutation = useUpdateAgent();
-  const { state, setOpen, setOpenMobile } = useSidebar();
+  const { setOpen, setOpenMobile } = useSidebar();
+
+  // Marketplace hooks
+  const publishAgentMutation = usePublishAgent();
+  const unpublishAgentMutation = useUnpublishAgent();
 
   // Ref to track if initial layout has been applied (for sidebar closing)
   const initialLayoutAppliedRef = useRef(false);
@@ -55,8 +60,6 @@ export default function AgentConfigurationPage() {
   const currentFormDataRef = useRef(formData);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('agent-builder');
   const [showCustomMCPDialog, setShowCustomMCPDialog] = useState(false);
   const accordionRef = useRef<HTMLDivElement>(null);
 
@@ -89,8 +92,6 @@ export default function AgentConfigurationPage() {
   // Show custom MCP dialog when coming from onboarding
   useEffect(() => {
     if (isFromOnboarding && agent && !isLoading) {
-      // Set active tab to manual configuration
-      setActiveTab('manual');
       // Show custom MCP dialog after a short delay to ensure UI is ready
       const timer = setTimeout(() => {
         setShowCustomMCPDialog(true);
@@ -178,16 +179,65 @@ export default function AgentConfigurationPage() {
     debouncedSave(newFormData);
   }, [debouncedSave]);
 
-  const handleBatchMCPChange = useCallback((updates: { configured_mcps: any[]; custom_mcps: any[] }) => {
-    const newFormData = {
-      ...currentFormDataRef.current,
-      configured_mcps: updates.configured_mcps,
-      custom_mcps: updates.custom_mcps
-    };
 
-    setFormData(newFormData);
-    debouncedSave(newFormData);
-  }, [debouncedSave]);
+
+  // Get default agent MCPs at the component level
+  const { data: defaultMCPs } = useDefaultAgentMCPs();
+
+  const handleMCPToggle = useCallback((mcpName: string, enabled: boolean, isCustom: boolean) => {
+    if (isCustom) {
+      // Handle custom MCPs
+      let newCustomMcps = [...currentFormDataRef.current.custom_mcps];
+
+      if (enabled) {
+        // Add MCP from default agent if not already present
+        if (defaultMCPs) {
+          const defaultMCP = defaultMCPs.custom_mcps.find(mcp => mcp.name === mcpName);
+          if (defaultMCP && !newCustomMcps.some(mcp => mcp.name === mcpName)) {
+            newCustomMcps.push(defaultMCP);
+          }
+        }
+      } else {
+        // Remove MCP
+        newCustomMcps = newCustomMcps.filter(mcp => mcp.name !== mcpName);
+      }
+
+      const newFormData = {
+        ...currentFormDataRef.current,
+        custom_mcps: newCustomMcps
+      };
+      setFormData(newFormData);
+      debouncedSave(newFormData);
+    } else {
+      // Handle configured MCPs
+      let newConfiguredMcps = [...currentFormDataRef.current.configured_mcps];
+
+      if (enabled) {
+        // Add MCP from default agent if not already present
+        if (defaultMCPs) {
+          const defaultMCP = defaultMCPs.configured_mcps.find(mcp => mcp.name === mcpName);
+          if (defaultMCP && !newConfiguredMcps.some(mcp => mcp.name === mcpName)) {
+            newConfiguredMcps.push({
+              name: defaultMCP.name,
+              qualifiedName: `configured_${defaultMCP.name.replace(/\s+/g, '_').toLowerCase()}`,
+              config: defaultMCP.config,
+              enabledTools: []
+            });
+          }
+        }
+      } else {
+        // Remove MCP
+        newConfiguredMcps = newConfiguredMcps.filter(mcp => mcp.name !== mcpName);
+      }
+
+      const newFormData = {
+        ...currentFormDataRef.current,
+        configured_mcps: newConfiguredMcps
+      };
+      setFormData(newFormData);
+      debouncedSave(newFormData);
+    }
+  }, [debouncedSave, defaultMCPs]);
 
   const scrollToAccordion = useCallback(() => {
     if (accordionRef.current) {
@@ -227,6 +277,29 @@ export default function AgentConfigurationPage() {
 
     toast.success(`Successfully connected ${customConfig.name} with ${customConfig.enabledTools.length} tools`);
   }, [debouncedSave]);
+
+  // Marketplace handlers
+  const handlePublish = useCallback(async () => {
+    try {
+      await publishAgentMutation.mutateAsync({ agentId, tags: [] });
+      toast.success('Agent published to marketplace successfully!');
+    } catch (error: any) {
+      toast.error('Failed to publish agent to marketplace');
+    }
+  }, [agentId, publishAgentMutation]);
+
+  const handleUnpublish = useCallback(async () => {
+    try {
+      await unpublishAgentMutation.mutateAsync(agentId);
+      toast.success('Agent removed from marketplace');
+    } catch (error: any) {
+      toast.error('Failed to remove agent from marketplace');
+    }
+  }, [agentId, unpublishAgentMutation]);
+
+  const handleChat = useCallback(() => {
+    router.push(`/dashboard?agent_id=${agentId}`);
+  }, [router, agentId]);
 
   const currentStyle = useMemo(() => {
     if (formData.avatar && formData.avatar_color) {
@@ -287,7 +360,7 @@ export default function AgentConfigurationPage() {
     }
   };
 
-  const ConfigurationContent = useMemo(() => {
+  const ManualConfigurationContent = useMemo(() => {
     return (
       <div className="h-full flex flex-col">
         <div className="md:hidden flex justify-between items-center mb-4 p-4 pb-0">
@@ -307,43 +380,10 @@ export default function AgentConfigurationPage() {
               {getSaveStatusBadge()}
             </div>
           </div>
-          <Drawer open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-            <DrawerTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Eye className="h-4 w-4" />
-                Preview
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent className="h-[90vh] bg-muted">
-              <DrawerHeader>
-                <DrawerTitle>Agent Preview</DrawerTitle>
-              </DrawerHeader>
-              <div className="flex-1 overflow-y-auto px-4 pb-4">
-                <AgentPreview agent={{ ...agent, ...formData }} />
-              </div>
-            </DrawerContent>
-          </Drawer>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <div className='w-full flex items-center justify-center flex-shrink-0 px-4 md:px-12 md:mt-10'>
-            <div className='w-auto flex items-center gap-2'>
-              <TabsList className="grid h-auto w-full grid-cols-2 bg-muted-foreground/10">
-                <TabsTrigger value="agent-builder" className="w-48 flex items-center gap-1.5 px-2">
-                  <span className="truncate">Agent Builder</span>
-                  <Badge variant="beta">
-                    Beta
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="manual">Manual</TabsTrigger>
-              </TabsList>
-            </div>
-          </div>
-          <TabsContent value="manual" className="mt-0 flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-12 pb-4 md:pb-12 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-12 pb-4 md:pb-12 scrollbar-hide">
             <div className="max-w-full">
-              <div className="hidden md:flex justify-end mb-4 mt-4">
-                {getSaveStatusBadge()}
-              </div>
               <div className='flex items-start md:items-center flex-col md:flex-row mt-6'>
                 <StylePicker
                   agentId={agentId}
@@ -375,7 +415,7 @@ export default function AgentConfigurationPage() {
               </div>
 
               <div className='flex flex-col mt-6 md:mt-8'>
-                <div className='text-sm font-semibold text-muted-foreground mb-2'>Instructions</div>
+                <div className='text-sm font-semibold text-muted-foreground mb-2'>System Prompt</div>
                 <EditableText
                   value={formData.system_prompt}
                   onSave={(value) => handleFieldChange('system_prompt', value)}
@@ -397,62 +437,35 @@ export default function AgentConfigurationPage() {
                     <AccordionTrigger className="hover:no-underline text-sm md:text-base">
                       <div className="flex items-center gap-2">
                         <Settings2 className="h-4 w-4" />
-                        AgentPress Tools
+                        Tools
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-4 overflow-x-hidden">
                       <AgentToolsConfiguration
                         tools={formData.agentpress_tools}
                         onToolsChange={(tools) => handleFieldChange('agentpress_tools', tools)}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="mcp" className="border-b">
-                    <AccordionTrigger className="hover:no-underline text-sm md:text-base">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4" />
-                        Integrations (via MCP)
-                        <Badge variant='new'>New</Badge>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-4 overflow-x-hidden">
-                      <AgentMCPConfiguration
                         mcps={formData.configured_mcps}
                         customMcps={formData.custom_mcps}
-                        onMCPsChange={(mcps) => handleBatchMCPChange({ configured_mcps: mcps, custom_mcps: formData.custom_mcps })}
-                        onCustomMCPsChange={(customMcps) => handleBatchMCPChange({ configured_mcps: formData.configured_mcps, custom_mcps: customMcps })}
-                        onBatchMCPChange={handleBatchMCPChange}
+                        onMCPToggle={handleMCPToggle}
                       />
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="agent-builder" className="mt-0 flex-1 flex flex-col overflow-hidden">
-            {memoizedAgentBuilderChat}
-          </TabsContent>
-        </Tabs>
+        </div>
       </div>
     );
   }, [
-    activeTab,
     agentId,
-    agent,
     formData,
     currentStyle,
-    isPreviewOpen,
-    memoizedAgentBuilderChat,
     handleFieldChange,
     handleStyleChange,
     setOpenMobile,
-    setIsPreviewOpen,
-    setActiveTab,
     scrollToAccordion,
     getSaveStatusBadge,
-    handleBatchMCPChange
+    handleMCPToggle
   ]);
 
   useEffect(() => {
@@ -504,15 +517,119 @@ export default function AgentConfigurationPage() {
     <div className="h-screen flex flex-col">
       <div className="flex-1 flex overflow-hidden">
         <div className="hidden md:flex w-full h-full">
+          {/* Left side: Agent Builder */}
           <div className="w-1/2 border-r bg-background h-full flex flex-col">
-            {ConfigurationContent}
+            <div className="p-4 border-b bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Agent Builder</h2>
+                <Badge variant="beta">Beta</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Chat with AI to build your agent
+              </p>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {memoizedAgentBuilderChat}
+            </div>
           </div>
+
+          {/* Right side: Manual Configuration */}
           <div className="w-1/2 overflow-y-auto">
-            <AgentPreview agent={{ ...agent, ...formData }} />
+            <div className="p-4 border-b bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold">Manual Configuration</h2>
+                </div>
+                {getSaveStatusBadge()}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Configure your agent manually
+              </p>
+            </div>
+
+            {/* Action Buttons Below Header */}
+            <div className="p-4 border-b bg-background">
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleChat}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Chat
+                </Button>
+
+                {agent && (agent as any).is_public ? (
+                  <Button
+                    onClick={handleUnpublish}
+                    disabled={unpublishAgentMutation.isPending}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {unpublishAgentMutation.isPending ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        Unpublishing...
+                      </>
+                    ) : (
+                      <>
+                        <GlobeLock className="h-4 w-4" />
+                        Make Private
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handlePublish}
+                    disabled={publishAgentMutation.isPending}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {publishAgentMutation.isPending ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        Publishing...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="h-4 w-4" />
+                        Publish to Marketplace
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+            {ManualConfigurationContent}
           </div>
         </div>
+
+        {/* Mobile: Show tabs for smaller screens */}
         <div className="md:hidden w-full h-full flex flex-col">
-          {ConfigurationContent}
+          <Tabs defaultValue="manual" className="flex-1 flex flex-col overflow-hidden">
+            <div className='w-full flex items-center justify-center flex-shrink-0 px-4 mt-4'>
+              <TabsList className="grid h-auto w-full grid-cols-2 bg-muted-foreground/10 max-w-md">
+                <TabsTrigger value="agent-builder" className="flex items-center gap-1.5 px-2">
+                  <span className="truncate">Builder</span>
+                  <Badge variant="beta" className="text-xs">Beta</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="manual">Manual</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="agent-builder" className="mt-0 flex-1 flex flex-col overflow-hidden">
+              {memoizedAgentBuilderChat}
+            </TabsContent>
+
+            <TabsContent value="manual" className="mt-0 flex-1 overflow-hidden">
+              {ManualConfigurationContent}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 

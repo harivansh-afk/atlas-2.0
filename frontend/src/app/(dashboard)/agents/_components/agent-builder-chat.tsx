@@ -391,7 +391,7 @@ export const AgentBuilderChat = React.memo(function AgentBuilderChat({
                 <div className="flex w-20 aspect-square items-center justify-center rounded-2xl bg-muted-foreground/10 p-4 mb-4">
                   <div className="text-4xl">🤖</div>
                 </div>
-                <p className='w-[60%] text-2xl'>Lets start with a brief <span className='text-primary/80 font-semibold'>description</span> of what you'd like to build</p>
+                <p className='w-[60%] text-2xl'>Im here to help you build your first AI agent, start by giving me a <span className='text-primary/80 font-semibold'>brief description</span> of what this agent can do !</p>
               </div>
             }
           />

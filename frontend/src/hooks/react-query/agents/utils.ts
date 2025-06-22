@@ -320,6 +320,69 @@ export const getThreadAgent = async (threadId: string): Promise<ThreadAgentRespo
   }
 };
 
+export type DefaultAgentMCPs = {
+  configured_mcps: Array<{
+    name: string;
+    config: Record<string, any>;
+  }>;
+  custom_mcps: Array<{
+    name: string;
+    type: 'json' | 'sse';
+    config: Record<string, any>;
+    enabledTools: string[];
+  }>;
+};
+
+export const getDefaultAgentMCPs = async (): Promise<DefaultAgentMCPs> => {
+  try {
+    const agentPlaygroundEnabled = await isFlagEnabled('custom_agents');
+    if (!agentPlaygroundEnabled) {
+      throw new Error('Custom agents is not enabled');
+    }
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw new Error('You must be logged in to get default agent MCPs');
+    }
+
+    // Fetch agents with is_default=true filter
+    const response = await fetch(`${API_URL}/agents?limit=1&has_default=true`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data: AgentsResponse = await response.json();
+    const defaultAgent = data.agents.find(agent => agent.is_default);
+
+    if (!defaultAgent) {
+      console.log('[API] No default agent found, returning empty MCPs');
+      return { configured_mcps: [], custom_mcps: [] };
+    }
+
+    console.log('[API] Fetched default agent MCPs:', {
+      configured_mcps: defaultAgent.configured_mcps?.length || 0,
+      custom_mcps: defaultAgent.custom_mcps?.length || 0
+    });
+
+    return {
+      configured_mcps: defaultAgent.configured_mcps || [],
+      custom_mcps: defaultAgent.custom_mcps || [],
+    };
+  } catch (err) {
+    console.error('Error fetching default agent MCPs:', err);
+    throw err;
+  }
+};
+
 export const getAgentBuilderChatHistory = async (agentId: string): Promise<{messages: any[], thread_id: string | null}> => {
   try {
     const agentPlaygroundEnabled = await isFlagEnabled('custom_agents');
@@ -442,7 +505,7 @@ export const startAgentBuilderChat = async (
           try {
             const data = JSON.parse(line.slice(6));
             onData(data);
-            
+
             if (data.type === 'done') {
               onComplete();
               return;
@@ -458,4 +521,3 @@ export const startAgentBuilderChat = async (
     throw err;
   }
 };
-  

@@ -25,15 +25,15 @@ export const EmptyState = ({ hasAgents, onCreateAgent, onClearFilters }: EmptySt
           </h2>
           <p className="text-muted-foreground leading-relaxed">
             {!hasAgents ? (
-              'Create your first agent to start automating tasks with custom instructions and tools. Configure custom AgentPress capabilities to fine tune agent according to your needs.'
+              'Create your first agent to start automating tasks with custom instructions and tools. Configure custom capabilities to fine tune agent according to your needs.'
             ) : (
               'No agents match your current search and filter criteria. Try adjusting your filters or search terms.'
             )}
           </p>
         </div>
         {!hasAgents ? (
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             onClick={onCreateAgent}
             className="mt-4"
           >
@@ -41,7 +41,7 @@ export const EmptyState = ({ hasAgents, onCreateAgent, onClearFilters }: EmptySt
             Create your first agent
           </Button>
         ) : (
-          <Button 
+          <Button
             variant="outline"
             onClick={onClearFilters}
             className="mt-4"
