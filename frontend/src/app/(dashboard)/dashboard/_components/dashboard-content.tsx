@@ -239,7 +239,7 @@ export function DashboardContent() {
           </div>
 
           {/* MCP Server Carousel - Between Chat Input and Suggestions */}
-          <div className="w-full overflow-hidden px-8 pb-6">
+            <div className="w-full max-w-5xl px-8 pb-6">
             <MCPServerCarousel />
           </div>
 
