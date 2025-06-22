@@ -1,8 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Settings2, Zap } from 'lucide-react';
+import { Search, Settings2, Zap, Terminal, FolderOpen, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import {
+  SiGmail, SiNotion, SiLinear, SiHubspot, SiFigma, SiClickup, SiGooglesheets, SiGoogledocs, SiSlack, SiGithub
+} from 'react-icons/si';
+import { FaMicrosoft, FaTwitter } from 'react-icons/fa';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DEFAULT_AGENTPRESS_TOOLS, getToolDisplayName } from '../_data/tools';
 import { useDefaultAgentMCPs } from '@/hooks/react-query/agents/use-agents';
@@ -44,68 +48,34 @@ export const AgentToolsConfiguration = ({
     }
   };
 
-  // Helper function to get MCP icon using the same logic as dashboard MCP server card
-  const getMCPIcon = (mcp: any) => {
-    // For custom MCPs, try to get icon from known Composio apps
-    if (mcp.isCustom) {
-      const lowerName = mcp.name.toLowerCase();
+  // Helper function to get MCP icon component (using React icons like suggestions)
+  const getMCPIconComponent = (mcp: any): React.ComponentType<any> => {
+    const lowerName = mcp.name.toLowerCase();
 
-      // Use the same icon URLs as the Composio API for consistency
-      if (lowerName.includes('gmail') || lowerName.includes('google')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/gmail.svg';
-      }
-      if (lowerName.includes('slack')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/slack.svg';
-      }
-      if (lowerName.includes('github')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/github.png';
-      }
-      if (lowerName.includes('notion')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/notion.svg';
-      }
-      if (lowerName.includes('calendar')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/googlecalendar.svg';
-      }
-      if (lowerName.includes('drive')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/googledrive.svg';
-      }
-      if (lowerName.includes('linear')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/linear.svg';
-      }
-      if (lowerName.includes('jira')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/jira.svg';
-      }
-      if (lowerName.includes('trello')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/trello.svg';
-      }
-      if (lowerName.includes('discord')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/discord.svg';
-      }
-      if (lowerName.includes('twitter') || lowerName.includes('x.com')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/twitter.svg';
-      }
-      if (lowerName.includes('linkedin')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/linkedin.svg';
-      }
-      if (lowerName.includes('youtube')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/youtube.svg';
-      }
-      if (lowerName.includes('spotify')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/spotify.svg';
-      }
-      if (lowerName.includes('figma')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/figma.svg';
-      }
-      if (lowerName.includes('dropbox')) {
-        return 'https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/dropbox.svg';
-      }
-
-      // Fallback emoji for unknown custom MCPs
-      return '🔧';
+    // Try to match against known integrations
+    if (lowerName.includes('gmail')) return SiGmail;
+    if (lowerName.includes('google')) {
+      if (lowerName.includes('docs')) return SiGoogledocs;
+      if (lowerName.includes('sheets')) return SiGooglesheets;
+      return SiGooglesheets; // Default to sheets for google
     }
+    if (lowerName.includes('notion')) return SiNotion;
+    if (lowerName.includes('linear')) return SiLinear;
+    if (lowerName.includes('slack')) return SiSlack;
+    if (lowerName.includes('github')) return SiGithub;
+    if (lowerName.includes('figma')) return SiFigma;
+    if (lowerName.includes('hubspot')) return SiHubspot;
+    if (lowerName.includes('clickup')) return SiClickup;
+    if (lowerName.includes('twitter') || lowerName.includes('x.com')) return FaTwitter;
+    if (lowerName.includes('microsoft')) return FaMicrosoft;
 
-    // For standard MCPs, use emoji fallback
-    return '⚡';
+    // Standard MCP servers
+    if (lowerName.includes('terminal')) return Terminal;
+    if (lowerName.includes('file') || lowerName.includes('filesystem')) return FolderOpen;
+    if (lowerName.includes('browser') || lowerName.includes('web')) return Globe;
+
+    // Default fallback
+    return Zap;
   };
 
   // Check if an MCP is currently enabled for this agent
@@ -130,7 +100,7 @@ export const AgentToolsConfiguration = ({
         name: mcp.name,
         type: 'mcp' as const,
         isCustom: false,
-        icon: getMCPIcon(mcpData),
+        iconComponent: getMCPIconComponent(mcpData),
         toolCount: 0,
         enabled: isMCPEnabled(mcp.name, false),
         originalData: mcp
@@ -144,7 +114,7 @@ export const AgentToolsConfiguration = ({
         name: mcp.name,
         type: 'mcp' as const,
         isCustom: true,
-        icon: getMCPIcon(mcpData),
+        iconComponent: getMCPIconComponent(mcpData),
         toolCount: mcp.enabledTools?.length || 0,
         enabled: isMCPEnabled(mcp.name, true),
         originalData: mcp
@@ -164,7 +134,7 @@ export const AgentToolsConfiguration = ({
     let toolEntries = Object.entries(DEFAULT_AGENTPRESS_TOOLS);
 
     if (searchQuery) {
-      toolEntries = toolEntries.filter(([toolName, toolInfo]) =>
+      toolEntries = toolEntries.filter(([toolName]) =>
         getToolDisplayName(toolName).toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -207,33 +177,9 @@ export const AgentToolsConfiguration = ({
               key={`mcp-${mcp.name}`}
               className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border hover:border-border/80 transition-colors"
             >
-              {/* Use same icon logic as dashboard MCP server card */}
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                {mcp.icon && mcp.icon.startsWith('http') ? (
-                  <img
-                    src={mcp.icon}
-                    alt={mcp.name}
-                    className="w-8 h-8 object-contain rounded"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const fallback = target.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-
-                {/* Fallback icon */}
-                <div
-                  className="w-8 h-8 flex items-center justify-center text-blue-600"
-                  style={{ display: mcp.icon && mcp.icon.startsWith('http') ? 'none' : 'flex' }}
-                >
-                  {mcp.icon && !mcp.icon.startsWith('http') ? (
-                    <span className="text-lg">{mcp.icon}</span>
-                  ) : (
-                    <Zap className="h-5 w-5" />
-                  )}
-                </div>
+              {/* Use React icon component like suggestions */}
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <mcp.iconComponent className="h-6 w-6" />
               </div>
 
               <div className="flex-1 min-w-0">
