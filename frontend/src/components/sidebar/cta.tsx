@@ -19,7 +19,7 @@ export function CTACard() {
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col">
           <span className="text-sm font-medium text-foreground">
-            Enterprise Beta
+            Public Beta 🎉
           </span>
           <span className="text-xs text-muted-foreground mt-0.5">
             AI employees for your company

@@ -422,33 +422,32 @@ export const useModelSelection = () => {
     try {
       const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
 
-      // Local mode - allow any model
+      // Local mode - allow any model, but default to AL0 (cheaper option)
       if (isLocalMode()) {
         if (savedModel && MODEL_OPTIONS.find(option => option.id === savedModel)) {
           setSelectedModel(savedModel);
         } else {
-          setSelectedModel(DEFAULT_PREMIUM_MODEL_ID);
-          saveModelPreference(DEFAULT_PREMIUM_MODEL_ID);
+          setSelectedModel(DEFAULT_FREE_MODEL_ID); // Default to AL0 even in local mode
+          saveModelPreference(DEFAULT_FREE_MODEL_ID);
         }
         return;
       }
 
-      // Premium subscription - ALWAYS use premium model
+      // Premium subscription - Default to AL0 (cheaper option) but allow saved premium models
       if (subscriptionStatus === 'active') {
-        // If they had a premium model saved and it's still valid, use it
-        const hasSavedPremiumModel = savedModel &&
+        // If they had a model saved and it's still valid, use it
+        const hasSavedValidModel = savedModel &&
           MODEL_OPTIONS.find(option =>
             option.id === savedModel &&
-            option.requiresSubscription &&
-            canAccessModel(subscriptionStatus, true)
+            canAccessModel(subscriptionStatus, option.requiresSubscription)
           );
 
-        // Otherwise use the default premium model
-        if (hasSavedPremiumModel) {
+        // Use saved model if valid, otherwise default to AL0 (free tier model)
+        if (hasSavedValidModel) {
           setSelectedModel(savedModel!);
         } else {
-          setSelectedModel(DEFAULT_PREMIUM_MODEL_ID);
-          saveModelPreference(DEFAULT_PREMIUM_MODEL_ID);
+          setSelectedModel(DEFAULT_FREE_MODEL_ID); // Default pro users to AL0 (cheaper option)
+          saveModelPreference(DEFAULT_FREE_MODEL_ID);
         }
         return;
       }
@@ -491,8 +490,8 @@ export const useModelSelection = () => {
     if (!modelOption && !isCustomModel) {
       console.warn('Model not found in options:', modelId, MODEL_OPTIONS, isCustomModel, customModels);
 
-      // Reset to default model when the selected model is not found
-      const defaultModel = isLocalMode() ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID;
+      // Reset to default model when the selected model is not found - always use AL0 (cheaper option)
+      const defaultModel = DEFAULT_FREE_MODEL_ID;
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       return;
