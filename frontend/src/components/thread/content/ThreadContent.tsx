@@ -17,6 +17,7 @@ import { KortixLogo } from '@/components/sidebar/kortix-logo';
 import { AgentLoader } from './loader';
 import { parseXmlToolCalls, isNewXmlFormat, extractToolNameFromStream } from '@/components/thread/tool-views/xml-parser';
 import { parseToolResult } from '@/components/thread/tool-views/tool-result-parser';
+import { MessageWithMentions } from '../message-with-mentions';
 
 // Define the set of  tags whose raw XML should be hidden during streaming
 const HIDE_STREAMING_XML_TAGS = new Set([
@@ -158,7 +159,7 @@ export function renderMarkdownContent(
                                     <CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
                                 </div>
                                 <span className="font-mono text-xs text-foreground">{getUserFriendlyToolName(toolName)}</span>
-                                {paramDisplay && <span className="ml-1 text-muted-foreground truncate max-w-[200px]" title={paramDisplay}>{paramDisplay}</span>}
+                                {paramDisplay && <span className="ml-1 text-muted-foreground truncate max-w-[200px]" title={typeof paramDisplay === 'string' ? paramDisplay : JSON.stringify(paramDisplay)}>{typeof paramDisplay === 'string' ? paramDisplay : '[Object]'}</span>}
                             </button>
                         </div>
                     );
@@ -558,7 +559,10 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                 <div className="flex max-w-[85%] rounded-xl bg-primary/10 px-4 py-3 break-words overflow-hidden">
                                                     <div className="space-y-3 min-w-0 flex-1">
                                                         {cleanContent && (
-                                                            <Markdown className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere">{cleanContent}</Markdown>
+                                                            <MessageWithMentions
+                                                                content={cleanContent}
+                                                                className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
+                                                            />
                                                         )}
 
                                                         {/* Use the helper function to render user attachments */}
