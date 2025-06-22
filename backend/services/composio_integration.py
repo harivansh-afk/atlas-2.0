@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from fastapi import HTTPException
 from utils.logger import logger
 from supabase import create_client, Client
+from utils.default_agent_config import get_default_agent_config
 import os
 from datetime import datetime, timedelta
 
@@ -587,57 +588,7 @@ class ComposioMCPService:
                 logger.info(f"Creating default agent for account {account_id}")
                 create_result = (
                     self.supabase.table("agents")
-                    .insert(
-                        {
-                            "account_id": account_id,
-                            "name": "Atlas",
-                            "description": "Your default Atlas agent with centralized tool configurations",
-                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
-                            "configured_mcps": [],
-                            "custom_mcps": [],
-                            "agentpress_tools": {
-                                "sb_shell_tool": {
-                                    "enabled": True,
-                                    "description": "Execute terminal commands, run scripts, manage system processes",
-                                },
-                                "sb_files_tool": {
-                                    "enabled": True,
-                                    "description": "Create, read, edit, and organize files and directories",
-                                },
-                                "sb_browser_tool": {
-                                    "enabled": True,
-                                    "description": "Navigate websites, interact with web applications, scrape content",
-                                },
-                                "sb_deploy_tool": {
-                                    "enabled": True,
-                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
-                                },
-                                "sb_expose_tool": {
-                                    "enabled": True,
-                                    "description": "Expose local services and ports for testing and development",
-                                },
-                                "web_search_tool": {
-                                    "enabled": True,
-                                    "description": "Search the internet for current information and research",
-                                },
-                                "sb_vision_tool": {
-                                    "enabled": True,
-                                    "description": "Process images, analyze visual content, generate visual insights",
-                                },
-                                "data_providers_tool": {
-                                    "enabled": True,
-                                    "description": "Access external APIs and data sources",
-                                },
-                                "clado_tool": {
-                                    "enabled": True,
-                                    "description": "Clado integration for enhanced functionality",
-                                },
-                            },
-                            "is_default": True,
-                            "avatar": "🗿",
-                            "avatar_color": "#000000",
-                        }
-                    )
+                    .insert(get_default_agent_config(account_id))
                     .execute()
                 )
 
@@ -758,57 +709,7 @@ class ComposioMCPService:
                 logger.info(f"Creating default agent for account {account_id}")
                 create_result = (
                     self.supabase.table("agents")
-                    .insert(
-                        {
-                            "account_id": account_id,
-                            "name": "Atlas",
-                            "description": "Your default Atlas agent with centralized tool configurations",
-                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
-                            "configured_mcps": [],
-                            "custom_mcps": [],
-                            "agentpress_tools": {
-                                "sb_shell_tool": {
-                                    "enabled": True,
-                                    "description": "Execute terminal commands, run scripts, manage system processes",
-                                },
-                                "sb_files_tool": {
-                                    "enabled": True,
-                                    "description": "Create, read, edit, and organize files and directories",
-                                },
-                                "sb_browser_tool": {
-                                    "enabled": True,
-                                    "description": "Navigate websites, interact with web applications, scrape content",
-                                },
-                                "sb_deploy_tool": {
-                                    "enabled": True,
-                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
-                                },
-                                "sb_expose_tool": {
-                                    "enabled": True,
-                                    "description": "Expose local services and ports for testing and development",
-                                },
-                                "web_search_tool": {
-                                    "enabled": True,
-                                    "description": "Search the internet for current information and research",
-                                },
-                                "sb_vision_tool": {
-                                    "enabled": True,
-                                    "description": "Process images, analyze visual content, generate visual insights",
-                                },
-                                "data_providers_tool": {
-                                    "enabled": True,
-                                    "description": "Access external APIs and data sources",
-                                },
-                                "clado_tool": {
-                                    "enabled": True,
-                                    "description": "Clado integration for enhanced functionality",
-                                },
-                            },
-                            "is_default": True,
-                            "avatar": "🤖",
-                            "avatar_color": "#6366f1",
-                        }
-                    )
+                    .insert(get_default_agent_config(account_id))
                     .execute()
                 )
 
@@ -1316,57 +1217,7 @@ class ComposioMCPService:
                 logger.info(f"Creating default agent for account {account_id}")
                 create_result = (
                     self.supabase.table("agents")
-                    .insert(
-                        {
-                            "account_id": account_id,
-                            "name": "Atlas",
-                            "description": "Your default Atlas agent with centralized tool configurations",
-                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
-                            "configured_mcps": [],
-                            "custom_mcps": [],
-                            "agentpress_tools": {
-                                "sb_shell_tool": {
-                                    "enabled": True,
-                                    "description": "Execute terminal commands, run scripts, manage system processes",
-                                },
-                                "sb_files_tool": {
-                                    "enabled": True,
-                                    "description": "Create, read, edit, and organize files and directories",
-                                },
-                                "sb_browser_tool": {
-                                    "enabled": True,
-                                    "description": "Navigate websites, interact with web applications, scrape content",
-                                },
-                                "sb_deploy_tool": {
-                                    "enabled": True,
-                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
-                                },
-                                "sb_expose_tool": {
-                                    "enabled": True,
-                                    "description": "Expose local services and ports for testing and development",
-                                },
-                                "web_search_tool": {
-                                    "enabled": True,
-                                    "description": "Search the internet for current information and research",
-                                },
-                                "sb_vision_tool": {
-                                    "enabled": True,
-                                    "description": "Process images, analyze visual content, generate visual insights",
-                                },
-                                "data_providers_tool": {
-                                    "enabled": True,
-                                    "description": "Access external APIs and data sources",
-                                },
-                                "clado_tool": {
-                                    "enabled": True,
-                                    "description": "Clado integration for enhanced functionality",
-                                },
-                            },
-                            "is_default": True,
-                            "avatar": "🤖",
-                            "avatar_color": "#6366f1",
-                        }
-                    )
+                    .insert(get_default_agent_config(account_id))
                     .execute()
                 )
 
@@ -1567,57 +1418,7 @@ class ComposioMCPService:
                 logger.info(f"Creating default agent for account {account_id}")
                 create_result = (
                     self.supabase.table("agents")
-                    .insert(
-                        {
-                            "account_id": account_id,
-                            "name": "Atlas",
-                            "description": "Your default Atlas agent with centralized tool configurations",
-                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
-                            "configured_mcps": [],
-                            "custom_mcps": [],
-                            "agentpress_tools": {
-                                "sb_shell_tool": {
-                                    "enabled": True,
-                                    "description": "Execute terminal commands, run scripts, manage system processes",
-                                },
-                                "sb_files_tool": {
-                                    "enabled": True,
-                                    "description": "Create, read, edit, and organize files and directories",
-                                },
-                                "sb_browser_tool": {
-                                    "enabled": True,
-                                    "description": "Navigate websites, interact with web applications, scrape content",
-                                },
-                                "sb_deploy_tool": {
-                                    "enabled": True,
-                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
-                                },
-                                "sb_expose_tool": {
-                                    "enabled": True,
-                                    "description": "Expose local services and ports for testing and development",
-                                },
-                                "web_search_tool": {
-                                    "enabled": True,
-                                    "description": "Search the internet for current information and research",
-                                },
-                                "sb_vision_tool": {
-                                    "enabled": True,
-                                    "description": "Process images, analyze visual content, generate visual insights",
-                                },
-                                "data_providers_tool": {
-                                    "enabled": True,
-                                    "description": "Access external APIs and data sources",
-                                },
-                                "clado_tool": {
-                                    "enabled": True,
-                                    "description": "Clado integration for enhanced functionality",
-                                },
-                            },
-                            "is_default": True,
-                            "avatar": "🤖",
-                            "avatar_color": "#6366f1",
-                        }
-                    )
+                    .insert(get_default_agent_config(account_id))
                     .execute()
                 )
 
@@ -1800,57 +1601,7 @@ class ComposioMCPToolExecutor:
                 logger.info(f"Creating default agent for account {account_id}")
                 create_result = (
                     self.supabase.table("agents")
-                    .insert(
-                        {
-                            "account_id": account_id,
-                            "name": "Atlas",
-                            "description": "Your default Atlas agent with centralized tool configurations",
-                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
-                            "configured_mcps": [],
-                            "custom_mcps": [],
-                            "agentpress_tools": {
-                                "sb_shell_tool": {
-                                    "enabled": True,
-                                    "description": "Execute terminal commands, run scripts, manage system processes",
-                                },
-                                "sb_files_tool": {
-                                    "enabled": True,
-                                    "description": "Create, read, edit, and organize files and directories",
-                                },
-                                "sb_browser_tool": {
-                                    "enabled": True,
-                                    "description": "Navigate websites, interact with web applications, scrape content",
-                                },
-                                "sb_deploy_tool": {
-                                    "enabled": True,
-                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
-                                },
-                                "sb_expose_tool": {
-                                    "enabled": True,
-                                    "description": "Expose local services and ports for testing and development",
-                                },
-                                "web_search_tool": {
-                                    "enabled": True,
-                                    "description": "Search the internet for current information and research",
-                                },
-                                "sb_vision_tool": {
-                                    "enabled": True,
-                                    "description": "Process images, analyze visual content, generate visual insights",
-                                },
-                                "data_providers_tool": {
-                                    "enabled": True,
-                                    "description": "Access external APIs and data sources",
-                                },
-                                "clado_tool": {
-                                    "enabled": True,
-                                    "description": "Clado integration for enhanced functionality",
-                                },
-                            },
-                            "is_default": True,
-                            "avatar": "🤖",
-                            "avatar_color": "#6366f1",
-                        }
-                    )
+                    .insert(get_default_agent_config(account_id))
                     .execute()
                 )
 

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ProgressIndicator } from './_components/progress-indicator';
 import Image from 'next/image';
 import { useCreateAgent } from '@/hooks/react-query/agents/use-agents';
+import { DEFAULT_AGENT_TOOLS_CONFIG } from '@/app/(dashboard)/agents/_data/tools';
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -22,51 +23,14 @@ export default function OnboardingPage() {
 
   const handleComplete = async (workType: string) => {
     try {
-      // Create default agent using the same configuration as Composio integration
+      // Create default agent using the centralized configuration
       const defaultAgentData = {
         name: 'Atlas',
         description: 'Your default Atlas agent with centralized tool configurations',
         system_prompt: 'You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.',
         configured_mcps: [],
         custom_mcps: [],
-        agentpress_tools: {
-          "sb_shell_tool": {
-            "enabled": true,
-            "description": "Execute terminal commands, run scripts, manage system processes",
-          },
-          "sb_file_tool": {
-            "enabled": true,
-            "description": "Read, write, and manage files and directories",
-          },
-          "sb_browser_tool": {
-            "enabled": true,
-            "description": "Browse websites, extract content, interact with web pages",
-          },
-          "sb_search_tool": {
-            "enabled": true,
-            "description": "Search the web for information and answers",
-          },
-          "sb_code_tool": {
-            "enabled": true,
-            "description": "Execute code in various programming languages",
-          },
-          "sb_vision_tool": {
-            "enabled": true,
-            "description": "Analyze and describe images, extract text from images",
-          },
-          "sb_email_tool": {
-            "enabled": true,
-            "description": "Send and manage emails",
-          },
-          "data_providers_tool": {
-            "enabled": true,
-            "description": "Access external APIs and data sources",
-          },
-          "clado_tool": {
-            "enabled": true,
-            "description": "Clado integration for enhanced functionality",
-          },
-        },
+        agentpress_tools: DEFAULT_AGENT_TOOLS_CONFIG,
         is_default: true,
         avatar: '🤖',
         avatar_color: '#6366f1',
