@@ -595,10 +595,47 @@ class ComposioMCPService:
                             "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
                             "configured_mcps": [],
                             "custom_mcps": [],
-                            "agentpress_tools": {},
+                            "agentpress_tools": {
+                                "sb_shell_tool": {
+                                    "enabled": True,
+                                    "description": "Execute terminal commands, run scripts, manage system processes",
+                                },
+                                "sb_files_tool": {
+                                    "enabled": True,
+                                    "description": "Create, read, edit, and organize files and directories",
+                                },
+                                "sb_browser_tool": {
+                                    "enabled": True,
+                                    "description": "Navigate websites, interact with web applications, scrape content",
+                                },
+                                "sb_deploy_tool": {
+                                    "enabled": True,
+                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
+                                },
+                                "sb_expose_tool": {
+                                    "enabled": True,
+                                    "description": "Expose local services and ports for testing and development",
+                                },
+                                "web_search_tool": {
+                                    "enabled": True,
+                                    "description": "Search the internet for current information and research",
+                                },
+                                "sb_vision_tool": {
+                                    "enabled": True,
+                                    "description": "Process images, analyze visual content, generate visual insights",
+                                },
+                                "data_providers_tool": {
+                                    "enabled": True,
+                                    "description": "Access external APIs and data sources",
+                                },
+                                "clado_tool": {
+                                    "enabled": True,
+                                    "description": "Clado integration for enhanced functionality",
+                                },
+                            },
                             "is_default": True,
-                            "avatar": "🤖",
-                            "avatar_color": "#6366f1",
+                            "avatar": "🗿",
+                            "avatar_color": "#000000",
                         }
                     )
                     .execute()
@@ -729,7 +766,44 @@ class ComposioMCPService:
                             "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
                             "configured_mcps": [],
                             "custom_mcps": [],
-                            "agentpress_tools": {},
+                            "agentpress_tools": {
+                                "sb_shell_tool": {
+                                    "enabled": True,
+                                    "description": "Execute terminal commands, run scripts, manage system processes",
+                                },
+                                "sb_files_tool": {
+                                    "enabled": True,
+                                    "description": "Create, read, edit, and organize files and directories",
+                                },
+                                "sb_browser_tool": {
+                                    "enabled": True,
+                                    "description": "Navigate websites, interact with web applications, scrape content",
+                                },
+                                "sb_deploy_tool": {
+                                    "enabled": True,
+                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
+                                },
+                                "sb_expose_tool": {
+                                    "enabled": True,
+                                    "description": "Expose local services and ports for testing and development",
+                                },
+                                "web_search_tool": {
+                                    "enabled": True,
+                                    "description": "Search the internet for current information and research",
+                                },
+                                "sb_vision_tool": {
+                                    "enabled": True,
+                                    "description": "Process images, analyze visual content, generate visual insights",
+                                },
+                                "data_providers_tool": {
+                                    "enabled": True,
+                                    "description": "Access external APIs and data sources",
+                                },
+                                "clado_tool": {
+                                    "enabled": True,
+                                    "description": "Clado integration for enhanced functionality",
+                                },
+                            },
                             "is_default": True,
                             "avatar": "🤖",
                             "avatar_color": "#6366f1",
@@ -1250,7 +1324,44 @@ class ComposioMCPService:
                             "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
                             "configured_mcps": [],
                             "custom_mcps": [],
-                            "agentpress_tools": {},
+                            "agentpress_tools": {
+                                "sb_shell_tool": {
+                                    "enabled": True,
+                                    "description": "Execute terminal commands, run scripts, manage system processes",
+                                },
+                                "sb_files_tool": {
+                                    "enabled": True,
+                                    "description": "Create, read, edit, and organize files and directories",
+                                },
+                                "sb_browser_tool": {
+                                    "enabled": True,
+                                    "description": "Navigate websites, interact with web applications, scrape content",
+                                },
+                                "sb_deploy_tool": {
+                                    "enabled": True,
+                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
+                                },
+                                "sb_expose_tool": {
+                                    "enabled": True,
+                                    "description": "Expose local services and ports for testing and development",
+                                },
+                                "web_search_tool": {
+                                    "enabled": True,
+                                    "description": "Search the internet for current information and research",
+                                },
+                                "sb_vision_tool": {
+                                    "enabled": True,
+                                    "description": "Process images, analyze visual content, generate visual insights",
+                                },
+                                "data_providers_tool": {
+                                    "enabled": True,
+                                    "description": "Access external APIs and data sources",
+                                },
+                                "clado_tool": {
+                                    "enabled": True,
+                                    "description": "Clado integration for enhanced functionality",
+                                },
+                            },
                             "is_default": True,
                             "avatar": "🤖",
                             "avatar_color": "#6366f1",
@@ -1464,7 +1575,44 @@ class ComposioMCPService:
                             "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
                             "configured_mcps": [],
                             "custom_mcps": [],
-                            "agentpress_tools": {},
+                            "agentpress_tools": {
+                                "sb_shell_tool": {
+                                    "enabled": True,
+                                    "description": "Execute terminal commands, run scripts, manage system processes",
+                                },
+                                "sb_files_tool": {
+                                    "enabled": True,
+                                    "description": "Create, read, edit, and organize files and directories",
+                                },
+                                "sb_browser_tool": {
+                                    "enabled": True,
+                                    "description": "Navigate websites, interact with web applications, scrape content",
+                                },
+                                "sb_deploy_tool": {
+                                    "enabled": True,
+                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
+                                },
+                                "sb_expose_tool": {
+                                    "enabled": True,
+                                    "description": "Expose local services and ports for testing and development",
+                                },
+                                "web_search_tool": {
+                                    "enabled": True,
+                                    "description": "Search the internet for current information and research",
+                                },
+                                "sb_vision_tool": {
+                                    "enabled": True,
+                                    "description": "Process images, analyze visual content, generate visual insights",
+                                },
+                                "data_providers_tool": {
+                                    "enabled": True,
+                                    "description": "Access external APIs and data sources",
+                                },
+                                "clado_tool": {
+                                    "enabled": True,
+                                    "description": "Clado integration for enhanced functionality",
+                                },
+                            },
                             "is_default": True,
                             "avatar": "🤖",
                             "avatar_color": "#6366f1",
@@ -1660,7 +1808,44 @@ class ComposioMCPToolExecutor:
                             "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
                             "configured_mcps": [],
                             "custom_mcps": [],
-                            "agentpress_tools": {},
+                            "agentpress_tools": {
+                                "sb_shell_tool": {
+                                    "enabled": True,
+                                    "description": "Execute terminal commands, run scripts, manage system processes",
+                                },
+                                "sb_files_tool": {
+                                    "enabled": True,
+                                    "description": "Create, read, edit, and organize files and directories",
+                                },
+                                "sb_browser_tool": {
+                                    "enabled": True,
+                                    "description": "Navigate websites, interact with web applications, scrape content",
+                                },
+                                "sb_deploy_tool": {
+                                    "enabled": True,
+                                    "description": "Deploy applications, manage containers, handle CI/CD workflows",
+                                },
+                                "sb_expose_tool": {
+                                    "enabled": True,
+                                    "description": "Expose local services and ports for testing and development",
+                                },
+                                "web_search_tool": {
+                                    "enabled": True,
+                                    "description": "Search the internet for current information and research",
+                                },
+                                "sb_vision_tool": {
+                                    "enabled": True,
+                                    "description": "Process images, analyze visual content, generate visual insights",
+                                },
+                                "data_providers_tool": {
+                                    "enabled": True,
+                                    "description": "Access external APIs and data sources",
+                                },
+                                "clado_tool": {
+                                    "enabled": True,
+                                    "description": "Clado integration for enhanced functionality",
+                                },
+                            },
                             "is_default": True,
                             "avatar": "🤖",
                             "avatar_color": "#6366f1",

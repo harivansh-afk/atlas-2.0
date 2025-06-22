@@ -152,10 +152,10 @@ export function renderMarkdownContent(
                         <div key={`tool-${match.index}-${index}`} className="my-1">
                             <button
                                 onClick={() => handleToolClick(messageId, toolName)}
-                                className="inline-flex items-center gap-1.5 py-1 px-1 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-md transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+                                className="inline-flex items-center gap-1.5 py-1 px-1 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-md transition-colors cursor-pointer border border-primary/20"
                             >
                                 <div className='border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600'>
-                                    <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                    <CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
                                 </div>
                                 <span className="font-mono text-xs text-foreground">{getUserFriendlyToolName(toolName)}</span>
                                 {paramDisplay && <span className="ml-1 text-muted-foreground truncate max-w-[200px]" title={paramDisplay}>{paramDisplay}</span>}
@@ -234,10 +234,10 @@ export function renderMarkdownContent(
                 <div key={toolCallKey} className="my-1">
                     <button
                         onClick={() => handleToolClick(messageId, toolName)}
-                        className="inline-flex items-center gap-1.5 py-1 px-1 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-md transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+                        className="inline-flex items-center gap-1.5 py-1 px-1 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-md transition-colors cursor-pointer border border-primary/20"
                     >
                         <div className='border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600'>
-                            <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
                         </div>
                         <span className="font-mono text-xs text-foreground">{getUserFriendlyToolName(toolName)}</span>
                         {paramDisplay && <span className="ml-1 text-muted-foreground truncate max-w-[200px]" title={paramDisplay}>{paramDisplay}</span>}
