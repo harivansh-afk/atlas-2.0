@@ -590,9 +590,9 @@ class ComposioMCPService:
                     .insert(
                         {
                             "account_id": account_id,
-                            "name": "Atlas Agent",
+                            "name": "Atlas",
                             "description": "Your default Atlas agent with centralized tool configurations",
-                            "system_prompt": "You are Atlas Agent, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
+                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
                             "configured_mcps": [],
                             "custom_mcps": [],
                             "agentpress_tools": {},
@@ -707,7 +707,7 @@ class ComposioMCPService:
 
             account_id = account_result.data[0]["id"]
 
-            # Get default agent
+            # Get or create default agent
             default_agent_result = (
                 self.supabase.table("agents")
                 .select("agent_id, custom_mcps")
@@ -717,11 +717,41 @@ class ComposioMCPService:
             )
 
             if not default_agent_result.data:
-                logger.error(f"No default agent found for account {account_id}")
-                return False
+                # Create default agent if none exists
+                logger.info(f"Creating default agent for account {account_id}")
+                create_result = (
+                    self.supabase.table("agents")
+                    .insert(
+                        {
+                            "account_id": account_id,
+                            "name": "Atlas",
+                            "description": "Your default Atlas agent with centralized tool configurations",
+                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
+                            "configured_mcps": [],
+                            "custom_mcps": [],
+                            "agentpress_tools": {},
+                            "is_default": True,
+                            "avatar": "🤖",
+                            "avatar_color": "#6366f1",
+                        }
+                    )
+                    .execute()
+                )
 
-            default_agent_id = default_agent_result.data[0]["agent_id"]
-            current_custom_mcps = default_agent_result.data[0]["custom_mcps"] or []
+                if not create_result.data:
+                    logger.error(
+                        f"Failed to create default agent for account {account_id}"
+                    )
+                    return False
+
+                default_agent_id = create_result.data[0]["agent_id"]
+                current_custom_mcps = []
+                logger.info(
+                    f"Created default agent {default_agent_id} for account {account_id}"
+                )
+            else:
+                default_agent_id = default_agent_result.data[0]["agent_id"]
+                current_custom_mcps = default_agent_result.data[0]["custom_mcps"] or []
 
             # Find the Composio MCP for this app and update its enabledTools
             updated = False
@@ -1198,7 +1228,7 @@ class ComposioMCPService:
 
             account_id = account_result.data[0]["id"]
 
-            # Get default agent
+            # Get or create default agent
             default_agent_result = (
                 self.supabase.table("agents")
                 .select("agent_id, custom_mcps")
@@ -1208,11 +1238,41 @@ class ComposioMCPService:
             )
 
             if not default_agent_result.data:
-                logger.error(f"No default agent found for account {account_id}")
-                return False
+                # Create default agent if none exists
+                logger.info(f"Creating default agent for account {account_id}")
+                create_result = (
+                    self.supabase.table("agents")
+                    .insert(
+                        {
+                            "account_id": account_id,
+                            "name": "Atlas",
+                            "description": "Your default Atlas agent with centralized tool configurations",
+                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
+                            "configured_mcps": [],
+                            "custom_mcps": [],
+                            "agentpress_tools": {},
+                            "is_default": True,
+                            "avatar": "🤖",
+                            "avatar_color": "#6366f1",
+                        }
+                    )
+                    .execute()
+                )
 
-            default_agent_id = default_agent_result.data[0]["agent_id"]
-            current_custom_mcps = default_agent_result.data[0]["custom_mcps"] or []
+                if not create_result.data:
+                    logger.error(
+                        f"Failed to create default agent for account {account_id}"
+                    )
+                    return False
+
+                default_agent_id = create_result.data[0]["agent_id"]
+                current_custom_mcps = []
+                logger.info(
+                    f"Created default agent {default_agent_id} for account {account_id}"
+                )
+            else:
+                default_agent_id = default_agent_result.data[0]["agent_id"]
+                current_custom_mcps = default_agent_result.data[0]["custom_mcps"] or []
 
             # Find and update the Composio MCP with the fresh URL
             updated = False
@@ -1382,7 +1442,7 @@ class ComposioMCPService:
 
             account_id = account_result.data[0]["id"]
 
-            # Get default agent's current custom_mcps
+            # Get or create default agent's current custom_mcps
             default_agent_result = (
                 self.supabase.table("agents")
                 .select("agent_id, custom_mcps")
@@ -1392,12 +1452,42 @@ class ComposioMCPService:
             )
 
             if not default_agent_result.data:
-                logger.error(f"No default agent found for account {account_id}")
-                return False
+                # Create default agent if none exists
+                logger.info(f"Creating default agent for account {account_id}")
+                create_result = (
+                    self.supabase.table("agents")
+                    .insert(
+                        {
+                            "account_id": account_id,
+                            "name": "Atlas",
+                            "description": "Your default Atlas agent with centralized tool configurations",
+                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
+                            "configured_mcps": [],
+                            "custom_mcps": [],
+                            "agentpress_tools": {},
+                            "is_default": True,
+                            "avatar": "🤖",
+                            "avatar_color": "#6366f1",
+                        }
+                    )
+                    .execute()
+                )
 
-            default_agent = default_agent_result.data[0]
-            default_agent_id = default_agent["agent_id"]
-            current_custom_mcps = default_agent.get("custom_mcps", [])
+                if not create_result.data:
+                    logger.error(
+                        f"Failed to create default agent for account {account_id}"
+                    )
+                    return False
+
+                default_agent_id = create_result.data[0]["agent_id"]
+                current_custom_mcps = []
+                logger.info(
+                    f"Created default agent {default_agent_id} for account {account_id}"
+                )
+            else:
+                default_agent = default_agent_result.data[0]
+                default_agent_id = default_agent["agent_id"]
+                current_custom_mcps = default_agent.get("custom_mcps", [])
 
             # Find and remove the Composio MCP entry
             original_count = len(current_custom_mcps)
@@ -1548,7 +1638,7 @@ class ComposioMCPToolExecutor:
 
             account_id = account_result.data[0]["id"]
 
-            # Get default agent's custom_mcps
+            # Get or create default agent's custom_mcps
             default_agent_result = (
                 self.supabase.table("agents")
                 .select("custom_mcps")
@@ -1558,10 +1648,38 @@ class ComposioMCPToolExecutor:
             )
 
             if not default_agent_result.data:
-                logger.error(f"No default agent found for account {account_id}")
-                return None
+                # Create default agent if none exists
+                logger.info(f"Creating default agent for account {account_id}")
+                create_result = (
+                    self.supabase.table("agents")
+                    .insert(
+                        {
+                            "account_id": account_id,
+                            "name": "Atlas",
+                            "description": "Your default Atlas agent with centralized tool configurations",
+                            "system_prompt": "You are Atlas, a helpful AI assistant with access to various tools and integrations. Provide clear, accurate, and helpful responses to user queries.",
+                            "configured_mcps": [],
+                            "custom_mcps": [],
+                            "agentpress_tools": {},
+                            "is_default": True,
+                            "avatar": "🤖",
+                            "avatar_color": "#6366f1",
+                        }
+                    )
+                    .execute()
+                )
 
-            custom_mcps = default_agent_result.data[0]["custom_mcps"] or []
+                if not create_result.data:
+                    logger.error(
+                        f"Failed to create default agent for account {account_id}"
+                    )
+                    return None
+
+                custom_mcps = []
+                logger.info(f"Created default agent for account {account_id}")
+            else:
+                custom_mcps = default_agent_result.data[0]["custom_mcps"] or []
+
             logger.info(f"Retrieved {len(custom_mcps)} custom MCPs from default agent")
             return custom_mcps
 
