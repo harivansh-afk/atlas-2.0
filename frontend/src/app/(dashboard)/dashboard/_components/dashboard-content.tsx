@@ -34,6 +34,8 @@ import { useModal } from '@/hooks/use-modal-store';
 import { Examples } from './suggestions/examples';
 import { useThreadQuery } from '@/hooks/react-query/threads/use-threads';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
+// import { MCPIntegrations } from '@/components/dashboard/mcp-integrations'; // Deprecated
+import { MCPServerCarousel } from '@/components/dashboard/mcp-server-carousel';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -236,7 +238,12 @@ export function DashboardContent() {
 
           </div>
 
-          {/* Suggestions Section - Full Width, Below Chat Input */}
+          {/* MCP Server Carousel - Between Chat Input and Suggestions */}
+          <div className="w-full max-w-5xl px-8 pb-6">
+            <MCPServerCarousel />
+          </div>
+
+          {/* Suggestions Section - Full Width, Below MCP Carousel */}
           <AnimatePresence>
             {showSuggestions && (
               <motion.div
@@ -250,6 +257,11 @@ export function DashboardContent() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Old MCP Integrations Section - Deprecated */}
+          {/* <div className="w-full max-w-6xl px-8 pb-8">
+            <MCPIntegrations />
+          </div> */}
         </div>
 
         {/* Floating Buttons - Bottom Right */}

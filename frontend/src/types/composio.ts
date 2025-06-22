@@ -1,6 +1,6 @@
 /**
  * TypeScript types for Composio MCP integration
- * 
+ *
  * These types define the structure for Composio MCP API requests, responses,
  * and data models used across the frontend application.
  */
@@ -39,6 +39,7 @@ export interface GetSupportedAppsResponse {
   success: boolean;
   apps: ComposioApp[];
   total: number;
+  message: string;
 }
 
 export interface ComposioHealthResponse {
@@ -57,6 +58,9 @@ export interface ComposioApp {
   description: string;
   icon: string;
   category: ComposioAppCategory;
+  tool_count?: number;
+  usage_count?: number;
+  popular?: boolean;
   requires_auth?: boolean;
   rate_limit?: number;
   timeout?: number;
@@ -82,17 +86,35 @@ export interface ComposioConnection {
 // Enums and Constants
 // ============================================================================
 
-export type ComposioAppCategory = 
+export type ComposioAppCategory =
+  | 'popular'
   | 'communication'
-  | 'development' 
+  | 'development'
   | 'productivity'
+  | 'ai'
+  | 'analytics'
+  | 'marketing'
+  | 'crm'
+  | 'finance'
   | 'storage'
-  | 'project-management'
+  | 'scheduling'
+  | 'media'
+  | 'education'
+  | 'design'
+  | 'social'
+  | 'gaming'
+  | 'voice'
+  | 'email'
+  | 'automation'
+  | 'support'
+  | 'security'
+  | 'monitoring'
+  | 'utilities'
+  | 'business'
   | 'sales'
-  | 'calendar'
   | 'other';
 
-export type ComposioConnectionStatus = 
+export type ComposioConnectionStatus =
   | 'pending'
   | 'connected'
   | 'error'
@@ -100,13 +122,31 @@ export type ComposioConnectionStatus =
   | 'disconnected';
 
 export const COMPOSIO_APP_CATEGORIES: Record<ComposioAppCategory, { name: string; icon: string }> = {
+  popular: { name: 'Popular', icon: '⭐' },
   communication: { name: 'Communication', icon: '💬' },
   development: { name: 'Development', icon: '🔧' },
   productivity: { name: 'Productivity', icon: '📝' },
+  ai: { name: 'AI & ML', icon: '🤖' },
+  analytics: { name: 'Analytics & Data', icon: '📊' },
+  marketing: { name: 'Marketing', icon: '📢' },
+  crm: { name: 'CRM', icon: '👥' },
+  finance: { name: 'Finance', icon: '💰' },
   storage: { name: 'File Storage', icon: '📁' },
-  'project-management': { name: 'Project Management', icon: '📋' },
-  sales: { name: 'Sales & CRM', icon: '🎯' },
-  calendar: { name: 'Calendar', icon: '📅' },
+  scheduling: { name: 'Scheduling', icon: '📅' },
+  media: { name: 'Media', icon: '🎬' },
+  education: { name: 'Education', icon: '🎓' },
+  design: { name: 'Design', icon: '🎨' },
+  social: { name: 'Social', icon: '📱' },
+  gaming: { name: 'Gaming', icon: '🎮' },
+  voice: { name: 'Voice', icon: '🎤' },
+  email: { name: 'Email', icon: '📧' },
+  automation: { name: 'Automation', icon: '⚡' },
+  support: { name: 'Support', icon: '🎧' },
+  security: { name: 'Security', icon: '🔒' },
+  monitoring: { name: 'Monitoring', icon: '📈' },
+  utilities: { name: 'Utilities', icon: '🔨' },
+  business: { name: 'Business', icon: '🏢' },
+  sales: { name: 'Sales', icon: '🎯' },
   other: { name: 'Other', icon: '🧩' },
 };
 
@@ -209,6 +249,21 @@ export interface ComposioErrorResponse {
   message: string;
   statusCode?: number;
   errorCode?: string;
+}
+
+export interface InitiateAuthRequest {
+  app_key: string;
+}
+
+export interface InitiateAuthResponse {
+  success: boolean;
+  app_key: string;
+  tool_name: string;
+  redirect_url?: string;
+  connection_id?: string;
+  instruction?: string;
+  message: string;
+  error?: string;
 }
 
 // ============================================================================

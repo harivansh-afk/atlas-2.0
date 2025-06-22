@@ -1,6 +1,6 @@
 /**
  * React Query hooks for Composio MCP integration
- * 
+ *
  * These hooks provide a reactive interface to the Composio MCP API service
  * with caching, error handling, and optimistic updates.
  */
@@ -58,14 +58,14 @@ export const useComposioApps = (): UseComposioAppsReturn => {
   });
 
   const getAppsByCategory = (category: string): ComposioApp[] => {
-    return query.data?.filter(app => app.category === category) || [];
+    return query.data?.apps?.filter(app => app.category === category) || [];
   };
 
   const searchApps = (searchQuery: string): ComposioApp[] => {
-    if (!query.data || !searchQuery.trim()) return query.data || [];
-    
+    if (!query.data?.apps || !searchQuery.trim()) return query.data?.apps || [];
+
     const lowercaseQuery = searchQuery.toLowerCase();
-    return query.data.filter(app => 
+    return query.data.apps.filter(app =>
       app.name.toLowerCase().includes(lowercaseQuery) ||
       app.description.toLowerCase().includes(lowercaseQuery) ||
       app.key.toLowerCase().includes(lowercaseQuery)
@@ -73,7 +73,7 @@ export const useComposioApps = (): UseComposioAppsReturn => {
   };
 
   return {
-    apps: query.data || [],
+    apps: query.data?.apps || [],
     isLoading: query.isLoading,
     error: query.error,
     getAppsByCategory,
@@ -155,7 +155,7 @@ export const useCreateComposioConnection = (): UseCreateComposioConnectionReturn
     onError: (error, appKey, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       queryClient.setQueryData(composioKeys.connections(), context?.previousConnections);
-      
+
       console.error(`Failed to create connection for ${appKey}:`, error);
       toast.error(`Failed to connect to ${appKey}: ${error.message}`);
     },
@@ -163,7 +163,7 @@ export const useCreateComposioConnection = (): UseCreateComposioConnectionReturn
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: composioKeys.connections() });
       queryClient.invalidateQueries({ queryKey: composioKeys.connection(appKey) });
-      
+
       toast.success(`Successfully connected to ${appKey}!`);
     },
   });
@@ -202,7 +202,7 @@ export const useDeleteComposioConnection = () => {
     onError: (error, appKey, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       queryClient.setQueryData(composioKeys.connections(), context?.previousConnections);
-      
+
       console.error(`Failed to delete connection for ${appKey}:`, error);
       toast.error(`Failed to disconnect ${appKey}: ${error.message}`);
     },
@@ -211,7 +211,7 @@ export const useDeleteComposioConnection = () => {
         // Invalidate and refetch
         queryClient.invalidateQueries({ queryKey: composioKeys.connections() });
         queryClient.invalidateQueries({ queryKey: composioKeys.connection(appKey) });
-        
+
         toast.success(`Successfully disconnected from ${appKey}`);
       } else {
         toast.error(`Failed to disconnect from ${appKey}`);
@@ -232,7 +232,7 @@ export const useReconnectComposioConnection = () => {
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: composioKeys.connections() });
       queryClient.invalidateQueries({ queryKey: composioKeys.connection(appKey) });
-      
+
       toast.success(`Successfully reconnected to ${appKey}!`);
     },
     onError: (error, appKey) => {
@@ -269,7 +269,7 @@ export const useHasComposioConnections = (): boolean => {
  */
 export const useComposioConnectionStats = () => {
   const { connections } = useComposioConnections();
-  
+
   return {
     total: connections.length,
     connected: connections.filter(conn => conn.status === 'connected').length,

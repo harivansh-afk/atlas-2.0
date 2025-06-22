@@ -17,6 +17,7 @@ import {
   ComposioHealthResponse,
   ComposioAPIError,
   ComposioAppKey,
+  ComposioConnectionStatus,
 } from '@/types/composio';
 
 // Remove /api suffix if present since we'll add it in our endpoints
@@ -97,7 +98,7 @@ export class ComposioMCPService {
     }
 
     // Transform the response to match our ComposioConnection interface
-    const connection = {
+    const connection: ComposioConnection = {
       id: result.session_uuid || '',
       user_id: '', // Will be populated by backend
       qualified_name: result.qualified_name || `composio/${appKey}`,
@@ -106,7 +107,7 @@ export class ComposioMCPService {
       mcp_url: result.mcp_url,
       auth_url: result.auth_url,
       session_uuid: result.session_uuid,
-      status: result.auth_url ? 'pending' : 'connected',
+      status: (result.auth_url ? 'pending' : 'connected') as ComposioConnectionStatus,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       scope: `composio_${appKey}`,
@@ -171,7 +172,7 @@ export class ComposioMCPService {
   /**
    * Get list of supported Composio apps
    */
-  static async getSupportedApps(): Promise<ComposioApp[]> {
+  static async getSupportedApps(): Promise<GetSupportedAppsResponse> {
     if (!API_URL) {
       throw new ComposioAPIError('Backend URL not configured', 500, 'NO_BACKEND_URL');
     }
@@ -191,7 +192,7 @@ export class ComposioMCPService {
       throw new ComposioAPIError('Failed to fetch supported apps', 400, 'FETCH_APPS_FAILED');
     }
 
-    return result.apps;
+    return result;
   }
 
   /**
@@ -250,6 +251,40 @@ export class ComposioMCPService {
       console.error(`[ComposioAPI] Error getting connection status for ${appKey}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Refresh MCP connection after OAuth authentication is completed
+   */
+  static async refreshConnection(appKey: ComposioAppKey): Promise<boolean> {
+    if (!API_URL) {
+      throw new ComposioAPIError('Backend URL not configured', 500, 'NO_BACKEND_URL');
+    }
+
+    const headers = await this.getAuthHeaders();
+
+    console.log(`[ComposioAPI] Refreshing connection after auth for app: ${appKey}`);
+
+    const response = await fetch(`${API_URL}/api/composio-mcp/refresh-connection/${appKey}`, {
+      method: 'POST',
+      headers,
+    });
+
+    const result = await this.handleResponse<{
+      success: boolean;
+      message: string;
+      app_key: string;
+      error?: string;
+    }>(response);
+
+    console.log('[ComposioAPI] Refresh connection response:', result);
+
+    if (!result.success) {
+      console.error('[ComposioAPI] Refresh connection failed:', result.error);
+      throw new ComposioAPIError(result.error || 'Failed to refresh connection', 400, 'REFRESH_FAILED');
+    }
+
+    return result.success;
   }
 
   /**

@@ -281,7 +281,7 @@ export default function IntegrationsSection() {
                         Connect to <span className="italic font-light">Everything</span>
                     </h2>
                     <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto text-center mb-6 sm:mb-8 px-2">
-                        Seamlessly integrate with 140+ apps via Model Context Protocol. Connect your entire ops stack.
+                        Seamlessly integrate with 190+ apps via Model Context Protocol. Connect your entire ops stack.
                     </p>
 
                     <div className="flex justify-center mb-1">

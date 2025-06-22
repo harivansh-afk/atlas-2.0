@@ -8,6 +8,7 @@ with our existing MCP architecture and authentication flow.
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Dict, Any, Optional, List
+import httpx
 from utils.auth_utils import get_current_user_id_from_jwt
 from utils.logger import logger
 from services.composio_integration import (
@@ -81,6 +82,15 @@ class UpdateComposioToolsResponse(BaseModel):
     error: Optional[str] = None
 
 
+class GetSupportedAppsResponse(BaseModel):
+    """Response model for getting supported Composio apps"""
+
+    success: bool
+    apps: List[Dict[str, Any]]
+    total: int
+    message: str
+
+
 class InitiateAuthRequest(BaseModel):
     """Request model for initiating authentication for a Composio MCP connection"""
 
@@ -126,31 +136,14 @@ async def create_composio_mcp_connection(
             f"Creating Composio MCP connection for user {user_id}, app {request.app_key}"
         )
 
-        # Validate app_key
-        supported_apps = [
-            "gmail",
-            "slack",
-            "github",
-            "notion",
-            "trello",
-            "asana",
-            "linear",
-            "jira",
-            "hubspot",
-            "salesforce",
-            "google-drive",
-            "dropbox",
-            "onedrive",
-            "zoom",
-            "calendar",
-        ]
+        # Validate app_key against official Composio API
+        # We'll let Composio handle validation since they have the authoritative list
+        # This allows us to support all 140+ servers without hardcoding
+        logger.info(f"Creating connection for app: {request.app_key}")
 
-        if request.app_key not in supported_apps:
-            logger.warning(f"Unsupported app key: {request.app_key}")
-            # Don't fail - let Composio handle validation
-
-        # Get or create the connection using our service (with persistence)
-        connection = await composio_mcp_service.get_or_create_user_mcp_connection(
+        # Create the connection WITHOUT storing in Supabase (new flow)
+        # Storage will happen later when user confirms tool selection
+        connection = await composio_mcp_service.create_user_mcp_connection_no_storage(
             user_id=user_id, app_key=request.app_key
         )
 
@@ -238,66 +231,149 @@ async def delete_composio_connection(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/supported-apps")
+@router.get("/supported-apps", response_model=GetSupportedAppsResponse)
 async def get_supported_apps():
     """
-    Get list of apps supported by Composio integration.
+    Get list of supported Composio apps from the official Composio API.
 
-    This endpoint returns the apps that can be connected through Composio.
+    This endpoint fetches all available MCP servers from mcp.composio.dev
+    and returns them in our standardized format.
     """
-    supported_apps = [
-        {
-            "key": "gmail",
-            "name": "Gmail",
-            "description": "Connect to Gmail for email management",
-            "icon": "📧",
-            "category": "communication",
-        },
-        {
-            "key": "slack",
-            "name": "Slack",
-            "description": "Connect to Slack for team communication",
-            "icon": "💬",
-            "category": "communication",
-        },
-        {
-            "key": "github",
-            "name": "GitHub",
-            "description": "Connect to GitHub for code management",
-            "icon": "🐙",
-            "category": "development",
-        },
-        {
-            "key": "notion",
-            "name": "Notion",
-            "description": "Connect to Notion for note-taking and documentation",
-            "icon": "📝",
-            "category": "productivity",
-        },
-        {
-            "key": "google-drive",
-            "name": "Google Drive",
-            "description": "Connect to Google Drive for file storage",
-            "icon": "📁",
-            "category": "storage",
-        },
-        {
-            "key": "linear",
-            "name": "Linear",
-            "description": "Connect to Linear for issue tracking",
-            "icon": "📋",
-            "category": "project-management",
-        },
-        {
-            "key": "hubspot",
-            "name": "HubSpot",
-            "description": "Connect to HubSpot for CRM",
-            "icon": "🎯",
-            "category": "sales",
-        },
-    ]
+    try:
+        # Fetch apps from official Composio API
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get("https://mcp.composio.dev/api/apps")
+            response.raise_for_status()
+            composio_apps = response.json()
 
-    return {"success": True, "apps": supported_apps, "total": len(supported_apps)}
+        # Transform Composio apps to our format
+        supported_apps = []
+        for app in composio_apps:
+            # Map Composio categories to our simplified categories
+            category_mapping = {
+                "popular": "popular",
+                "collaboration & communication": "communication",
+                "developer tools & devops": "development",
+                "productivity & project management": "productivity",
+                "ai & machine learning": "ai",
+                "analytics & data": "analytics",
+                "marketing & social media": "marketing",
+                "crm": "crm",
+                "finance & accounting": "finance",
+                "document & file management": "storage",
+                "scheduling & booking": "scheduling",
+                "entertainment & media": "media",
+                "education & lms": "education",
+                "design & creative tools": "design",
+                "social": "social",
+                "gaming": "gaming",
+                "voice": "voice",
+                "email": "email",
+                "other / miscellaneous": "other",
+                "workflow automation": "automation",
+                "sales & customer support": "support",
+                "security & compliance": "security",
+                "monitoring & observability": "monitoring",
+                "time tracking": "productivity",
+                "url shortening": "utilities",
+                "email marketing": "marketing",
+                "website builders": "development",
+                "browser automation": "automation",
+                "testing": "development",
+                "data services": "analytics",
+                "financial data": "finance",
+                "internet security": "security",
+                "database management": "development",
+                "vacation rental software": "business",
+                "lead generation": "marketing",
+                "sales": "sales",
+                "incident management": "monitoring",
+                "natural language processing": "ai",
+                "web scraping": "analytics",
+                "web3 development": "development",
+                "compliance": "security",
+                "networking": "development",
+                "cdn": "development",
+                "dns": "development",
+            }
+
+            # Get the primary category from meta.categories or fallback to app.category
+            primary_category = "other"
+            if app.get("meta", {}).get("categories"):
+                primary_category = app["meta"]["categories"][0].get("name", "other")
+            elif app.get("category"):
+                primary_category = app["category"]
+
+            # Map to our simplified category
+            mapped_category = category_mapping.get(primary_category, "other")
+
+            # Use icon from meta.logo or fallback to a default emoji
+            icon_url = app.get("meta", {}).get("logo") or app.get("icon", "")
+
+            supported_apps.append(
+                {
+                    "key": app["key"],
+                    "name": app["name"],
+                    "description": app.get("description", f"Connect to {app['name']}"),
+                    "icon": icon_url,  # Use the actual icon URL from Composio
+                    "category": mapped_category,
+                    "tool_count": app.get("meta", {}).get("tool_count", 0),
+                    "usage_count": app.get("usageCount", 0),
+                    "popular": app.get("popular", False),
+                }
+            )
+
+        logger.info(f"Fetched {len(supported_apps)} apps from Composio API")
+
+        return GetSupportedAppsResponse(
+            success=True,
+            apps=supported_apps,
+            total=len(supported_apps),
+            message=f"Successfully fetched {len(supported_apps)} supported apps from Composio",
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching apps from Composio API: {e}")
+        # Fallback to a minimal set if API fails
+        fallback_apps = [
+            {
+                "key": "gmail",
+                "name": "Gmail",
+                "description": "Connect to Gmail for email management",
+                "icon": "https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/gmail.svg",
+                "category": "communication",
+                "tool_count": 23,
+                "usage_count": 196,
+                "popular": True,
+            },
+            {
+                "key": "github",
+                "name": "GitHub",
+                "description": "Connect to GitHub for code management",
+                "icon": "https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/github.png",
+                "category": "development",
+                "tool_count": 910,
+                "usage_count": 470,
+                "popular": True,
+            },
+            {
+                "key": "slack",
+                "name": "Slack",
+                "description": "Connect to Slack for team communication",
+                "icon": "https://cdn.jsdelivr.net/gh/ComposioHQ/open-logos@master/slack.svg",
+                "category": "communication",
+                "tool_count": 174,
+                "usage_count": 44,
+                "popular": True,
+            },
+        ]
+
+        return GetSupportedAppsResponse(
+            success=True,
+            apps=fallback_apps,
+            total=len(fallback_apps),
+            message=f"Using fallback apps due to API error: {str(e)}",
+        )
 
 
 @router.post("/discover-tools", response_model=DiscoverComposioToolsResponse)
@@ -317,8 +393,8 @@ async def discover_composio_tools(
             f"Discovering tools for Composio app: {request.app_key}, user: {user_id}"
         )
 
-        # Get the existing Composio MCP connection from default agent
-        connection = await composio_mcp_service.get_or_create_user_mcp_connection(
+        # Get the Composio MCP connection (no storage yet)
+        connection = await composio_mcp_service.create_user_mcp_connection_no_storage(
             user_id, request.app_key
         )
 
@@ -473,6 +549,70 @@ async def initiate_composio_auth(
             message=f"Failed to initiate authentication for {request.app_key}",
             error=str(e),
         )
+
+
+@router.post("/refresh-connection/{app_key}")
+async def refresh_mcp_connection(
+    app_key: str, user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    """
+    Refresh MCP connection after OAuth authentication is completed.
+
+    This endpoint should be called after the user completes OAuth authentication
+    to ensure the MCP server URL reflects the authenticated state.
+    """
+    try:
+        logger.info(f"Refreshing MCP connection for user {user_id}, app {app_key}")
+
+        success = await composio_mcp_service.refresh_mcp_connection_after_auth(
+            user_id, app_key
+        )
+
+        if success:
+            return {
+                "success": True,
+                "message": f"Successfully refreshed MCP connection for {app_key}",
+                "app_key": app_key,
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Failed to refresh MCP connection for {app_key}",
+                "app_key": app_key,
+                "error": "Could not update MCP URL after authentication",
+            }
+
+    except Exception as e:
+        logger.error(f"Error refreshing MCP connection for {app_key}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/debug-session/{app_key}")
+async def debug_session_uuid(
+    app_key: str, user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    """Debug endpoint to check session UUID consistency"""
+    try:
+        # Generate session UUID using the same method
+        session_uuid = composio_mcp_service._generate_session_uuid(user_id, app_key)
+
+        # Check what's stored in Supabase
+        connections = await composio_mcp_service.list_user_mcp_connections(user_id)
+        stored_connection = next(
+            (conn for conn in connections if conn["app_key"] == app_key), None
+        )
+
+        return {
+            "user_id": user_id,
+            "app_key": app_key,
+            "generated_session_uuid": session_uuid,
+            "stored_connection": stored_connection,
+            "mcp_url_would_be": f"https://mcp.composio.dev/partner/composio/{app_key}/mcp?customerId={session_uuid}",
+        }
+
+    except Exception as e:
+        logger.error(f"Error in debug session: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/health")

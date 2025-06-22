@@ -345,11 +345,9 @@ class ComposioMCPService:
                 "App key contains invalid characters (only lowercase letters, numbers, and hyphens allowed)",
             )
 
-        if app_key not in COMPOSIO_SUPPORTED_APPS:
-            return (
-                False,
-                f"Unsupported app: {app_key}. Supported apps: {', '.join(COMPOSIO_SUPPORTED_APPS.keys())}",
-            )
+        # NEW: Skip hardcoded validation - allow all apps that pass format validation
+        # The Composio API will handle validation of supported apps
+        # This allows us to support all 192+ apps dynamically
 
         return True, None
 
@@ -386,11 +384,8 @@ class ComposioMCPService:
         cache_key = f"{user_id}:{app_key}"
         now = datetime.now()
 
-        # Get app-specific rate limit or use default
-        app_config = COMPOSIO_SUPPORTED_APPS.get(app_key, {})
-        rate_limit = app_config.get(
-            "rate_limit", RATE_LIMIT_CONFIG["default_requests_per_minute"]
-        )
+        # Use default rate limit for all apps (since we support all apps dynamically)
+        rate_limit = RATE_LIMIT_CONFIG["default_requests_per_minute"]
 
         # Initialize cache for this user-app combination
         if cache_key not in self._rate_limit_cache:
@@ -416,27 +411,43 @@ class ComposioMCPService:
         return True, None
 
     def get_app_config(self, app_key: str) -> Dict[str, Any]:
-        """Get configuration for a specific app."""
-        return COMPOSIO_SUPPORTED_APPS.get(app_key, {})
+        """Get configuration for a specific app. Returns default config for dynamic apps."""
+        return {
+            "name": app_key.title(),
+            "description": f"Connect to {app_key.title()} via Composio MCP",
+            "category": "integration",
+            "requires_auth": True,
+            "rate_limit": RATE_LIMIT_CONFIG["default_requests_per_minute"],
+            "timeout": 30,
+        }
 
-    def get_supported_apps(self) -> List[Dict[str, Any]]:
-        """Get list of all supported apps with their metadata."""
-        return [
-            {"key": key, **config} for key, config in COMPOSIO_SUPPORTED_APPS.items()
-        ]
+    async def get_supported_apps(self) -> List[Dict[str, Any]]:
+        """Get list of all supported apps from Composio API."""
+        try:
+            response = await self.get_supported_apps_from_api()
+            if response.get("success"):
+                return response.get("apps", [])
+            else:
+                logger.error("Failed to fetch supported apps from Composio API")
+                return []
+        except Exception as e:
+            logger.error(f"Error fetching supported apps: {e}")
+            return []
 
-    def get_apps_by_category(self, category: str) -> List[Dict[str, Any]]:
-        """Get apps filtered by category."""
-        return [
-            {"key": key, **config}
-            for key, config in COMPOSIO_SUPPORTED_APPS.items()
-            if config.get("category") == category
-        ]
+    async def get_apps_by_category(self, category: str) -> List[Dict[str, Any]]:
+        """Get apps filtered by category from Composio API."""
+        try:
+            all_apps = await self.get_supported_apps()
+            return [app for app in all_apps if app.get("category") == category]
+        except Exception as e:
+            logger.error(f"Error fetching apps by category {category}: {e}")
+            return []
 
     def _generate_session_uuid(self, user_id: str, app_key: str) -> str:
-        """Generate a unique session UUID for user-app combination"""
-        # Create deterministic but unique session ID
-        session_data = f"{user_id}_{app_key}_{uuid.uuid4()}"
+        """Generate a deterministic session UUID for user-app combination"""
+        # Create deterministic session ID that's always the same for the same user+app
+        # This ensures OAuth authentication and MCP URL use the same customerId
+        session_data = f"{user_id}_{app_key}_composio_mcp"
         return str(uuid.uuid5(uuid.NAMESPACE_DNS, session_data))
 
     async def _generate_composio_mcp_url(
@@ -671,6 +682,9 @@ class ComposioMCPService:
         """
         Update the enabled tools for a Composio MCP connection in the default agent.
 
+        NEW FLOW: This method now also stores the MCP connection in Supabase
+        when tools are selected, implementing the new user-controlled flow.
+
         This mirrors the exact per-agent MCP tool selection logic, updating the
         enabledTools array in the default agent's custom_mcps for the specified app.
         """
@@ -723,8 +737,32 @@ class ComposioMCPService:
                     break
 
             if not updated:
-                logger.error(f"Composio MCP for {app_key} not found in default agent")
-                return False
+                # MCP not found in default agent - need to create it first
+                logger.info(
+                    f"Composio MCP for {app_key} not found in default agent, creating it"
+                )
+
+                # Generate the MCP connection details
+                connection = await self.create_user_mcp_connection_no_storage(
+                    user_id, app_key
+                )
+                if not connection.success:
+                    logger.error(
+                        f"Failed to generate MCP connection for {app_key}: {connection.error}"
+                    )
+                    return False
+
+                # Add the new MCP to custom_mcps
+                new_mcp = {
+                    "type": "http",
+                    "name": app_key.title(),
+                    "config": {"url": connection.mcp_url},
+                    "enabledTools": selected_tools,
+                }
+                current_custom_mcps.append(new_mcp)
+                logger.info(
+                    f"Added new Composio MCP for {app_key} with {len(selected_tools)} tools"
+                )
 
             # Update the default agent with modified custom_mcps
             update_result = (
@@ -1050,6 +1088,174 @@ class ComposioMCPService:
         """
         return await self.get_or_create_user_mcp_connection(user_id, app_key)
 
+    async def create_user_mcp_connection_no_storage(
+        self, user_id: str, app_key: str
+    ) -> ComposioMCPConnection:
+        """
+        Create MCP connection without storing in Supabase.
+
+        This is used for the new flow where we only store the connection
+        after the user selects their tools.
+        """
+        try:
+            logger.info(
+                f"Creating Composio MCP connection (no storage) for user {user_id}, app {app_key}"
+            )
+
+            # Step 1: Validate inputs
+            user_valid, user_error = self.validate_user_id(user_id)
+            if not user_valid:
+                return ComposioMCPConnection(
+                    success=False,
+                    app_key=app_key,
+                    error=f"Invalid user ID: {user_error}",
+                )
+
+            app_valid, app_error = self.validate_app_key(app_key)
+            if not app_valid:
+                return ComposioMCPConnection(
+                    success=False,
+                    app_key=app_key,
+                    error=f"Invalid app key: {app_error}",
+                )
+
+            # Step 2: Check rate limits
+            rate_ok, rate_error = self.check_rate_limit(user_id, app_key)
+            if not rate_ok:
+                return ComposioMCPConnection(
+                    success=False,
+                    app_key=app_key,
+                    error=rate_error,
+                )
+
+            # Step 3: Generate session UUID
+            session_uuid = self._generate_session_uuid(user_id, app_key)
+
+            # Step 4: Generate MCP URL from Composio
+            mcp_url = await self._generate_composio_mcp_url(app_key, session_uuid)
+            if not mcp_url:
+                return ComposioMCPConnection(
+                    success=False,
+                    app_key=app_key,
+                    error="Failed to generate MCP URL from Composio",
+                )
+
+            # Step 5: Return success WITHOUT storing in Supabase
+            qualified_name = f"composio/{app_key}"
+            return ComposioMCPConnection(
+                success=True,
+                app_key=app_key,
+                mcp_url=mcp_url,
+                session_uuid=session_uuid,
+                auth_url=mcp_url,  # For now, MCP URL is the auth URL
+                qualified_name=qualified_name,
+            )
+
+        except Exception as e:
+            logger.error(f"Error in create_user_mcp_connection_no_storage: {e}")
+            return ComposioMCPConnection(success=False, app_key=app_key, error=str(e))
+
+    async def refresh_mcp_connection_after_auth(
+        self, user_id: str, app_key: str
+    ) -> bool:
+        """
+        Refresh the MCP connection after OAuth authentication is completed.
+
+        This method regenerates the MCP URL to ensure it reflects the authenticated state
+        and updates the stored connection in Supabase.
+        """
+        try:
+            logger.info(
+                f"Refreshing MCP connection after auth for user {user_id}, app {app_key}"
+            )
+
+            # Use the SAME session UUID as the original connection
+            # This ensures the customerId matches between OAuth and MCP URL
+            session_uuid = self._generate_session_uuid(user_id, app_key)
+
+            # Generate a fresh MCP URL that should reflect the authenticated state
+            mcp_url = await self._generate_composio_mcp_url(app_key, session_uuid)
+            if not mcp_url:
+                logger.error(f"Failed to generate fresh MCP URL for {app_key}")
+                return False
+
+            # Update the stored connection in Supabase with the new URL
+            actual_user_id = self._normalize_user_id(user_id)
+
+            # Get account_id from user_id
+            account_result = (
+                self.supabase.schema("basejump")
+                .table("accounts")
+                .select("id")
+                .eq("primary_owner_user_id", actual_user_id)
+                .eq("personal_account", True)
+                .execute()
+            )
+
+            if not account_result.data:
+                logger.error(f"No personal account found for user {user_id}")
+                return False
+
+            account_id = account_result.data[0]["id"]
+
+            # Get default agent
+            default_agent_result = (
+                self.supabase.table("agents")
+                .select("agent_id, custom_mcps")
+                .eq("account_id", account_id)
+                .eq("is_default", True)
+                .execute()
+            )
+
+            if not default_agent_result.data:
+                logger.error(f"No default agent found for account {account_id}")
+                return False
+
+            default_agent_id = default_agent_result.data[0]["agent_id"]
+            current_custom_mcps = default_agent_result.data[0]["custom_mcps"] or []
+
+            # Find and update the Composio MCP with the fresh URL
+            updated = False
+            for i, mcp in enumerate(current_custom_mcps):
+                if (
+                    mcp.get("type") == "http"
+                    and mcp.get("name", "").lower() == app_key.lower()
+                ):
+                    # Update the URL to the fresh authenticated URL
+                    current_custom_mcps[i]["config"]["url"] = mcp_url
+                    updated = True
+                    logger.info(f"Updated MCP URL for {app_key} after authentication")
+                    break
+
+            if not updated:
+                logger.error(f"Could not find MCP connection for {app_key} to refresh")
+                return False
+
+            # Update the default agent with the refreshed MCP URL
+            update_result = (
+                self.supabase.table("agents")
+                .update({"custom_mcps": current_custom_mcps})
+                .eq("agent_id", default_agent_id)
+                .execute()
+            )
+
+            if not update_result.data:
+                logger.error(
+                    f"Failed to update agent {default_agent_id} with refreshed MCP URL"
+                )
+                return False
+
+            logger.info(
+                f"Successfully refreshed MCP connection for {app_key} after authentication"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Error refreshing MCP connection after auth for {app_key}: {e}"
+            )
+            return False
+
     def _normalize_user_id(self, user_id: str) -> str:
         """Convert user ID to proper UUID format for database operations"""
         try:
@@ -1066,44 +1272,84 @@ class ComposioMCPService:
 
     async def list_user_mcp_connections(self, user_id: str) -> List[Dict[str, Any]]:
         """
-        List all Composio MCP connections for a user from Supabase.
+        List all Composio MCP connections for a user from the agents table.
+
+        NEW: This now checks the default agent's custom_mcps for HTTP MCPs
+        instead of the deprecated mcp_oauth_tokens table.
         """
         try:
             actual_user_id = self._normalize_user_id(user_id)
-            result = (
-                self.supabase.table("mcp_oauth_tokens")
-                .select("*")
-                .eq("user_id", actual_user_id)
-                .like("qualified_name", "composio/%")
+
+            # Get account_id from user_id using basejump schema
+            account_result = (
+                self.supabase.schema("basejump")
+                .table("accounts")
+                .select("id")
+                .eq("primary_owner_user_id", actual_user_id)
+                .eq("personal_account", True)
                 .execute()
             )
 
-            connections = []
-            for row in result.data:
-                connections.append(
-                    {
-                        "id": row.get("id", ""),
-                        "user_id": row["user_id"],
-                        "qualified_name": row["qualified_name"],
-                        "app_key": row["qualified_name"].replace("composio/", ""),
-                        "app_name": row["qualified_name"]
-                        .replace("composio/", "")
-                        .title(),
-                        "mcp_url": row[
-                            "access_token"
-                        ],  # MCP URL stored as access_token
-                        "auth_url": row["access_token"],  # Same as MCP URL for now
-                        "session_uuid": row[
-                            "refresh_token"
-                        ],  # Session UUID stored as refresh_token
-                        "status": "connected",  # Default to connected for existing connections
-                        "created_at": row["created_at"],
-                        "updated_at": row["updated_at"],
-                        "expires_at": row.get("expires_at"),
-                        "scope": row["scope"],
-                    }
-                )
+            if not account_result.data:
+                logger.warning(f"No personal account found for user {user_id}")
+                return []
 
+            account_id = account_result.data[0]["id"]
+
+            # Get default agent's custom_mcps
+            default_agent_result = (
+                self.supabase.table("agents")
+                .select("agent_id, custom_mcps, created_at, updated_at")
+                .eq("account_id", account_id)
+                .eq("is_default", True)
+                .execute()
+            )
+
+            if not default_agent_result.data:
+                logger.warning(f"No default agent found for account {account_id}")
+                return []
+
+            default_agent = default_agent_result.data[0]
+            custom_mcps = default_agent.get("custom_mcps", [])
+
+            # Extract Composio MCP connections (HTTP MCPs with Composio URLs)
+            connections = []
+            for mcp in custom_mcps:
+                if mcp.get("type") == "http":
+                    mcp_name = mcp.get("name", "")
+                    mcp_config = mcp.get("config", {})
+                    mcp_url = mcp_config.get("url", "")
+                    enabled_tools = mcp.get("enabledTools", [])
+
+                    # Check if this is a Composio MCP by looking for mcp.composio.dev in URL
+                    if "mcp.composio.dev" in mcp_url:
+
+                        connections.append(
+                            {
+                                "id": f"agent_{default_agent['agent_id']}_{mcp_name.lower()}",
+                                "user_id": actual_user_id,
+                                "qualified_name": f"composio/{mcp_name.lower()}",
+                                "app_key": mcp_name.lower(),
+                                "app_name": mcp_name,
+                                "mcp_url": mcp_url,
+                                "auth_url": mcp_url,
+                                "session_uuid": None,  # HTTP MCPs don't use session UUIDs
+                                "status": "connected",
+                                "created_at": default_agent["created_at"],
+                                "updated_at": default_agent["updated_at"],
+                                "expires_at": None,
+                                "scope": f"composio_{mcp_name.lower()}",
+                                "enabled_tools": enabled_tools,
+                                "tool_count": len(enabled_tools),
+                            }
+                        )
+                        logger.info(
+                            f"Found Composio MCP: {mcp_name} with {len(enabled_tools)} enabled tools"
+                        )
+
+            logger.info(
+                f"Found {len(connections)} Composio MCP connections for user {user_id}"
+            )
             return connections
 
         except Exception as e:
@@ -1112,33 +1358,89 @@ class ComposioMCPService:
 
     async def delete_user_mcp_connection(self, user_id: str, app_key: str) -> bool:
         """
-        Delete a specific Composio MCP connection for a user.
+        Delete a specific Composio MCP connection for a user from the default agent's custom_mcps.
+
+        This removes the MCP server entry from the agents table custom_mcps column,
+        which is where Composio MCPs are now stored (not in mcp_oauth_tokens).
         """
         try:
-            qualified_name = f"composio/{app_key}"
             actual_user_id = self._normalize_user_id(user_id)
 
-            result = (
-                self.supabase.table("mcp_oauth_tokens")
-                .delete()
-                .eq("user_id", actual_user_id)
-                .eq("qualified_name", qualified_name)
+            # Get account_id from user_id using basejump schema
+            account_result = (
+                self.supabase.schema("basejump")
+                .table("accounts")
+                .select("id")
+                .eq("primary_owner_user_id", actual_user_id)
+                .eq("personal_account", True)
                 .execute()
             )
 
-            if result.data:
-                logger.info(
-                    f"Deleted Composio MCP connection for user {user_id}, app {app_key}"
-                )
-                return True
-            else:
-                logger.warning(
-                    f"No connection found to delete for user {user_id}, app {app_key}"
+            if not account_result.data:
+                logger.error(f"No personal account found for user {user_id}")
+                return False
+
+            account_id = account_result.data[0]["id"]
+
+            # Get default agent's current custom_mcps
+            default_agent_result = (
+                self.supabase.table("agents")
+                .select("agent_id, custom_mcps")
+                .eq("account_id", account_id)
+                .eq("is_default", True)
+                .execute()
+            )
+
+            if not default_agent_result.data:
+                logger.error(f"No default agent found for account {account_id}")
+                return False
+
+            default_agent = default_agent_result.data[0]
+            default_agent_id = default_agent["agent_id"]
+            current_custom_mcps = default_agent.get("custom_mcps", [])
+
+            # Find and remove the Composio MCP entry
+            original_count = len(current_custom_mcps)
+            updated_custom_mcps = []
+
+            for mcp in current_custom_mcps:
+                # Skip the MCP entry that matches our app_key
+                if (
+                    mcp.get("type") == "http"
+                    and mcp.get("name", "").lower() == app_key.lower()
+                    and "mcp.composio.dev" in mcp.get("config", {}).get("url", "")
+                ):
+                    logger.info(f"Removing Composio MCP entry for {app_key}")
+                    continue
+                else:
+                    updated_custom_mcps.append(mcp)
+
+            # Check if we actually removed something
+            if len(updated_custom_mcps) == original_count:
+                logger.warning(f"No Composio MCP connection found for {app_key}")
+                return False
+
+            # Update the default agent with the filtered custom_mcps
+            update_result = (
+                self.supabase.table("agents")
+                .update({"custom_mcps": updated_custom_mcps})
+                .eq("agent_id", default_agent_id)
+                .execute()
+            )
+
+            if not update_result.data:
+                logger.error(
+                    f"Failed to update default agent {default_agent_id} after removing MCP"
                 )
                 return False
 
+            logger.info(
+                f"Successfully deleted Composio MCP connection for user {user_id}, app {app_key} from default agent"
+            )
+            return True
+
         except Exception as e:
-            logger.error(f"Error deleting MCP connection: {e}")
+            logger.error(f"Error deleting MCP connection from default agent: {e}")
             return False
 
 
