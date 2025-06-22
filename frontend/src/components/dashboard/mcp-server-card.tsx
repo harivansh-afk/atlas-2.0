@@ -13,6 +13,8 @@ interface MCPServerCardProps {
   isConnecting: boolean;
   onConnect: () => void;
   onDisconnect: () => void;
+  onViewTools?: () => void;
+  isLoadingTools?: boolean;
 }
 
 export function MCPServerCard({
@@ -20,7 +22,9 @@ export function MCPServerCard({
   isConnected,
   isConnecting,
   onConnect,
-  onDisconnect
+  onDisconnect,
+  onViewTools,
+  isLoadingTools = false
 }: MCPServerCardProps) {
   return (
     <motion.div
@@ -31,7 +35,11 @@ export function MCPServerCard({
     >
       <Card
         className="w-44 h-14 cursor-pointer transition-all duration-200 hover:shadow-lg bg-muted/50 dark:bg-muted/30 border border-border"
-        onClick={!isConnected && !isConnecting ? onConnect : undefined}
+        onClick={
+          isConnected && onViewTools
+            ? onViewTools
+            : (!isConnected && !isConnecting ? onConnect : undefined)
+        }
       >
         <CardContent className="px-3 h-full flex items-center justify-between">
           {/* Left: Icon + Text */}
@@ -76,7 +84,7 @@ export function MCPServerCard({
           {/* Right: Status/Actions - Properly centered */}
           <div className="flex items-center flex-shrink-0 ml-2">
             {isConnected ? (
-              /* Connected state: Green check that becomes trash on hover */
+              /* Connected state: Green check that becomes trash on hover, or loading spinner */
               <Button
                 variant="ghost"
                 size="sm"
@@ -85,9 +93,16 @@ export function MCPServerCard({
                   onDisconnect();
                 }}
                 className="h-7 w-7 p-0 rounded-full text-green-500 hover:text-destructive hover:bg-destructive/10 group"
+                disabled={isLoadingTools}
               >
-                <Check className="h-4 w-4 group-hover:hidden" />
-                <Trash2 className="h-4 w-4 hidden group-hover:block" />
+                {isLoadingTools ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 group-hover:hidden" />
+                    <Trash2 className="h-4 w-4 hidden group-hover:block" />
+                  </>
+                )}
               </Button>
             ) : (
               /* Connect button with plus icon and circular border */

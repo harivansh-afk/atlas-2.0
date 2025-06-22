@@ -32,8 +32,9 @@ interface MCPToolSelectionModalProps {
   appName: string;
   appIcon?: string;
   tools: MCPTool[];
-  onConfirm: (selectedTools: string[]) => void;
+  onConfirm?: (selectedTools: string[]) => void;
   isLoading?: boolean;
+  viewOnly?: boolean;
 }
 
 export function MCPToolSelectionModal({
@@ -45,18 +46,22 @@ export function MCPToolSelectionModal({
   tools,
   onConfirm,
   isLoading = false,
+  viewOnly = false,
 }: MCPToolSelectionModalProps) {
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredTools, setFilteredTools] = useState<MCPTool[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Initialize with all tools selected by default
+  // Initialize with all tools selected by default (only for connection flow, not view-only)
   useEffect(() => {
-    if (tools.length > 0) {
+    if (tools.length > 0 && !viewOnly) {
       setSelectedTools(new Set(tools.map(tool => tool.name)));
+    } else if (viewOnly) {
+      // In view-only mode, don't select any tools
+      setSelectedTools(new Set());
     }
-  }, [tools]);
+  }, [tools, viewOnly]);
 
   // Filter tools based on search query
   useEffect(() => {
@@ -93,6 +98,12 @@ export function MCPToolSelectionModal({
   };
 
   const handleConfirm = async () => {
+    if (viewOnly || !onConfirm) {
+      // In view-only mode, just close the modal
+      onClose();
+      return;
+    }
+
     if (selectedTools.size === 0) {
       toast.error("No tools selected", {
         description: "Please select at least one tool to continue.",
@@ -111,8 +122,18 @@ export function MCPToolSelectionModal({
   const selectedCount = selectedTools.size;
   const filteredSelectedCount = filteredTools.filter(tool => selectedTools.has(tool.name)).length;
 
+  const handleClose = () => {
+    if (viewOnly || !isConnecting) {
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        handleClose();
+      }
+    }}>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
@@ -138,9 +159,14 @@ export function MCPToolSelectionModal({
               </div>
             </div>
             <div>
-              <div className="text-lg font-semibold">Configure {appName}</div>
+              <div className="text-lg font-semibold">
+                {viewOnly ? `${appName} Tools` : `Configure ${appName}`}
+              </div>
               <div className="text-sm text-muted-foreground font-normal">
-                Select tools to enable for this integration
+                {viewOnly
+                  ? `Available tools for this connected integration`
+                  : `Select tools to enable for this integration`
+                }
               </div>
             </div>
           </DialogTitle>
@@ -159,26 +185,28 @@ export function MCPToolSelectionModal({
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectAll}
-                  disabled={filteredSelectedCount === filteredTools.length}
-                >
-                  Select All
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDeselectAll}
-                  disabled={filteredSelectedCount === 0}
-                >
-                  Deselect All
-                </Button>
+            {!viewOnly && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    disabled={filteredSelectedCount === filteredTools.length}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeselectAll}
+                    disabled={filteredSelectedCount === 0}
+                  >
+                    Deselect All
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Tools List */}
@@ -186,7 +214,16 @@ export function MCPToolSelectionModal({
             <div className="p-4 space-y-2">
               {filteredTools.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  {searchQuery ? 'No tools match your search' : 'No tools available'}
+                  {viewOnly && tools.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span>Loading tools...</span>
+                    </div>
+                  ) : searchQuery ? (
+                    'No tools match your search'
+                  ) : (
+                    'No tools available'
+                  )}
                 </div>
               ) : (
                 <AnimatePresence>
@@ -203,16 +240,20 @@ export function MCPToolSelectionModal({
                         transition={{ duration: 0.2, delay: index * 0.02 }}
                       >
                         <div
-                          className={`cursor-pointer transition-all duration-200 p-3 rounded-lg border ${
+                          className={`${viewOnly ? '' : 'cursor-pointer'} transition-all duration-200 p-3 rounded-lg border ${
                             isSelected
                               ? 'bg-muted border-foreground/20'
-                              : 'hover:bg-muted/50 border-transparent'
+                              : viewOnly
+                                ? 'bg-muted/30 border-transparent'
+                                : 'hover:bg-muted/50 border-transparent'
                           }`}
-                          onClick={() => handleToolToggle(tool.name)}
+                          onClick={viewOnly ? undefined : () => handleToolToggle(tool.name)}
                         >
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 mt-0.5">
-                              {isSelected ? (
+                              {viewOnly ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              ) : isSelected ? (
                                 <CheckCircle2 className="h-4 w-4 text-foreground" />
                               ) : (
                                 <Circle className="h-4 w-4 text-muted-foreground" />
@@ -252,23 +293,25 @@ export function MCPToolSelectionModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isConnecting}>
-            Cancel
+          <Button variant="outline" onClick={handleClose} disabled={isConnecting}>
+            {viewOnly ? 'Close' : 'Cancel'}
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={isConnecting || selectedTools.size === 0}
-            className="min-w-[120px]"
-          >
-            {isConnecting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Connecting...
-              </>
-            ) : (
-              `Connect ${selectedCount} tools`
-            )}
-          </Button>
+          {!viewOnly && (
+            <Button
+              onClick={handleConfirm}
+              disabled={isConnecting || selectedTools.size === 0}
+              className="min-w-[120px]"
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Connecting...
+                </>
+              ) : (
+                `Connect ${selectedCount} tools`
+              )}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

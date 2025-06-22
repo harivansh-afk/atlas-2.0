@@ -32,6 +32,9 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
   const [connectingApps, setConnectingApps] = useState<Set<string>>(new Set());
   const [disconnectingApps, setDisconnectingApps] = useState<Set<string>>(new Set());
   const [connectedApps, setConnectedApps] = useState<Set<string>>(new Set());
+  const [loadingTools, setLoadingTools] = useState<Set<string>>(new Set());
+  // Cache for tools data to avoid repeated API calls
+  const [toolsCache, setToolsCache] = useState<Map<string, any[]>>(new Map());
   // Tool selection modal state
   const [toolSelectionModal, setToolSelectionModal] = useState<{
     isOpen: boolean;
@@ -40,12 +43,14 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
     appIcon?: string;
     tools: any[];
     mcpUrl?: string;
+    viewOnly?: boolean;
   }>({
     isOpen: false,
     appKey: '',
     appName: '',
     appIcon: '',
     tools: [],
+    viewOnly: false,
   });
 
   // Helper function to get authenticated headers
@@ -289,6 +294,8 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
               isConnecting={connectingApps.has(app.key)}
               onConnect={() => handleConnect(app.key, app.name)}
               onDisconnect={() => handleDisconnect(app.key, app.name)}
+              onViewTools={() => handleViewTools(app.key, app.name, app.icon)}
+              isLoadingTools={loadingTools.has(app.key)}
             />
           ))}
         </div>
@@ -303,13 +310,15 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
 
       {/* Tool Selection Modal */}
       <MCPToolSelectionModal
+        key={`${toolSelectionModal.appKey}-${toolSelectionModal.viewOnly ? 'view' : 'connect'}`}
         isOpen={toolSelectionModal.isOpen}
         onClose={handleToolSelectionClose}
         appKey={toolSelectionModal.appKey}
         appName={toolSelectionModal.appName}
         appIcon={toolSelectionModal.appIcon}
         tools={toolSelectionModal.tools}
-        onConfirm={handleToolSelectionConfirm}
+        onConfirm={toolSelectionModal.viewOnly ? undefined : handleToolSelectionConfirm}
+        viewOnly={toolSelectionModal.viewOnly}
       />
     </>
   );
@@ -423,7 +432,7 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
       const authData = await authResponse.json();
 
       // Close modal and redirect to authentication
-      setToolSelectionModal({ isOpen: false, appKey: '', appName: '', appIcon: '', tools: [] });
+      setToolSelectionModal({ isOpen: false, appKey: '', appName: '', appIcon: '', tools: [], viewOnly: false });
 
       if (authData.success && authData.redirect_url) {
         // Set flag for post-OAuth refresh
@@ -454,7 +463,95 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
 
   // Handle modal close
   function handleToolSelectionClose() {
-    setToolSelectionModal({ isOpen: false, appKey: '', appName: '', appIcon: '', tools: [] });
+    setToolSelectionModal({ isOpen: false, appKey: '', appName: '', appIcon: '', tools: [], viewOnly: false });
+  }
+
+  // Handle viewing tools for connected MCP servers
+  async function handleViewTools(appKey: string, appName: string, appIcon?: string) {
+    // Check cache first
+    const cachedTools = toolsCache.get(appKey);
+    if (cachedTools) {
+      // Show modal immediately with cached data
+      setToolSelectionModal({
+        isOpen: true,
+        appKey,
+        appName,
+        appIcon,
+        tools: cachedTools,
+        viewOnly: true,
+      });
+      return;
+    }
+
+    // Show loading state immediately
+    setLoadingTools(prev => new Set(prev).add(appKey));
+
+    // Show modal with loading state immediately for better UX
+    setToolSelectionModal({
+      isOpen: true,
+      appKey,
+      appName,
+      appIcon,
+      tools: [], // Empty initially
+      viewOnly: true,
+    });
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/api$/, '') || '';
+      const authHeaders = await getAuthHeaders();
+
+      // Discover tools for the connected MCP server
+      const toolsResponse = await fetch(`${API_URL}/api/composio-mcp/discover-tools`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ app_key: appKey }),
+      });
+
+      if (!toolsResponse.ok) {
+        const errorText = await toolsResponse.text();
+        throw new Error(`Failed to discover tools: ${errorText}`);
+      }
+
+      const toolsData = await toolsResponse.json();
+
+      if (!toolsData.success || !toolsData.tools?.length) {
+        toast.error("No Tools Found", {
+          description: `No tools are currently available for ${appName}`,
+        });
+        // Close the modal since there are no tools
+        setToolSelectionModal({ isOpen: false, appKey: '', appName: '', appIcon: '', tools: [], viewOnly: false });
+        return;
+      }
+
+      // Cache the tools data for future use
+      setToolsCache(prev => new Map(prev).set(appKey, toolsData.tools));
+
+      // Update modal with actual tools data
+      setToolSelectionModal({
+        isOpen: true,
+        appKey,
+        appName,
+        appIcon,
+        tools: toolsData.tools,
+        mcpUrl: toolsData.mcp_url,
+        viewOnly: true,
+      });
+
+    } catch (error: any) {
+      console.error('Error viewing tools:', error);
+      toast.error("Failed to Load Tools", {
+        description: error.message || `Failed to load tools for ${appName}`,
+      });
+      // Close the modal on error
+      setToolSelectionModal({ isOpen: false, appKey: '', appName: '', appIcon: '', tools: [], viewOnly: false });
+    } finally {
+      // Remove loading state
+      setLoadingTools(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(appKey);
+        return newSet;
+      });
+    }
   }
 
   // Handle MCP server disconnection
