@@ -18,12 +18,15 @@ import { createClient } from '@/lib/supabase/client';
 import { MCPServerCard } from './mcp-server-card';
 import { MCPToolSelectionModal } from './mcp-tool-selection-modal-new';
 import { ComposioMCPService } from '@/lib/composio-api';
+import { useQueryClient } from '@tanstack/react-query';
+import { agentKeys } from '@/hooks/react-query/agents/keys';
 
 interface MCPServerCarouselProps {
   className?: string;
 }
 
 export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
+  const queryClient = useQueryClient();
   const [apps, setApps] = useState<ComposioApp[]>([]);
   const [filteredApps, setFilteredApps] = useState<ComposioApp[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,6 +154,10 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
           // Reload connections to show updated state
           await loadConnections();
 
+          // Invalidate React Query cache to refresh cursor agent selector
+          queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
+          queryClient.invalidateQueries({ queryKey: agentKeys.defaultMCPs() });
+
           toast.success("Authentication Complete!", {
             description: `${recentlyConnectedKey} is now connected and ready to use.`,
           });
@@ -179,7 +186,7 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
     return () => {
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, []);
+  }, [queryClient]);
 
   // Filter and sort apps (connected first)
   useEffect(() => {
@@ -584,6 +591,10 @@ export function MCPServerCarousel({ className }: MCPServerCarouselProps) {
           newSet.delete(appKey);
           return newSet;
         });
+
+        // Invalidate React Query cache to refresh cursor agent selector
+        queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: agentKeys.defaultMCPs() });
 
         toast.success("Disconnected Successfully", {
           description: `${appName} has been disconnected and removed.`,

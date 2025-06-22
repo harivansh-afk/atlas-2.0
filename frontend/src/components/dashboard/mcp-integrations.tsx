@@ -13,6 +13,8 @@ import { ComposioMCPService } from '@/lib/composio-api';
 import { ComposioApp, COMPOSIO_APP_CATEGORIES } from '@/types/composio';
 import { createClient } from '@/lib/supabase/client';
 import { MCPToolSelectionModal } from './mcp-tool-selection-modal';
+import { useQueryClient } from '@tanstack/react-query';
+import { agentKeys } from '@/hooks/react-query/agents/keys';
 import {
   Select,
   SelectContent,
@@ -26,6 +28,7 @@ interface MCPIntegrationsProps {
 }
 
 export function MCPIntegrations({ className }: MCPIntegrationsProps) {
+  const queryClient = useQueryClient();
   const [apps, setApps] = useState<ComposioApp[]>([]);
   const [filteredApps, setFilteredApps] = useState<ComposioApp[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,6 +163,10 @@ export function MCPIntegrations({ className }: MCPIntegrationsProps) {
           // Reload connections to show updated state
           await loadConnections();
 
+          // Invalidate React Query cache to refresh cursor agent selector
+          queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
+          queryClient.invalidateQueries({ queryKey: agentKeys.defaultMCPs() });
+
           toast.success("Authentication Complete!", {
             description: `${recentlyConnectedKey} is now connected and ready to use.`,
           });
@@ -189,7 +196,7 @@ export function MCPIntegrations({ className }: MCPIntegrationsProps) {
     return () => {
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, []);
+  }, [queryClient]);
 
   // Filter apps based on search and category
   useEffect(() => {
