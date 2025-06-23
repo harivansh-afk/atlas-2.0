@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Settings2, Zap, Terminal, FolderOpen, Globe } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Search, Zap, Terminal, FolderOpen, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import {
   SiGmail, SiNotion, SiLinear, SiHubspot, SiFigma, SiClickup, SiGooglesheets, SiGoogledocs, SiSlack, SiGithub
 } from 'react-icons/si';
 import { FaMicrosoft, FaTwitter } from 'react-icons/fa';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DEFAULT_AGENTPRESS_TOOLS, getToolDisplayName } from '../_data/tools';
 import { useDefaultAgentMCPs } from '@/hooks/react-query/agents/use-agents';
 
@@ -29,7 +29,7 @@ export const AgentToolsConfiguration = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Get default agent MCPs for shared tools
-  const { data: defaultMCPs, isLoading: isLoadingDefaultMCPs } = useDefaultAgentMCPs();
+  const { data: defaultMCPs } = useDefaultAgentMCPs();
 
   const handleToolToggle = (toolName: string, enabled: boolean) => {
     const updatedTools = {
@@ -51,8 +51,22 @@ export const AgentToolsConfiguration = ({
   // Helper function to get MCP icon component (using React icons like suggestions)
   const getMCPIconComponent = (mcp: any): React.ComponentType<any> => {
     const lowerName = mcp.name.toLowerCase();
+    const qualifiedName = mcp.qualifiedName?.toLowerCase() || '';
 
-    // Try to match against known integrations
+    // Handle Smithery MCP servers by qualifiedName first
+    if (!mcp.isCustom && qualifiedName) {
+      // Common Smithery MCP servers
+      if (qualifiedName.includes('exa')) return Search;
+      if (qualifiedName.includes('github')) return SiGithub;
+      if (qualifiedName.includes('notion')) return SiNotion;
+      if (qualifiedName.includes('slack')) return SiSlack;
+      if (qualifiedName.includes('linear')) return SiLinear;
+      if (qualifiedName.includes('figma')) return SiFigma;
+      if (qualifiedName.includes('desktop-commander')) return Terminal; // Terminal/desktop tool
+      if (qualifiedName.includes('filesystem')) return FolderOpen; // File operations
+    }
+
+    // Try to match against known integrations by name
     if (lowerName.includes('gmail')) return SiGmail;
     if (lowerName.includes('google')) {
       if (lowerName.includes('docs')) return SiGoogledocs;
@@ -79,13 +93,13 @@ export const AgentToolsConfiguration = ({
   };
 
   // Check if an MCP is currently enabled for this agent
-  const isMCPEnabled = (mcpName: string, isCustom: boolean) => {
+  const isMCPEnabled = useCallback((mcpName: string, isCustom: boolean) => {
     if (isCustom) {
       return customMcps.some(mcp => mcp.name === mcpName);
     } else {
       return mcps.some(mcp => mcp.name === mcpName);
     }
-  };
+  }, [mcps, customMcps]);
 
   // Get shared MCPs from default agent
   const sharedMCPs = useMemo(() => {
@@ -122,7 +136,7 @@ export const AgentToolsConfiguration = ({
     });
 
     return shared;
-  }, [defaultMCPs, mcps, customMcps]);
+  }, [defaultMCPs, isMCPEnabled]);
 
   const getSelectedToolsCount = (): number => {
     const regularToolsCount = Object.values(tools).filter(tool => tool.enabled).length;
@@ -184,18 +198,18 @@ export const AgentToolsConfiguration = ({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-sm truncate">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <h4 className="font-medium text-sm truncate min-w-0">
                       {mcp.name}
                     </h4>
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                    <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 flex-shrink-0">
                       App
                     </Badge>
                   </div>
                   <Switch
                     checked={mcp.enabled}
                     onCheckedChange={(checked) => handleMCPToggle(mcp.name, checked, mcp.isCustom)}
-                    className="flex-shrink-0"
+                    className="flex-shrink-0 ml-2"
                   />
                 </div>
               </div>
@@ -213,13 +227,13 @@ export const AgentToolsConfiguration = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm">
+                  <h4 className="font-medium text-sm truncate min-w-0 flex-1">
                     {getToolDisplayName(toolName)}
                   </h4>
                   <Switch
                     checked={tools[toolName]?.enabled || false}
                     onCheckedChange={(checked) => handleToolToggle(toolName, checked)}
-                    className="flex-shrink-0"
+                    className="flex-shrink-0 ml-2"
                   />
                 </div>
               </div>

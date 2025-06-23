@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Plus, Infinity, User, Bot, Check, Search } from 'lucide-react';
+import { ChevronDown, Plus, Infinity, Bot, Check, Search } from 'lucide-react';
 import {
   SiGmail, SiNotion, SiLinear, SiHubspot, SiFigma, SiClickup, SiGooglesheets, SiGoogledocs, SiSlack, SiGithub
 } from 'react-icons/si';
@@ -48,8 +48,22 @@ const integrationIcons: Record<string, React.ComponentType<any>> = {
 // Helper function to get MCP icon component (using React icons like suggestions)
 const getMCPIconComponent = (mcp: any): React.ComponentType<any> => {
   const lowerName = mcp.name.toLowerCase();
+  const qualifiedName = mcp.qualifiedName?.toLowerCase() || '';
 
-  // Try to match against known integrations
+  // Handle Smithery MCP servers by qualifiedName first
+  if (!mcp.isCustom && qualifiedName) {
+    // Common Smithery MCP servers
+    if (qualifiedName.includes('exa')) return Search;
+    if (qualifiedName.includes('github')) return integrationIcons['github'];
+    if (qualifiedName.includes('notion')) return integrationIcons['notion'];
+    if (qualifiedName.includes('slack')) return integrationIcons['slack'];
+    if (qualifiedName.includes('linear')) return integrationIcons['linear'];
+    if (qualifiedName.includes('figma')) return integrationIcons['figma'];
+    if (qualifiedName.includes('desktop-commander')) return integrationIcons['microsoft']; // Terminal/desktop tool
+    if (qualifiedName.includes('filesystem')) return Search; // File operations
+  }
+
+  // Try to match against known integrations by name
   if (lowerName.includes('gmail')) return integrationIcons['gmail'];
   if (lowerName.includes('google')) {
     if (lowerName.includes('docs')) return integrationIcons['googledocs'];
