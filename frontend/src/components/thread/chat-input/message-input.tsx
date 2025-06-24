@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect } from 'react';
+import React, { forwardRef, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Square, Loader2, ArrowUp } from 'lucide-react';
@@ -9,12 +9,18 @@ import { VoiceRecorder } from './voice-recorder';
 import { ModelToggle } from './model-toggle';
 import { CursorStyleAgentSelector } from './cursor-style-agent-selector';
 import { useRunValidation } from '@/hooks/use-run-validation';
+import { ToolMentionsInput } from './tool-mentions-input';
+import { ClassifiedMCPTool } from '@/hooks/use-mcp-tool-classification';
+import { toast } from 'sonner';
+import { useUpdateAgent, useAgent } from '@/hooks/react-query/agents/use-agents';
+import { useMCPConnection } from '@/hooks/use-mcp-connection';
 
 
 
 interface MessageInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onMentionChange?: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onTranscription: (text: string) => void;
   placeholder: string;
@@ -48,6 +54,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     {
       value,
       onChange,
+      onMentionChange,
       onSubmit,
       onTranscription,
       placeholder,
@@ -77,7 +84,83 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     },
     ref,
   ) => {
+    const { data: currentAgent } = useAgent(selectedAgentId || '');
+    const updateAgentMutation = useUpdateAgent();
     const { canSubmit } = useRunValidation();
+
+    // Use the reusable MCP connection hook
+    const { connectToMCPServer } = useMCPConnection({
+      onConnectionSuccess: (_, appName) => {
+        toast.success('Tool Connected!', {
+          description: `${appName} is now available for use.`
+        });
+      }
+    });
+
+    // Handle connecting to a new MCP server
+    const handleToolConnect = useCallback(async (tool: ClassifiedMCPTool): Promise<void> => {
+      if (!tool.originalApp) {
+        toast.error('Unable to connect to this tool');
+        throw new Error('Unable to connect to this tool');
+      }
+
+      try {
+        // Use the reusable connection hook
+        await connectToMCPServer(tool.originalApp);
+      } catch (error) {
+        // Error handling is done in the hook, but we need to re-throw for loading state
+        throw error;
+      }
+    }, [connectToMCPServer]);
+
+    // Handle adding a tool to the current agent
+    const handleToolAddToAgent = useCallback(async (tool: ClassifiedMCPTool): Promise<void> => {
+      if (!selectedAgentId || !currentAgent) {
+        toast.error('No agent selected');
+        throw new Error('No agent selected');
+      }
+
+      try {
+        toast.info('Adding tool to agent...', {
+          description: `Adding ${tool.displayName} to your agent`
+        });
+
+        // Add the tool to the agent's custom MCPs
+        const updatedCustomMcps = [...(currentAgent.custom_mcps || [])];
+
+        // Check if tool is already added
+        const existingTool = updatedCustomMcps.find(mcp => mcp.name === tool.name);
+        if (existingTool) {
+          toast.warning('Tool already added', {
+            description: `${tool.displayName} is already in this agent`
+          });
+          return;
+        }
+
+        // Add the new tool
+        updatedCustomMcps.push({
+          name: tool.name,
+          type: tool.config?.type || 'http',
+          config: tool.config,
+          enabledTools: tool.enabledTools || []
+        });
+
+        await updateAgentMutation.mutateAsync({
+          agentId: selectedAgentId,
+          custom_mcps: updatedCustomMcps
+        });
+
+        toast.success('Tool added to agent!', {
+          description: `${tool.displayName} is now available in this agent`
+        });
+      } catch (error) {
+        console.error('Error adding tool to agent:', error);
+        toast.error('Failed to add tool to agent', {
+          description: error instanceof Error ? error.message : 'Please try again'
+        });
+        throw error; // Re-throw to allow loading state to be cleared
+      }
+    }, [selectedAgentId, currentAgent, updateAgentMutation]);
 
     useEffect(() => {
       const textarea = ref as React.RefObject<HTMLTextAreaElement>;
@@ -119,19 +202,38 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       <div className="relative flex flex-col w-full h-auto gap-4 justify-between">
 
         <div className="flex flex-col gap-2 items-center px-2">
-          <Textarea
-            ref={ref}
-            value={value}
-            onChange={onChange}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            className={cn(
-              'w-full bg-transparent dark:bg-transparent border-none shadow-none focus-visible:ring-0 px-2 py-1 text-base min-h-[40px] max-h-[200px] overflow-y-auto resize-none',
-              isDraggingOver ? 'opacity-40' : '',
-            )}
-            disabled={loading || (disabled && !isAgentRunning)}
-            rows={2}
-          />
+          {onMentionChange ? (
+            <ToolMentionsInput
+              ref={ref}
+              value={value}
+              onChange={onMentionChange}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              disabled={loading || (disabled && !isAgentRunning)}
+              selectedAgentId={selectedAgentId}
+              isDraggingOver={isDraggingOver}
+              onToolConnect={handleToolConnect}
+              onToolAddToAgent={handleToolAddToAgent}
+              className={cn(
+                'w-full bg-transparent dark:bg-transparent border-none shadow-none focus-visible:ring-0 px-2 py-1 text-base min-h-[40px] max-h-[200px] overflow-y-auto resize-none',
+                isDraggingOver ? 'opacity-40' : '',
+              )}
+            />
+          ) : (
+            <Textarea
+              ref={ref}
+              value={value}
+              onChange={onChange}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              className={cn(
+                'w-full bg-transparent dark:bg-transparent border-none shadow-none focus-visible:ring-0 px-2 py-1 text-base min-h-[40px] max-h-[200px] overflow-y-auto resize-none',
+                isDraggingOver ? 'opacity-40' : '',
+              )}
+              disabled={loading || (disabled && !isAgentRunning)}
+              rows={2}
+            />
+          )}
         </div>
 
 

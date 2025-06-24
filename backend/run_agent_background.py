@@ -82,6 +82,9 @@ async def run_agent_background(
     target_agent_id: Optional[str] = None,
 ):
     """Run the agent in the background using Redis for state."""
+    print(
+        f"🔥🔥🔥 BACKGROUND AGENT STARTING - Agent Run ID: {agent_run_id}, Thread: {thread_id}"
+    )
     try:
         await initialize()
     except Exception as e:

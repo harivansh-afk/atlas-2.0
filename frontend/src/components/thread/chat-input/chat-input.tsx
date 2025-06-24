@@ -17,6 +17,7 @@ import { useModelSelection } from './_use-model-selection';
 import { useRunValidation } from '@/hooks/use-run-validation';
 import { toast } from 'sonner';
 
+
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -140,6 +141,8 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
         return;
       }
 
+      // Keep original message with tool mentions for backend processing
+      // The backend now handles tool mention parsing and fetching tool information
       let message = value;
 
       if (uploadedFiles.length > 0) {
@@ -148,6 +151,8 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           .join('\n');
         message = message ? `${message}\n\n${fileInfo}` : fileInfo;
       }
+
+
 
       let baseModelName = getActualModelId(selectedModel);
       let thinkingEnabled = false;
@@ -170,6 +175,14 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
+      if (isControlled) {
+        controlledOnChange(newValue);
+      } else {
+        setUncontrolledValue(newValue);
+      }
+    };
+
+    const handleMentionChange = (newValue: string) => {
       if (isControlled) {
         controlledOnChange(newValue);
       } else {
@@ -274,6 +287,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                 ref={textareaRef}
                 value={value}
                 onChange={handleChange}
+                onMentionChange={handleMentionChange}
                 onSubmit={handleSubmit}
                 onTranscription={handleTranscription}
                 placeholder={placeholder}

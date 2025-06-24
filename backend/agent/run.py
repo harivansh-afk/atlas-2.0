@@ -54,6 +54,7 @@ async def run_agent(
     target_agent_id: Optional[str] = None,
 ):
     """Run the development agent with specified configuration."""
+    print(f"🚀🚀🚀 AGENT RUN STARTED - Thread: {thread_id}, Model: {model_name}")
     logger.info(f"🚀 Starting agent with model: {model_name}")
     if agent_config:
         logger.info(f"Using custom agent: {agent_config.get('name', 'Unknown')}")
@@ -439,6 +440,8 @@ async def run_agent(
     iteration_count = 0
     continue_execution = True
 
+    # Get latest user message for both tool mention processing and trace update
+    logger.info(f"🔍 Querying for latest user message in thread: {thread_id}")
     latest_user_message = (
         await client.table("messages")
         .select("*")
@@ -448,6 +451,106 @@ async def run_agent(
         .limit(1)
         .execute()
     )
+    logger.info(
+        f"🔍 User message query completed. Found {len(latest_user_message.data) if latest_user_message.data else 0} messages"
+    )
+
+    # ---- Tool Mention Preprocessing ----
+    # Check for tool mentions in the latest user message and fetch tool information
+    tool_mention_context = ""
+    print("🔍🔍🔍 TOOL MENTION PREPROCESSING STARTING")
+    logger.info("🔍 Starting tool mention preprocessing...")
+    logger.info(f"🔍 Latest user message query result: {latest_user_message}")
+    logger.info(
+        f"🔍 Latest user message data: {latest_user_message.data if latest_user_message else 'No result'}"
+    )
+    logger.info(
+        f"🔍 Latest user message data length: {len(latest_user_message.data) if latest_user_message and latest_user_message.data else 'No data'}"
+    )
+
+    if latest_user_message.data and len(latest_user_message.data) > 0:
+        try:
+            from utils.tool_mention_processor import ToolMentionProcessor
+            from services.tool_information_fetcher import ToolInformationFetcher
+
+            # Get the latest user message content
+            latest_message_data = latest_user_message.data[0]["content"]
+            logger.info(f"🔍 Raw message data type: {type(latest_message_data)}")
+            logger.info(f"🔍 Raw message data: {latest_message_data}")
+
+            if isinstance(latest_message_data, str):
+                latest_message_data = json.loads(latest_message_data)
+                logger.info(f"🔍 Parsed message data: {latest_message_data}")
+
+            user_message_content = latest_message_data.get("content", "")
+            logger.info(f"🔍 Extracted user message content: '{user_message_content}'")
+            logger.info(
+                f"📝 Checking user message for tool mentions: '{user_message_content[:100]}...'"
+            )
+
+            # Process tool mentions
+            processor = ToolMentionProcessor()
+            if processor.has_tool_mentions(user_message_content):
+                logger.info(
+                    "🔧 Tool mentions detected in user message, fetching tool information..."
+                )
+                trace.event(
+                    name="tool_mentions_detected",
+                    level="DEFAULT",
+                    status_message="Tool mentions detected, fetching tool information",
+                )
+
+                # Parse tool mentions
+                mentions = processor.parse_tool_mentions(user_message_content)
+                logger.info(
+                    f"Found {len(mentions)} tool mentions: {[m.display for m in mentions]}"
+                )
+
+                # Fetch tool information
+                fetcher = ToolInformationFetcher()
+                tool_mention_context = await fetcher.get_tool_schemas_for_prompt(
+                    mentions, account_id
+                )
+
+                if tool_mention_context:
+                    logger.info(
+                        "✅ Successfully fetched tool information for mentioned tools"
+                    )
+                    trace.event(
+                        name="tool_information_fetched",
+                        level="DEFAULT",
+                        status_message=f"Fetched information for {len(mentions)} mentioned tools",
+                    )
+
+                    # Update system message with enhanced content
+                    system_content += tool_mention_context
+                    system_message = {"role": "system", "content": system_content}
+                    logger.info(
+                        "📝 Enhanced system prompt with tool mention information"
+                    )
+                else:
+                    logger.warning(
+                        "⚠️ No tool information could be fetched for mentioned tools"
+                    )
+                    trace.event(
+                        name="tool_information_fetch_failed",
+                        level="WARNING",
+                        status_message="Failed to fetch tool information for mentioned tools",
+                    )
+            else:
+                logger.info("ℹ️ No tool mentions detected in user message")
+
+        except Exception as e:
+            logger.error(f"❌ Error processing tool mentions: {str(e)}")
+            trace.event(
+                name="tool_mention_processing_error",
+                level="ERROR",
+                status_message=f"Error processing tool mentions: {str(e)}",
+            )
+    else:
+        logger.info("ℹ️ No latest user message found for tool mention processing")
+
+    # Update trace with user input
     if latest_user_message.data and len(latest_user_message.data) > 0:
         data = latest_user_message.data[0]["content"]
         if isinstance(data, str):

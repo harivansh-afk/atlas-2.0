@@ -1,11 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Plus, Infinity, Bot, Check, Search } from 'lucide-react';
-import {
-  SiGmail, SiNotion, SiLinear, SiHubspot, SiFigma, SiClickup, SiGooglesheets, SiGoogledocs, SiSlack, SiGithub
-} from 'react-icons/si';
-import { FaMicrosoft, FaTwitter } from 'react-icons/fa';
+import { ChevronDown, Plus, Infinity, Bot, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAgents } from '@/hooks/react-query/agents/use-agents';
 import { useRouter } from 'next/navigation';
+import { getAgentMCPTools } from '@/lib/icon-mapping';
 
 interface CursorStyleAgentSelectorProps {
   selectedAgentId?: string;
@@ -26,94 +23,7 @@ interface CursorStyleAgentSelectorProps {
   className?: string;
 }
 
-// Integration icon mapping (same as suggestions component)
-const integrationIcons: Record<string, React.ComponentType<any>> = {
-  'gmail': SiGmail,
-  'google': SiGooglesheets, // Default to Sheets for google
-  'googledocs': SiGoogledocs,
-  'googlesheets': SiGooglesheets,
-  'googlecalendar': SiGooglesheets, // Using sheets as fallback for calendar
-  'googledrive': SiGooglesheets, // Using sheets as fallback for drive
-  'notion': SiNotion,
-  'linear': SiLinear,
-  'hubspot': SiHubspot,
-  'twitter': FaTwitter,
-  'figma': SiFigma,
-  'clickup': SiClickup,
-  'slack': SiSlack,
-  'github': SiGithub,
-  'microsoft': FaMicrosoft,
-};
 
-// Helper function to get MCP icon component (using React icons like suggestions)
-const getMCPIconComponent = (mcp: any): React.ComponentType<any> => {
-  const lowerName = mcp.name.toLowerCase();
-  const qualifiedName = mcp.qualifiedName?.toLowerCase() || '';
-
-  // Handle Smithery MCP servers by qualifiedName first
-  if (!mcp.isCustom && qualifiedName) {
-    // Common Smithery MCP servers
-    if (qualifiedName.includes('exa')) return Search;
-    if (qualifiedName.includes('github')) return integrationIcons['github'];
-    if (qualifiedName.includes('notion')) return integrationIcons['notion'];
-    if (qualifiedName.includes('slack')) return integrationIcons['slack'];
-    if (qualifiedName.includes('linear')) return integrationIcons['linear'];
-    if (qualifiedName.includes('figma')) return integrationIcons['figma'];
-    if (qualifiedName.includes('desktop-commander')) return integrationIcons['microsoft']; // Terminal/desktop tool
-    if (qualifiedName.includes('filesystem')) return Search; // File operations
-  }
-
-  // Try to match against known integrations by name
-  if (lowerName.includes('gmail')) return integrationIcons['gmail'];
-  if (lowerName.includes('google')) {
-    if (lowerName.includes('docs')) return integrationIcons['googledocs'];
-    if (lowerName.includes('sheets')) return integrationIcons['googlesheets'];
-    if (lowerName.includes('calendar')) return integrationIcons['googlecalendar'];
-    if (lowerName.includes('drive')) return integrationIcons['googledrive'];
-    return integrationIcons['google']; // Default to sheets
-  }
-  if (lowerName.includes('notion')) return integrationIcons['notion'];
-  if (lowerName.includes('linear')) return integrationIcons['linear'];
-  if (lowerName.includes('hubspot')) return integrationIcons['hubspot'];
-  if (lowerName.includes('twitter')) return integrationIcons['twitter'];
-  if (lowerName.includes('figma')) return integrationIcons['figma'];
-  if (lowerName.includes('clickup')) return integrationIcons['clickup'];
-  if (lowerName.includes('slack')) return integrationIcons['slack'];
-  if (lowerName.includes('github')) return integrationIcons['github'];
-  if (lowerName.includes('microsoft')) return integrationIcons['microsoft'];
-
-  // Default fallback
-  return Search;
-};
-
-// Helper function to get all MCP tools for an agent
-const getAgentMCPTools = (agent: any): Array<{name: string, IconComponent: React.ComponentType<any>}> => {
-  if (!agent) return [];
-
-  const tools: Array<{name: string, IconComponent: React.ComponentType<any>}> = [];
-
-  // Add configured MCPs
-  if (agent.configured_mcps) {
-    agent.configured_mcps.forEach((mcp: any) => {
-      tools.push({
-        name: mcp.name,
-        IconComponent: getMCPIconComponent({ ...mcp, isCustom: false })
-      });
-    });
-  }
-
-  // Add custom MCPs
-  if (agent.custom_mcps) {
-    agent.custom_mcps.forEach((mcp: any) => {
-      tools.push({
-        name: mcp.name,
-        IconComponent: getMCPIconComponent({ ...mcp, isCustom: true })
-      });
-    });
-  }
-
-  return tools;
-};
 
 // Icon tray component for MCP tools (exactly like suggestions component)
 const MCPIconTray = ({ tools, maxIcons = 3 }: { tools: Array<{name: string, IconComponent: React.ComponentType<any>}>, maxIcons?: number }) => {
